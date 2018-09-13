@@ -114,7 +114,7 @@ void Vertices::createPointReps(VertexData::Position::AXIS axis, float fEpsilon)
 		// need to back up until we are further than epsilon (with a nice fudge factor)
 		// away, test everything in this range and add it to our point rep if in range
 		// we never scan forward as the next johnny will search backwards
-		auto& siBackIt = siIt - 1;
+		auto siBackIt = siIt - 1;
 		while((fabsf((position((VertexIndex)siBackIt->index).get(axis)) - cmp) < fEpsilon * 5))
 		{
 			VertexIndex const siBackIndex  = (VertexIndex)siBackIt->index;

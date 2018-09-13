@@ -66,7 +66,7 @@ public:
 	typedef CT ContainerType;
 	typedef typename std::vector<DataType>::iterator iterator;
 	typedef typename std::vector<DataType>::const_iterator const_iterator;
-	typedef typename BaseElements<DT, CT, Interpol, Derived, reserveAmnt> BaseElementType;
+	typedef BaseElements<DT, CT, Interpol, Derived, reserveAmnt> BaseElementType;
 
 	std::vector<DataType> elements;
 

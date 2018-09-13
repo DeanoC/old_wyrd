@@ -133,7 +133,7 @@ public:
 	{
 		TextureLayer<T> newTex(rhs.width, rhs.height);
 		newTex.layers = rhs.layers;
-		newText.layersNameMap = rhs.layersNameMap;
+		newTex.layersNameMap = rhs.layersNameMap;
 		return std::move(newTex);
 	}
 private:

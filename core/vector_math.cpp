@@ -256,7 +256,7 @@ Plane CreatePlaneFromPoints(size_t pointCount, Vector3 const* points)
 		weightedDir.z = (float)(wd[2] / len);
 
 	}
-	return Plane::Plane(weightedDir, Dot(weightedDir, centroid));
+	return Plane(weightedDir, Dot(weightedDir, centroid));
  }
 
 };

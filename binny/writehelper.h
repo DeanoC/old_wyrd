@@ -108,7 +108,7 @@ public:
 		using namespace std::string_literals;
 		if (std::is_signed<T>())
 		{
-			if (typeid(typename T) == typeid(double)) { return "Double"s; }
+			if (typeid(T) == typeid(double)) { return "Double"s; }
 			if (typeid(T) == typeid(float)) { return "Float"s; }
 
 			switch (sizeof(T)) {

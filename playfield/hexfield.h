@@ -30,7 +30,7 @@ namespace Playfield {
 
 		constexpr BaseHexCoord() {}
 		constexpr explicit BaseHexCoord(CoordType x_, CoordType y_) : x(x_), y(y_){}
-		constexpr BaseHexCoord(PointyHexDirections dir_) : x(GetPointyHexDirection<CoordType>(dir_).x), y(GetPointyHexDirection<CoordType>(dir_).y) {}
+//		constexpr BaseHexCoord(PointyHexDirections dir_) : x(GetPointyHexDirection<CoordType>(dir_).x), y(GetPointyHexDirection<CoordType>(dir_).y) {}
 
 		constexpr CoordType z() const { return - x - y; }
 
@@ -72,7 +72,7 @@ namespace Playfield {
 		}
 		static constexpr float starNorm(BaseHexCoord const& a)
 		{
-			return Math::Min(downTrianglePseudoNorm(a), upTrianglePseudoNorm(b));
+			return Math::Min(downTrianglePseudoNorm(a), upTrianglePseudoNorm(a));
 		}
 
 		static constexpr BaseHexCoord round(Math::Vector2 const& coord) {

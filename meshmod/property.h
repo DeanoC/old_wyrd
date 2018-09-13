@@ -7,7 +7,7 @@
 #if !defined( MESH_MOD_PROPERTY_H_ )
 #define MESH_MOD_PROPERTY_H_
 
-#include <any>
+#include "core/any.h"
 
 namespace MeshMod {
 

@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <sstream>
+#include <array>
 #include "playfield/hexfield.h"
 
 struct VizPosColorUvVertex
@@ -212,7 +213,13 @@ void Viz::init(int32_t _argc, const char *const *_argv, uint32_t _width, uint32_
 	m_reset = BGFX_RESET_VSYNC;
 
 	bgfx::Init init;
+
+	// shader compiler failing on metal at the moment
+#if PLATFORM_OS == OSX
+	init.type = bgfx::RendererType::OpenGL;
+#else
 	init.type = args.m_type;
+#endif
 	init.vendorId = args.m_pciId;
 	init.resolution.width = m_width;
 	init.resolution.height = m_height;
@@ -309,7 +316,7 @@ void Viz::init(int32_t _argc, const char *const *_argv, uint32_t _width, uint32_
 		auto result = testRead.read(in, &malloc, handlers.size(), handlers.data());
 		if (result.first != Bundle::ErrorCode::Okay)
 		{
-			DebugBreak();
+			bx::debugBreak();
 		}
 		for( auto mem : tests)
 		{
@@ -319,7 +326,7 @@ void Viz::init(int32_t _argc, const char *const *_argv, uint32_t _width, uint32_
 	Playfield::BaseHexCoord<int8_t> a(10, 10);
 	Playfield::BaseHexCoord<int8_t> b = (Playfield::BaseHexCoord<int8_t>)(Math::Vector2(100.f, 100.f));
 	Playfield::BaseHexCoord<int8_t> c = Playfield::BaseHexCoord<int8_t>::round(Math::Vector2(101.5f, 102.5f));
-	Playfield::BaseHexCoord<int8_t> e(Playfield::PointyHexDirections::E);
+//	Playfield::BaseHexCoord<int8_t> e(Playfield::PointyHexDirections::E);
 }
 
 int Viz::shutdown()
@@ -556,7 +563,7 @@ void Viz::replaceWithConvexHull()
 	Math::Matrix4x4 rootMatrix = Math::IdentityMatrix();
 
 	rootScene->mutateDescendents(rootMatrix, [this](MeshMod::SceneNode& node, Math::Matrix4x4 const& worldMat) {
-		node.mutateObjects([this, &worldMat](MeshMod::SceneObjectPtr& obj) {
+		node.mutateObjects([this, &worldMat](MeshMod::SceneObjectPtr obj) {
 			auto mesh = std::dynamic_pointer_cast<MeshMod::Mesh>(obj);
 			if (!mesh) return;
 			MeshOps::ConvexHullComputer::generateInline(mesh);

@@ -4,12 +4,19 @@
 #define TINYGLTF_IMPLEMENTATION
 //#define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+
+
+
+
+#include "core/core.h"
+
+#if PLATFORM == WINDOWS
 // If using a modern Microsoft Compiler, this define supress compilation
 // warnings in stb_image_write
 #define STBI_MSC_SECURE_CRT
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
+#endif
 
-#include "core/core.h"
 #include "core/quick_hash.h"
 #include "meshmod/meshmod.h"
 #include "meshops/meshops.h"

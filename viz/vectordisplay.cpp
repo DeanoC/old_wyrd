@@ -165,7 +165,7 @@ void VectorDisplay::endFrame()
 
 	if (m_points.size() > 0)
 	{
-		bgfx::updateDynamicVertexBuffer(m_vertexBuffers[m_currentDrawStep]
+		bgfx::update(m_vertexBuffers[m_currentDrawStep]
 			, 0
 			, bgfx::copy(m_points.data(), (uint32_t)m_points.size() * sizeof(PosColorUvVertex))
 		);
@@ -830,13 +830,13 @@ void VectorDisplay::screenSpaceQuad(float _textureWidth, float _textureHeight, f
 
 void VectorDisplay::setupResDependent()
 {
-	const uint32_t samplerFlags = 0
+	const uint64_t samplerFlags = 0
 		| BGFX_TEXTURE_RT
-		| BGFX_TEXTURE_MIN_POINT
-		| BGFX_TEXTURE_MAG_POINT
-		| BGFX_TEXTURE_MIP_POINT
-		| BGFX_TEXTURE_U_CLAMP
-		| BGFX_TEXTURE_V_CLAMP
+		| BGFX_SAMPLER_MIN_POINT
+		| BGFX_SAMPLER_MAG_POINT
+		| BGFX_SAMPLER_MIP_POINT
+		| BGFX_SAMPLER_U_CLAMP
+		| BGFX_SAMPLER_V_CLAMP
 		;
 	m_sceneFrameBuffer = bgfx::createFrameBuffer(m_screenWidth, m_screenHeight, bgfx::TextureFormat::BGRA8, samplerFlags);
 
@@ -881,11 +881,11 @@ void VectorDisplay::genLinetex()                                    // generate 
 		}
 	}
 
-	const uint32_t flags = 0
-		| BGFX_TEXTURE_U_CLAMP
-		| BGFX_TEXTURE_V_CLAMP
-		| BGFX_TEXTURE_MIN_POINT
-		| BGFX_TEXTURE_MAG_POINT
+	const uint64_t flags = 0
+		| BGFX_SAMPLER_U_CLAMP
+		| BGFX_SAMPLER_V_CLAMP
+		| BGFX_SAMPLER_MIN_POINT
+		| BGFX_SAMPLER_MAG_POINT
 		;
 
 	m_lineTexId = bgfx::createTexture2D(TEXTURE_SIZE, TEXTURE_SIZE, false, 1, bgfx::TextureFormat::BGRA8, flags, mem);

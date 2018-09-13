@@ -61,7 +61,7 @@ Rasteriser::Rasteriser(unsigned int width, unsigned int height, unsigned int sub
 
 	// initialise our random number generators
 	std::mt19937 generator;
-	std::uniform_int<unsigned int> distribution(0, 0xffffffff);
+	std::uniform_int_distribution<unsigned int> distribution(0, 0xffffffff);
 
 	// generate two random numbers per pixel if we're multi-sampling
 	if(m_subSampleCount > 1)

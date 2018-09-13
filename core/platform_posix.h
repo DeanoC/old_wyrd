@@ -1,6 +1,6 @@
-#	include <stdint.h>
-#	include <stdlib.h>
-#	include <malloc.h>
+#	include <cstdint>
+#	include <cstdlib>
+#	include <memory.h>
 
 #define CALL
 #define READONLY_MEM

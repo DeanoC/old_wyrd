@@ -460,11 +460,42 @@ void Mesh::cleanAndRepackWIP()
 	polygons.repack();
 
 }
-/**
-Short description.
-Detailed description
-@param param description
-@return description
-@exception description
-*/
+template<class T, bool interpolatable, DerivedType derived>
+inline VertexIndex Mesh::addVertexAttributeToFace(const VertexIndex vPosIndex,
+												  const PolygonIndex fIndex,
+												  BaseElements<T, Vertex_, interpolatable, derived> &eleContainer,
+												  const T &data)
+{
+	// first scan the face for the position we have an index for
+	VertexIndexContainer faceVertices;
+	polygons.getVertexIndices(fIndex, faceVertices);
+	VertexIndex vfPosIndex = vertices.hasPosition(vPosIndex, faceVertices);
+
+	// if this fires the position passed in doesn't belong to the face
+	// passed it, which makes this whole thing useless...
+	assert(vfPosIndex != MM_INVALID_INDEX);
+
+	// does this face vertex already have the attribute data
+	if(eleContainer[vfPosIndex].equal(data) == true)
+	{
+		// it does, so nothing to do just return the index
+		return vfPosIndex;
+	} else
+	{
+		// nope, if it has a valid index
+		// clone the old vertex and insert the data
+		// else just make it a valid index by sticking
+		// that data in there
+		if(eleContainer[vfPosIndex].isValid())
+		{
+			VertexIndex vIndex = vertices.clone(vfPosIndex);
+			eleContainer[vIndex] = data;
+			return vIndex;
+		} else
+		{
+			eleContainer[vfPosIndex] = data;
+			return vfPosIndex;
+		}
+	}
+}
 } // end namespace

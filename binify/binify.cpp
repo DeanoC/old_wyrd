@@ -6,6 +6,7 @@
 #include <string>
 #include <cassert>
 #include <type_traits>
+#include <cmath>
 #include "binify.h"
 
 // TODO determine this from compile PLATFORM

@@ -6,4 +6,9 @@
 #endif
 
 #include <inttypes.h>
-#include "platform_posix.h
+#include "platform_posix.h"
+
+inline char* _strdup(char const* str)
+{
+	return strdup(str);
+}

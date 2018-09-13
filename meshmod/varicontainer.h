@@ -63,10 +63,10 @@ public:
 	void cloneTo(VariContainer<T> &nvc) const;
 
 	//! add the element with default subname
-	Ptr addElements(typename Ptr ele, std::string const &subName = std::string());
+	Ptr addElements(Ptr ele, std::string const &subName = std::string());
 
 	//! remove the elements
-	void removeElements(typename Ptr ele);
+	void removeElements(Ptr ele);
 
 	//! gets the first element named name (ther may be others with different subnames)
 	Ptr getElements(std::string const &name);
@@ -223,7 +223,7 @@ public:
 
 		for(auto toRemove : derivedElements)
 		{
-			auto& it = std::find(elements.begin(), elements.end(), toRemove);
+			auto it = std::find(elements.begin(), elements.end(), toRemove);
 			if(it != elements.end())
 			{
 				elements.erase(it);
@@ -273,7 +273,7 @@ inline void VariContainer<T>::resize(size_t const size)
 }
 
 template<typename T>
-inline typename VariContainer<T>::Ptr VariContainer<T>::addElements(typename Ptr ele, std::string const &subName)
+inline typename VariContainer<T>::Ptr VariContainer<T>::addElements(Ptr ele, std::string const &subName)
 {
 	elements.push_back(ele);
 	ele->resize(notValidFlags.size());
@@ -282,9 +282,9 @@ inline typename VariContainer<T>::Ptr VariContainer<T>::addElements(typename Ptr
 }
 
 template<typename T>
-inline void VariContainer<T>::removeElements(typename Ptr ele)
+inline void VariContainer<T>::removeElements(Ptr ele)
 {
-	auto& it = std::find(elements.begin(), elements.end(), ele);
+	auto it = std::find(elements.begin(), elements.end(), ele);
 	if (it != elements.end())
 	{
 		elements.erase(it);

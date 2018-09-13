@@ -2,6 +2,7 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <unordered_map>
 #include "lz4/lz4.h"
 #include "crc32c/crc32c.h"
 #include "bundle.h"

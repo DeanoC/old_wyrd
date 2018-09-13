@@ -130,7 +130,7 @@ namespace cx
     template <size_t I>
     constexpr array<T, N+1> insert(const T& t) const
     {
-      return inserter<I>()(*this, t);
+      return inserter<I, T>()(*this, t);
     }
 
     // mergesort
@@ -142,7 +142,7 @@ namespace cx
     template <typename F>
     constexpr array<T, N> mergesort(F&& f) const
     {
-      return sorter<N>::sort(*this, std::forward<F>(f));
+      return sorter<N, T>::sort(*this, std::forward<F>(f));
     }
 
     template <typename P>
@@ -255,7 +255,7 @@ namespace cx
       template <typename F>
       constexpr static array<T, I> sort(const array<T, I>& a, const F& f)
       {
-        return merger<I/2, I-I/2>::merge(
+        return merger<I/2, I-I/2, T>::merge(
             a.init(std::make_index_sequence<I/2>()).mergesort(f),
             a.tail(std::make_index_sequence<I - I/2>()).mergesort(f),
             f);
@@ -287,7 +287,7 @@ namespace cx
                                            const F& f)
       {
         return f(b[0], a[0]) ?
-          merger<I, J-1>::merge(a, b.tail(), f).push_front(b[0]) :
+          merger<I, J-1, T>::merge(a, b.tail(), f).push_front(b[0]) :
           b.push_front(a[0]);
       }
     };
@@ -302,7 +302,7 @@ namespace cx
       {
         return f(b[0], a[0]) ?
           a.push_front(b[0]) :
-          merger<I-1, J>::merge(a.tail(), b, f).push_front(a[0]);
+          merger<I-1, J, T>::merge(a.tail(), b, f).push_front(a[0]);
       }
     };
 
@@ -315,8 +315,8 @@ namespace cx
                                            const F& f)
       {
         return f(b[0], a[0]) ?
-          merger<I, J-1>::merge(a, b.tail(), f).push_front(b[0]) :
-          merger<I-1, J>::merge(a.tail(), b, f).push_front(a[0]);
+          merger<I, J-1, T>::merge(a, b.tail(), f).push_front(b[0]) :
+          merger<I-1, J, T>::merge(a.tail(), b, f).push_front(a[0]);
       }
     };
 

@@ -118,6 +118,7 @@ list( APPEND VIZ_SOURCES
 	vectordisplay.h
 	)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${BGFX_DIR}/examples/common)
 add_executable( viz WIN32 ${VIZ_SOURCES} ${SHADERS} )
 add_definitions( -DUSING_STATIC_LIBS )

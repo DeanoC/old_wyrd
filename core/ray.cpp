@@ -6,6 +6,7 @@
 #include "ray.h"
 #include <utility>
 #include <algorithm>
+#include <limits>
 
 namespace Core
 {
@@ -25,8 +26,8 @@ bool Ray::intersectsAABB( AABB const& bounds, float& min, float& max ) const
 	static float const one( 1 );
 
 	// start off with a big slab
-	min = -FLT_MAX;
-	max = FLT_MAX;
+	min = -std::numeric_limits<float>::max();
+	max = std::numeric_limits<float>::max();
 
 	// clip to each axis
 	Math::Vector3 p1 = bounds.getMinExtent() - m_origin;

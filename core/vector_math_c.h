@@ -276,7 +276,7 @@ namespace Math {
 
 
         // binary operators
-        CALL constexpr Matrix4x4 operator * ( const Matrix4x4& rhs ) const {
+        CALL Matrix4x4 operator * ( const Matrix4x4& rhs ) const {
             Matrix4x4 ret;
             for(int i=0;i < 4;i++) {
                 for(int j=0;j < 4;j++) {
@@ -440,22 +440,19 @@ namespace Math {
     template<typename T>
     CALL constexpr T Min( const T a, const T b ) { return (a < b)? a : b; }
     template<typename T>
-    CALL constexpr T Clamp( const T a, const T mi, const T ma ) { T r; r = Max(a, mi); r = Min(r, ma); return r; }
+    CALL constexpr T Clamp( const T a, const T mi, const T ma ) { return Max(mi, Min(a, ma));}
 
-    CALL constexpr Vector2 Abs( const Vector2& vector ) { return Vector2( fabsf( vector.x ), fabsf( vector.y ) ); }
+    CALL constexpr Vector2 Abs( const Vector2& vector ) { return Vector2( cx::abs( vector.x ), cx::abs( vector.y ) ); }
     CALL constexpr Vector2 Max( const Vector2& vecA, const Vector2& vecB ) { return Vector2( vecA.x > vecB.x ? vecA.x : vecB.x, vecA.y > vecB.y ? vecA.y : vecB.y ); }
     CALL constexpr Vector2 Min( const Vector2& vecA, const Vector2& vecB ) { return Vector2( vecA.x < vecB.x ? vecA.x : vecB.x, vecA.y < vecB.y ? vecA.y : vecB.y ); }
-    CALL constexpr Vector2 Clamp( const Vector2& vecA, const Vector2& vecB, const Vector2& vecC ) { Vector2 vec; vec = Max(vecA, vecB); vec = Min(vec, vecC); return vec; }
 
-    CALL constexpr Vector3 Abs( const Vector3& vector ) { return Vector3( fabsf( vector.x ), fabsf( vector.y ), fabsf( vector.z ) ); }
+    CALL constexpr Vector3 Abs( const Vector3& vector ) { return Vector3( cx::abs( vector.x ), cx::abs( vector.y ), cx::abs( vector.z ) ); }
     CALL constexpr Vector3 Max( const Vector3& vecA, const Vector3& vecB ) { return Vector3( vecA.x > vecB.x ? vecA.x : vecB.x, vecA.y > vecB.y ? vecA.y : vecB.y, vecA.z > vecB.z ? vecA.z : vecB.z ); }
     CALL constexpr Vector3 Min( const Vector3& vecA, const Vector3& vecB ) { return Vector3( vecA.x < vecB.x ? vecA.x : vecB.x, vecA.y < vecB.y ? vecA.y : vecB.y, vecA.z < vecB.z ? vecA.z : vecB.z ); }
-    CALL constexpr Vector3 Clamp( const Vector3& vecA, const Vector3& vecB, const Vector3& vecC ) { Vector3 vec; vec = Max(vecA, vecB); vec = Min(vec, vecC); return vec; }
 
-    CALL constexpr Vector4 Abs( const Vector4& vector ) { return Vector4( fabsf( vector.x ), fabsf( vector.y ), fabsf( vector.z ), fabsf( vector.w ) ); }
+    CALL constexpr Vector4 Abs( const Vector4& vector ) { return Vector4( cx::abs( vector.x ), cx::abs( vector.y ), cx::abs( vector.z ), cx::abs( vector.w ) ); }
     CALL constexpr Vector4 Max( const Vector4& vecA, const Vector4& vecB ) { return Vector4( vecA.x > vecB.x ? vecA.x : vecB.x, vecA.y > vecB.y ? vecA.y : vecB.y, vecA.z > vecB.z ? vecA.z : vecB.z, vecA.w > vecB.w ? vecA.w : vecB.w ); }
     CALL constexpr Vector4 Min( const Vector4& vecA, const Vector4& vecB ) { return Vector4( vecA.x < vecB.x ? vecA.x : vecB.x, vecA.y < vecB.y ? vecA.y : vecB.y, vecA.z < vecB.z ? vecA.z : vecB.z, vecA.w < vecB.w ? vecA.w : vecB.w ); }
-    CALL constexpr Vector4 Clamp( const Vector4& vecA, const Vector4& vecB, const Vector4& vecC ) { Vector4 vec; vec = Max(vecA, vecB); vec = Min(vec, vecC); return vec; }
 
 	CALL constexpr int HorizMaxIndex (Vector2 const& v_) { return (v_.x > v_.y) ? 0 : 1; }
 	CALL constexpr int HorizMaxIndex(Vector3 const& v_) { return (v_.x > v_.y) ? (v_.x > v_.z) ? 0 : 2 : (v_.y > v_.z) ? 1 : 2; }
@@ -523,48 +520,37 @@ CALL constexpr void SetZAxis( Matrix4x4& mat, const Vector3& axis ){ mat._31 = a
 CALL constexpr Quaternion IdentityQuat() { return Quaternion(0,0,0,1); }
 
 CALL constexpr Matrix4x4 CreateXRotationMatrix( const float a ) {
-    Matrix4x4 result;
-    const float c = cx::cos(a);
-    const float s = cx::sin(a);
-
-    result(0,0) = 1; result(0,1) = 0;  result(0,2) = 0;  result(0,3) = 0;
-    result(1,0) = 0; result(1,1) = c;  result(1,2) = s; result(1,3) = 0;
-    result(2,0) = 0; result(2,1) = -s; result(2,2) = c;  result(2,3) = 0;
-    result(3,0) = 0; result(3,1) = 0;  result(3,2) = 0;  result(3,3) = 1;
-
-    return result;
+  return Matrix4x4{
+			1, 	0, 				0, 				0,
+			0, 	cx::cos(a), 	cx::sin(a), 	0,
+			0, 	-cx::sin(a), 	cx::cos(a), 	0,
+			0, 	0, 				0, 				1,
+    };
 }
 
 CALL constexpr Matrix4x4 CreateYRotationMatrix( const float a ) {
-    Matrix4x4 result;
-    const float c = cx::cos(a);
-    const float s = cx::sin(a);
-
-    result(0,0) = c;  result(0,1) = 0; result(0,2) = -s; result(0,3) = 0;
-    result(1,0) = 0;  result(1,1) = 1; result(1,2) = 0;	 result(1,3) = 0;
-    result(2,0) = s;  result(2,1) = 0; result(2,2) = c;	 result(2,3) = 0;
-    result(3,0) = 0;  result(3,1) = 0; result(3,2) = 0;	 result(3,3) = 1;
-
-    return result;
+	return Matrix4x4{
+			cx::cos(a), 	0, 				-cx::sin(a), 	0,
+			0, 				1, 				0, 				0,
+			cx::sin(a), 	0, 				cx::cos(a), 	0,
+			0, 				0, 				0, 				1,
+	};
 }
 
 CALL constexpr Matrix4x4 CreateZRotationMatrix( const float a ) {
-    Matrix4x4 result;
-    const float c = cx::cos(a);
-    const float s = cx::sin(a);
+	return Matrix4x4{
+			cx::cos(a), 	cx::sin(a), 	0, 		0,
+			-cx::sin(a), 	cx::cos(a), 	0, 		0,
+			0, 				1, 				0, 		0,
+			0, 				0, 				0, 		1,
+	};
 
-    result(0,0) = c;  result(0,1) = s;	result(0,2) = 0; result(0,3) = 0;
-    result(1,0) = -s; result(1,1) = c;	result(1,2) = 0; result(1,3) = 0;
-    result(2,0) = 0;  result(2,1) = 0;	result(2,2) = 1; result(2,3) = 0;
-    result(3,0) = 0;  result(3,1) = 0;	result(3,2) = 0; result(3,3) = 1;
-
-    return result;
 }
 CALL constexpr Matrix4x4 CreateScaleMatrix( const float sx, const float sy, const float sz ){ Matrix4x4 result(IdentityMatrix()); SetScale(result, sx, sy, sz); return result; }
 CALL constexpr Matrix4x4 CreateTranslationMatrix( const float tx, const float ty, const float tz ){ Matrix4x4 result(IdentityMatrix()); SetTranslation(result, tx, ty, tz); return result; };
 CALL constexpr Matrix4x4 CreateScaleMatrix( const Vector3& scale ){ return CreateScaleMatrix( scale.x, scale.y, scale.z); }
 CALL constexpr Matrix4x4 CreateTranslationMatrix( const Vector3& trans ){ return CreateTranslationMatrix(trans.x, trans.y, trans.z); }
-CALL constexpr Matrix4x4 CreateLookAtMatrix( const Math::Vector3& eye, const Math::Vector3& to, const Math::Vector3& up ){
+CALL inline Matrix4x4 CreateLookAtMatrix( const Math::Vector3& eye, const Math::Vector3& to, const Math::Vector3& up ){
     Matrix4x4 result;
     const Math::Vector3 f = Normalise(to - eye);
     Math::Vector3 u = Normalise(up);
@@ -590,7 +576,7 @@ CALL constexpr Matrix4x4 CreateRotationMatrix( const Quaternion& quat ) {
 							0,							0,							0,							1 );
 	}
 #endif
-CALL constexpr Quaternion CreateRotationQuat( const Matrix4x4& m ){
+inline CALL Quaternion CreateRotationQuat( const Matrix4x4& m ){
     float s = 0.0f;
     Quaternion q;
 
