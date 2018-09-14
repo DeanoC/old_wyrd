@@ -186,7 +186,7 @@ namespace Math {
 
     class Plane {
     public:
-#if PLATFORM != GPU
+#if PLATFORM != NVGPU
         CALL Plane() {};
 		CALL Plane( const float * fArr) { assert(fArr); a = fArr[0]; b = fArr[1]; c = fArr[2]; d = fArr[3]; };
 		CALL constexpr Plane( float a_, float b_, float c_, float d_ ) : a(a_), b(b_), c(c_), d(d_) {};
@@ -205,7 +205,7 @@ namespace Math {
     };
     class Matrix4x4 {
     public:
-#if PLATFORM != GPU
+#if PLATFORM != NVGPU
         CALL Matrix4x4() {};
 		CALL Matrix4x4( const float * fArr ) { assert(fArr); memcpy(&_11, fArr, sizeof(Matrix4x4)); }
 		CALL constexpr Matrix4x4( const Matrix4x4& rhs) :
@@ -233,7 +233,7 @@ namespace Math {
 		CALL float* data() { return &_11; }
 
         // assignment operators
-        CALL constexpr Matrix4x4& operator *= ( const Matrix4x4& rhs )	{ *this = *this * rhs; return *this; }
+        CALL Matrix4x4& operator *= ( const Matrix4x4& rhs )	{ *this = *this * rhs; return *this; }
 
         CALL constexpr Matrix4x4& operator += ( const Matrix4x4& rhs ) {
             _11 += rhs._11;	_12 += rhs._12;	_13 += rhs._13;	_14 += rhs._14;
@@ -265,7 +265,7 @@ namespace Math {
 
         // unary operators
         CALL constexpr Matrix4x4 operator + () const { return Matrix4x4(*this); }
-#if PLATFORM != GPU
+#if PLATFORM != NVGPU
         CALL constexpr Matrix4x4 operator - () const {
 			return Matrix4x4(	-_11, -_12, -_13, -_14,
 								-_21, -_22, -_23, -_24,
@@ -428,7 +428,7 @@ namespace Math {
 
     CALL constexpr Plane Normalise( const Plane& plane ) {
         float len = Length( Vector3(plane.a, plane.b, plane.c) );
-        return Plane( plane.a / len, plane.b / len, plane.c / len, plane.d / len );
+        return Plane{ plane.a / len, plane.b / len, plane.c / len, plane.d / len };
     }
 
     template<typename T>
@@ -492,7 +492,7 @@ namespace Math {
     CALL constexpr Vector2 TransformNormal( const Vector2& vec, const Matrix4x4& matrix ) { Vector4 out = Transform(Vector4(vec.x,vec.y,0,0), matrix); return Vector2(out.x, out.y); } //!< return Vector4(vec,0,0) * matrix
     CALL constexpr Vector3 TransformNormal( const Vector3& vec, const Matrix4x4& matrix ) { Vector4 out = Transform(Vector4(vec.x,vec.y,vec.z,0), matrix); return Vector3(out.x, out.y, out.z); } //!< return Vector4(vec,0) * matrix
 
-#if PLATFORM != GPU
+#if PLATFORM != NVGPU
     CALL constexpr Matrix4x4 IdentityMatrix() { return Matrix4x4(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1); }
 	CALL constexpr Matrix4x4 TransposeMatrix( const Matrix4x4& mat ) {
 		return Matrix4x4(	mat(0,0) , mat(1,0), mat(2,0), mat(3,0),
@@ -501,7 +501,7 @@ namespace Math {
 							mat(0,3) , mat(1,3), mat(2,3), mat(3,3) );
 	}
 #endif
-CALL constexpr Matrix4x4 MultiplyMatrix( const Matrix4x4& a, const Matrix4x4& b){ return a*b; }
+CALL inline Matrix4x4 MultiplyMatrix( const Matrix4x4& a, const Matrix4x4& b){ return a*b; }
 
 CALL constexpr Vector3 GetTranslation( const Matrix4x4& mat ){ return Vector3( mat._41, mat._42, mat._43 ); }
 CALL constexpr Vector3 GetXAxis( const Matrix4x4& mat ){ return Vector3( mat._11, mat._12, mat._13 ); }
@@ -566,7 +566,7 @@ CALL inline Matrix4x4 CreateLookAtMatrix( const Math::Vector3& eye, const Math::
 }
 
 //	inline Matrix4x4 CreateYawPitchRollRotationMatrix( const float yawRads, const float pitchRads, const float rollRads ){ Matrix4x4 result; D3DXMatrixRotationYawPitchRoll( &result, yawRads, pitchRads, rollRads ); return result; }
-#if PLATFORM != GPU
+#if PLATFORM != NVGPU
 CALL constexpr Matrix4x4 CreateRotationMatrix( const Quaternion& quat ) {
 		const float q1 = quat.x; const float q2 = quat.y; const float q3 = quat.z; const float q0 = quat.w;
 		const float q1_2 = q1 * q1; const float q2_2 = q2 * q2; const float q3_2 = q3 * q3; const float q0_2 = q0 * q0;

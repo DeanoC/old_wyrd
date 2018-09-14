@@ -28,7 +28,7 @@ public:
 	/// \param	max	The maximum extents as a float array.
 	CALL explicit AABB( float const min[3], float const max[3] );
 
-#if PLATFORM != GPU
+#if PLATFORM != NVGPU
 	static AABB fromCenterAndHalfLength( Math::Vector3 const& center, Math::Vector3 const& halfLength );
 #endif
 

@@ -7,7 +7,7 @@
 #define WINDOWS					(0x0)
 #define APPLE_MAC				(0x1)
 #define IPHONE					(0x2)
-#define GPU						(0x3)
+#define NVGPU					(0x3)
 #define	POSIX					(0x4)
 
 // OS options

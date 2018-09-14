@@ -1,4 +1,4 @@
-#if PLATFORM == GPU
+#if PLATFORM == NVGPU
 #   undef assert
 #   define assert(x)if(!(x))printf(#x);
 #endif

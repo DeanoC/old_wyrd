@@ -41,7 +41,7 @@ add_library(wyrd_static ${CORE_SRC}
 			${BINNY_SRC}
 			${PLAYFIELD_SRC}
                         ${MESHMOD_SRC}
-                        ${MESHOPS_SRC} core/any.h core/filesystem.h)
+                        ${MESHOPS_SRC})
 
 target_link_libraries(wyrd_static enkiTS binify)
 set_target_properties(wyrd_static PROPERTIES COMPILE_FLAGS -DCRC32C_STATIC)

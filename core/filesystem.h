@@ -2,6 +2,7 @@
 #ifndef WYRD_FILESYSTEM_H
 #define WYRD_FILESYSTEM_H
 
+#include "core/core.h"
 #if PLATFORM_OS == OSX
 #include "macos/experimental/filesystem"
 #else
