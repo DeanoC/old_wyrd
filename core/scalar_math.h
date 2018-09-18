@@ -55,21 +55,22 @@ namespace std {
 
 namespace Math
 {
-    template <typename T>
+
+	template <typename T, typename = std::enable_if< std::is_floating_point<T>{} >::type>
     static constexpr T pi() { return static_cast<T>(3.14159265358979323846264338327950L); }
 
-    template <typename T>
+    template <typename T, typename = std::enable_if< std::is_floating_point<T>{} >::type>
     static constexpr T pi_over_2() { return pi<T>() / static_cast<T>(2); }
 
     template<typename T>
     static constexpr T square(T const val) { return val * val; }
 
-	template<typename T>
+	template<typename T, typename = std::enable_if< std::is_floating_point<T>{} >::type>
 	static constexpr T degreesToRadians(T const val) { 
-		return (val * pi<T>()) / static_cast<T>(180);
+		return val * (pi<T>() / static_cast<T>(180));
 	}
 
-	template<typename T>
+	template<typename T, typename = std::enable_if< std::is_floating_point<T>{} >::type>
 	static constexpr T radiansToDegrees(T const val) {
 		return static_cast<T>(180) / (val * pi<T>());
 	}
