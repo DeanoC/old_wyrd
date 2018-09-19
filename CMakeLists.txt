@@ -2,6 +2,13 @@ cmake_minimum_required(VERSION 3.10)
 project(wyrd)
 set(CMAKE_CXX_STANDARD 17)
 
+add_definitions(-D_CRT_SECURE_NO_WARNINGS -D__STDC_FORMAT_MACROS )
+add_definitions(-D__TBB_NO_IMPLICIT_LINKAGE=1 -D__TBBMALLOC_NO_IMPLICIT_LINKAGE=1)
+
+option( BUILD_TESTER   "Build the tester app."                             ON  )
+option( BUILD_VIZ      "Build the debug visualiser."                       ON  )
+
+
 add_subdirectory(enkiTS)
 add_subdirectory(binify)
 add_subdirectory(tbb)
@@ -50,5 +57,9 @@ add_library(wyrd_static ${CORE_SRC}
 target_link_libraries(wyrd_static enkiTS binify tbb_static tbbmalloc_static tbbmalloc_proxy_static)
 set_target_properties(wyrd_static PROPERTIES COMPILE_FLAGS -DCRC32C_STATIC)
 
-add_subdirectory(tester)
-add_subdirectory(viz)
+if(BUILD_TESTER)
+	add_subdirectory(tester)
+endif(BUILD_TESTER)
+if(BUILD_VIZ)
+	add_subdirectory(viz)
+endif(BUILD_VIZ)

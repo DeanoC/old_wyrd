@@ -16,22 +16,26 @@ public:
 	using ChunkWriter = std::function<void(WriteHelper& helper)>;
 
 	/// add a raw text chunk, will be stored independently in its own chunk
-	void addRawTextChunk(std::string const& name_, uint32_t id_, uint16_t majorVersion_, uint16_t minorVersion_, std::string const& text_);
+	/// @return true if successful
+	bool addRawTextChunk(std::string const& name_, uint32_t id_, uint16_t majorVersion_, uint16_t minorVersion_, std::string const& text_);
 
 	/// add a raw binary chunk, will be stored in its own chunk without any processing
-	void addRawBinaryChunk(std::string const& name_, uint32_t id_, uint16_t majorVersion_, uint16_t minorVersion_, std::vector<uint8_t> const& bin_);
+	/// @return true if successful
+	bool addRawBinaryChunk(std::string const& name_, uint32_t id_, uint16_t majorVersion_, uint16_t minorVersion_, std::vector<uint8_t> const& bin_);
 
 	/// @param ChunkWriter will be called at build time
-	void addChunk(std::string const& name_, uint32_t id_, uint16_t majorVersion_, uint16_t minorVersion_, ChunkWriter writer_);
+	/// @return true if successful
+	bool addChunk(std::string const& name_, uint32_t id_, uint16_t majorVersion_, uint16_t minorVersion_, ChunkWriter writer_);
 
 	/// @param userData_ a 64 bit in that store in the header, usually a cache / re-gen marker
 	/// @param result_ where the bundle data will be put
-	void build(uint64_t const userData_, std::vector<uint8_t>& result_);
+	/// @return true if successful
+	bool build(uint64_t const userData_, std::vector<uint8_t>& result_);
 
 	void setLogBinifyText() { logBinifyText = true; }
 
 private:
-	void addChunkInternal(std::string const& name_, uint32_t id_, std::vector<uint8_t> const& bin_);
+	bool addChunkInternal(std::string const& name_, uint32_t id_, std::vector<uint8_t> const& bin_);
 
 	int addressLength;
 	std::unique_ptr<WriteHelper> helper;

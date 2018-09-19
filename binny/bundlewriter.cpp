@@ -24,7 +24,7 @@ BundleWriter::BundleWriter(int addressLength_) :
 }
 
 
-void BundleWriter::addRawTextChunk(std::string const& name_, uint32_t id_, uint16_t majorVersion_, uint16_t minorVersion_, std::string const& text_)
+bool BundleWriter::addRawTextChunk(std::string const& name_, uint32_t id_, uint16_t majorVersion_, uint16_t minorVersion_, std::string const& text_)
 {
 	bool nullTerminated = text_.back() == '\0';
 
@@ -44,10 +44,10 @@ void BundleWriter::addRawTextChunk(std::string const& name_, uint32_t id_, uint1
 	cheader->majorVersion = majorVersion_;
 	cheader->minorVersion = minorVersion_;
 
-	addChunkInternal(name_, id_, bin);
+	return addChunkInternal(name_, id_, bin);
 }
 
-void BundleWriter::addRawBinaryChunk(std::string const& name_, uint32_t id_, uint16_t majorVersion_, uint16_t minorVersion_, std::vector<uint8_t> const& bin_)
+bool BundleWriter::addRawBinaryChunk(std::string const& name_, uint32_t id_, uint16_t majorVersion_, uint16_t minorVersion_, std::vector<uint8_t> const& bin_)
 {
 	std::vector<uint8_t> bin(bin_.size() + sizeof(Bundle::ChunkHeader));
 	std::memcpy(bin.data() + sizeof(Bundle::ChunkHeader), bin_.data(), bin_.size());
@@ -61,10 +61,10 @@ void BundleWriter::addRawBinaryChunk(std::string const& name_, uint32_t id_, uin
 	cheader->majorVersion = majorVersion_;
 	cheader->minorVersion = minorVersion_;
 
-	addChunkInternal(name_, id_, bin);
+	return addChunkInternal(name_, id_, bin);
 }
 
-void BundleWriter::addChunkInternal(std::string const& name_, uint32_t id_, std::vector<uint8_t> const& bin_)
+bool BundleWriter::addChunkInternal(std::string const& name_, uint32_t id_, std::vector<uint8_t> const& bin_)
 {
 	uint32_t const uncompressedCrc32c = crc32c_append(0, bin_.data(), bin_.size());
 	int const maxSize = LZ4_compressBound((int)bin_.size());
@@ -75,7 +75,7 @@ void BundleWriter::addChunkInternal(std::string const& name_, uint32_t id_, std:
 										(char *)compressedData->data(),
 										(int)bin_.size(),
 										(int)compressedData->size());
-		assert(okay);
+		if(!okay) return false;
 		compressedData->resize(okay);
 	}
 
@@ -88,8 +88,8 @@ void BundleWriter::addChunkInternal(std::string const& name_, uint32_t id_, std:
 
 	if (addressLength == 32)
 	{
-		assert(compressedData->size() < (1ull << 32));
-		assert(bin_.size() < (1ull << 32));
+		if(compressedData->size() >= (1ull << 32)) return false;
+		if(bin_.size() >= (1ull << 32)) return false;
 	}
 
 	DirEntryWriter entry =
@@ -105,9 +105,10 @@ void BundleWriter::addChunkInternal(std::string const& name_, uint32_t id_, std:
 
 	dirEntries.push_back(entry);
 	o.reserve_label(name_ + "chunk"s);
+	return true;
 }
 
-void BundleWriter::addChunk(std::string const& name_, uint32_t id_, uint16_t majorVersion_, uint16_t minorVersion_, ChunkWriter writer_)
+bool BundleWriter::addChunk(std::string const& name_, uint32_t id_, uint16_t majorVersion_, uint16_t minorVersion_, ChunkWriter writer_)
 {
 	WriteHelper h;
 
@@ -131,23 +132,23 @@ void BundleWriter::addChunk(std::string const& name_, uint32_t id_, uint16_t maj
 
 	std::string log;
 	std::vector<uint8_t> data;
-	{
-		std::stringstream binData;
-		BINIFY_StringToOStream(binifyText, &binData, log);
-		std::string tmp = binData.str();
-		data.resize(tmp.size());
-		std::memcpy(data.data(), tmp.data(), tmp.size());
-	}
+	std::stringstream binData;
+	bool okay = BINIFY_StringToOStream(binifyText, &binData, log);
+	if(!okay) return false;
+	std::string tmp = binData.str();
+	data.resize(tmp.size());
+	std::memcpy(data.data(), tmp.data(), tmp.size());
+
 	if (!log.empty() || logBinifyText)
 	{
 		LOG_S(INFO) << name_ << "_Chunk:" << log;
 		LOG_S(INFO) << std::endl << binifyText;
 	}
 
-	addChunkInternal(name_, id_, data);
+	return addChunkInternal(name_, id_, data);
 }
 
-void BundleWriter::build(uint64_t const userData_, std::vector<uint8_t>& result_)
+bool BundleWriter::build(uint64_t const userData_, std::vector<uint8_t>& result_)
 {
 	using namespace std::string_literals;
 
@@ -199,7 +200,8 @@ void BundleWriter::build(uint64_t const userData_, std::vector<uint8_t>& result_
 	std::string binifyText = o.ostr.str();
 	std::string log;
 	std::stringstream binData;
-	BINIFY_StringToOStream(binifyText, &binData, log);
+	bool okay = BINIFY_StringToOStream(binifyText, &binData, log);
+	if(!okay) return false;
 	std::string tmp = binData.str();
 	result_.resize(tmp.size());
 	std::memcpy(result_.data(), tmp.data(), tmp.size());
@@ -209,6 +211,7 @@ void BundleWriter::build(uint64_t const userData_, std::vector<uint8_t>& result_
 		LOG_S(INFO) << "Bundle: ";
 		LOG_S(INFO) << std::endl << binifyText;
 	}
+	return true;
 }
 
 } // end namespace

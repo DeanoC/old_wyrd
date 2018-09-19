@@ -417,11 +417,12 @@ struct BINIFY_HANDLE_IMPL : public BINIFY_HANDLE
 	std::vector<uint8_t> data;
 };
 
-void BINIFY_StringToOStream( std::string const& txt, std::ostream* out_, std::string& log )
+bool BINIFY_StringToOStream( std::string const& txt, std::ostream* out_, std::string& log )
 {
 	binify::Binify binny;
-	binny.parse(txt, out_);
+	bool okay = binny.parse(txt, out_);
 	log = binny.getLog();
+	return okay;
 }
 
 extern "C" BINIFY_HANDLE *BINIFY_Alloc()
@@ -429,17 +430,19 @@ extern "C" BINIFY_HANDLE *BINIFY_Alloc()
 	return new BINIFY_HANDLE_IMPL();
 }
 
-extern "C" void BINIFY_Parse( BINIFY_HANDLE * handle_, char const * const in_)
+extern "C" int BINIFY_Parse( BINIFY_HANDLE * handle_, char const * const in_)
 {
 	assert(handle_ != nullptr);
 	BINIFY_HANDLE_IMPL* handle = (BINIFY_HANDLE_IMPL*)handle_;
 
 	std::ostringstream dir;
-	handle->binny->parse( in_, &dir );
+	bool okay = handle->binny->parse( in_, &dir );
+	if(!okay) return 0;
 
 	std::string tmp = dir.str();
 	handle->data.resize(tmp.size());
 	std::memcpy( handle->data.data(), tmp.data(), tmp.size());
+	return 1;
 }
 
 extern "C" size_t BINIFY_BinarySize( BINIFY_HANDLE * handle_ )

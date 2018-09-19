@@ -3,6 +3,7 @@
 #define CORE_FREELIST_H_ 1
 
 #include <vector>
+#include <atomic>
 
 // for MTFreeList
 #include "tbb/concurrent_vector.h"
