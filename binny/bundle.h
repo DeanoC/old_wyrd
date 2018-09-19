@@ -17,12 +17,10 @@ constexpr uint32_t operator"" _bundle_id(char const* s, size_t count)
 }
 
 /// A bundle is binary resource file.
-/// It makes exactly 4 tempary allocs + 1 alloc per chunk. 2 tempory are just during the read (both slightly more than the maximum compressed chunk size), 
-/// whilst the other 2 are for the lifetime of the bundle object;
 /// The chunk allocs are never freed and are the callees responsbility
 /// It only ever seeks forward and skips chunk that are not handled
 /// It allows multiple version of the same chunk in a single resource and passes the version info to the handler
-/// Chunks are compressed if its again (currently LZ4)
+/// Chunks are compressed if its useful (currently LZ4)
 /// Pointers are fixed up before handlers are called 
 /// Bundle are designed to be endian specific currently and pointer size specific (however 32bit to 64bit is planned)
 /// raw text and binary chunks can be stored, these will be compressed by apart from that no fixups

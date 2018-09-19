@@ -4,14 +4,17 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_subdirectory(enkiTS)
 add_subdirectory(binify)
+add_subdirectory(tbb)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tbb/include)
 
 file( GLOB LZ4_SRC lz4/*.c lz4/*.h)
 file( GLOB CRC32C_SRC crc32c/crc32c.cpp crc32c/crc32c.h)
 file( GLOB CX_SRC cx/*.h)
-
 file( GLOB CORE_SRC core/*.cpp core/*.c core/*.h core/*.inl)
 file( GLOB BINNY_SRC binny/*.cpp binny/*.c binny/*.h binny/*.inl)
+file(GLOB RESOURCEMAN_SRC resourceman/*.cpp resourceman/*.c resourceman/*.h resourceman/*.inl)
+
 file( GLOB PLAYFIELD_SRC playfield/*.cpp playfield/*.c playfield/*.h playfield/*.inl)
 
 file( GLOB MESHMOD_SRC  meshmod/*.cpp
@@ -38,12 +41,14 @@ add_library(wyrd_static ${CORE_SRC}
                         ${LZ4_SRC}
                         ${CRC32C_SRC}
                         ${CX_SRC}
-			${BINNY_SRC}
-			${PLAYFIELD_SRC}
+		${BINNY_SRC}
+		${RESOURCEMAN_SRC}
+		${PLAYFIELD_SRC}
                         ${MESHMOD_SRC}
-                        ${MESHOPS_SRC})
+		${MESHOPS_SRC} resourceman/base.h resourceman/resourceman.cpp resourceman/resourceman.h)
 
-target_link_libraries(wyrd_static enkiTS binify)
+target_link_libraries(wyrd_static enkiTS binify tbb_static tbbmalloc_static tbbmalloc_proxy_static)
 set_target_properties(wyrd_static PROPERTIES COMPILE_FLAGS -DCRC32C_STATIC)
 
+add_subdirectory(tester)
 add_subdirectory(viz)

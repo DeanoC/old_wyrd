@@ -4,6 +4,11 @@
 
 #include <vector>
 
+// for MTFreeList
+#include "tbb/concurrent_vector.h"
+#include "tbb/concurrent_queue.h"
+#include <mutex>
+
 namespace Core {
 
 // enabled a view of free list chain in debug
@@ -18,18 +23,20 @@ class ExplicitFreeList
 public:
 	static const IndexType InvalidIndex = ~0;
 
-	typedef typename std::vector<Type>::value_type value_type;
-	typedef typename std::vector<Type>::size_type size_type;
-	typedef typename std::vector<Type>::difference_type difference_type;
-	typedef typename std::vector<Type>::pointer pointer;
-	typedef typename std::vector<Type>::const_pointer const_pointer;
-	typedef typename std::vector<Type>::reference reference;
-	typedef typename std::vector<Type>::const_reference const_reference;
+	using value_type = typename std::vector<Type>::value_type;
+	using size_type = typename std::vector<Type>::size_type;
+	using difference_type = typename std::vector<Type>::difference_type;
+	using pointer = typename std::vector<Type>::pointer;
+	using const_pointer = typename std::vector<Type>::const_pointer;
+	using reference = typename std::vector<Type>::reference;
+	using const_reference = typename std::vector<Type>::const_reference;
 
 	ExplicitFreeList() : currentFree( 0 )
 	{}
 
-	explicit ExplicitFreeList( size_type _count ) : data( _count ), freelist( _count ), currentFree( _count )
+	explicit ExplicitFreeList( size_type _count ) : data( _count ),
+													freelist( _count ),
+													currentFree( _count )
 	{
 		for(size_type i = 0; i < _count; ++i)
 		{
@@ -105,15 +112,15 @@ public:
 				   "IndexType must be less than size in bytes of the Type being stored" );
 	static const IndexType InvalidIndex = ~0;
 
-	typedef typename std::vector<Type>::value_type value_type;
-	typedef typename std::vector<Type>::size_type size_type;
-	typedef typename std::vector<Type>::difference_type difference_type;
-	typedef typename std::vector<Type>::pointer pointer;
-	typedef typename std::vector<Type>::const_pointer const_pointer;
-	typedef typename std::vector<Type>::reference reference;
-	typedef typename std::vector<Type>::const_reference const_reference;
+	using value_type = typename std::vector<Type>::value_type;
+	using size_type = typename std::vector<Type>::size_type;
+	using difference_type = typename std::vector<Type>::difference_type;
+	using pointer = typename std::vector<Type>::pointer;
+	using const_pointer = typename std::vector<Type>::const_pointer;
+	using reference = typename std::vector<Type>::reference;
+	using const_reference = typename std::vector<Type>::const_reference;
 
-	IntrusiveFreeList() : capacity( 0 ), current( 0 ), currentFree( 0 )
+	IntrusiveFreeList() : freeCount( 0 )
 	{}
 
 	explicit IntrusiveFreeList( size_type count_ ) : data( count_ )
@@ -205,12 +212,110 @@ protected:
 	} *debugCracker;
 #endif
 };
+
+// MTFreeList are mostly the same as FreeList but don't have manual resize and are MT safe
+// it will grow in a safe manner but will lock during resize
+template<typename Type, typename IndexType = uintptr_t>
+class MTFreeList
+{
+public:
+	static const IndexType InvalidIndex = ~0;
+
+	using value_type = typename tbb::concurrent_vector<Type>::value_type;
+	using size_type = typename tbb::concurrent_vector<Type>::size_type;
+	using difference_type = typename tbb::concurrent_vector<Type>::difference_type;
+	using pointer = typename tbb::concurrent_vector<Type>::pointer;
+	using const_pointer = typename tbb::concurrent_vector<Type>::const_pointer;
+	using reference = typename tbb::concurrent_vector<Type>::reference;
+	using const_reference = typename tbb::concurrent_vector<Type>::const_reference;
+
+	MTFreeList()
+	{}
+
+	explicit MTFreeList( size_type _count ) : data( _count ), currentSize( _count )
+	{
+		for(size_type i = 0; i < _count; ++i)
+		{
+			freelist.push( i );
+		}
+	}
+
+	IndexType push( const value_type& _val )
+	{
+		IndexType index = alloc();
+		data[index] = _val;
+		return index;
+	}
+
+	IndexType alloc()
+	{
+		IndexType index;
+		bool space = freelist.try_pop( index );
+		while(space == false)
+		{
+			resize( currentSize );
+			space = freelist.try_pop( index );
+		}
+
+		return index;
+	}
+
+	bool empty() const
+	{ return !freelist.empty(); }
+
+	size_type size() const
+	{ return data.size(); }
+
+	void erase( IndexType const index_ )
+	{
+		freelist.push( index_ );
+	}
+
+	Type& at( IndexType const index_ )
+	{ return data.at( index_ ); }
+
+	Type& operator[]( IndexType const index_ )
+	{ return data[index_]; }
+
+	Type const& at( IndexType const index_ ) const
+	{ return data.at( index_ ); }
+
+	Type const& operator[]( IndexType const index_ ) const
+	{ return data[index_]; }
+
+protected:
+	void resize( size_type oldSize )
+	{
+		std::lock_guard guard( stopTheWorldMutex );
+		if(data.size() > oldSize) return;
+		auto size = oldSize * 2 + 1;
+		data.grow_to_at_least( size );
+		for(auto i = oldSize; i < size; ++i)
+		{
+			freelist.push( i );
+		}
+
+		currentSize = size;
+	}
+
+	tbb::concurrent_vector<Type> data;
+	tbb::concurrent_queue<IndexType> freelist;
+	std::atomic<size_type> currentSize;
+
+	// for resize we use a mutex for simplicity, otherwise operations are lock free
+	std::mutex stopTheWorldMutex;
+};
+
 template<typename Type, typename IndexType = uintptr_t, class Enable = void>
 class FreeList : public ExplicitFreeList<Type, IndexType>
 {
 public:
-	FreeList() : ExplicitFreeList(){};
-	explicit FreeList(size_type count_) : ExplicitFreeList(count_){}
+	FreeList() : ExplicitFreeList<Type, IndexType>()
+	{};
+
+	explicit FreeList( typename ExplicitFreeList<Type, IndexType>::size_type count_ ) :
+			ExplicitFreeList<Type, IndexType>( count_ )
+	{}
 };
 
 template<typename Type, typename IndexType>
@@ -220,8 +325,12 @@ class FreeList<Type, IndexType,
 		>::value> : public IntrusiveFreeList<Type, IndexType>
 {
 public:
-	FreeList() : IntrusiveFreeList(){};
-	explicit FreeList(IntrusiveFreeList<Type,IndexType>::size_type count_) : IntrusiveFreeList(count_){}
+	FreeList() : IntrusiveFreeList<Type, IndexType>()
+	{};
+
+	explicit FreeList( typename IntrusiveFreeList<Type, IndexType>::size_type count_ ) :
+			IntrusiveFreeList<Type, IndexType>( count_ )
+	{}
 };
 
 } // end Core namespace

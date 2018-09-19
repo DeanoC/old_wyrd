@@ -214,11 +214,10 @@ void Viz::init(int32_t _argc, const char *const *_argv, uint32_t _width, uint32_
 
 	bgfx::Init init;
 
+	init.type = args.m_type;
 	// shader compiler failing on metal at the moment
 #if PLATFORM_OS == OSX
 	init.type = bgfx::RendererType::OpenGL;
-#else
-	init.type = args.m_type;
 #endif
 	init.vendorId = args.m_pciId;
 	init.resolution.width = m_width;
