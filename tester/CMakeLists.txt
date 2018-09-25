@@ -2,8 +2,10 @@ cmake_minimum_required(VERSION 3.9)
 project(tester)
 
 set(CMAKE_CXX_STANDARD 17)
-set(TESTER_SOURCE "" core/math_unittest.cpp core/freelist_unittest.cpp)
-list(APPEND TESTER_SOURCE
+set(TESTER_SOURCE
+		core/math_unittest.cpp
+		core/freelist_unittest.cpp
+		resourcemanager/resourcemanager_unittest.cpp
 		tester.cpp
 		)
 

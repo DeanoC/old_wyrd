@@ -15,12 +15,15 @@ Bundle::~Bundle()
 	if(stringMemory) { tmpFree(stringMemory); }
 }
 
-std::pair<Bundle::ErrorCode, uint64_t> Bundle::read(std::istream& in_, allocFunc alloc_, size_t handlerCount, chunkHandler const* const handlers)
+std::pair<Bundle::ErrorCode, uint64_t> Bundle::read(std::string_view name_, size_t handlerCount, chunkHandler const* const handlers)
 {
 	// read header
 	Header header;
-	auto ret = readHeader(in_, header);
+	auto ret = readHeader(header);
 	if(ret.first != ErrorCode::Okay) return ret;
+
+	if(directory) { tmpFree(directory); }
+	if(stringMemory) { tmpFree(stringMemory); }
 
 	static const int sizeOfPtr = sizeof(uintptr_t);
 	size_t const dirMemorySize = header.chunkCount * sizeof(DirEntry);
@@ -35,8 +38,8 @@ std::pair<Bundle::ErrorCode, uint64_t> Bundle::read(std::istream& in_, allocFunc
 		std::vector<uint8_t> readMemory(dirMemorySize32);
 
 		DiskDirEntry32 const* dir32 = (DiskDirEntry32 const*)readMemory.data();
-		in_.read((char*)dir32, dirMemorySize32);
-		if (in_.fail())
+		in.read((char*)dir32, dirMemorySize32);
+		if (in.fail())
 		{
 			return { ErrorCode::ReadError, 0ul };
 		}
@@ -54,16 +57,16 @@ std::pair<Bundle::ErrorCode, uint64_t> Bundle::read(std::istream& in_, allocFunc
 	}
 	else
 	{
-		in_.read((char*)directory, dirMemorySize);
+		in.read((char*)directory, dirMemorySize);
 	}
 
-	in_.seekg(header.stringsMicroOffset, in_.cur);
-	in_.read(stringMemory, header.stringTableSize);
-	if (in_.fail())
+	in.seekg(header.stringsMicroOffset, in.cur);
+	in.read(stringMemory, header.stringTableSize);
+	if (in.fail())
 	{
 		return { ErrorCode::ReadError, 0ul };
 	}
-	in_.seekg(header.chunksMicroOffset, in_.cur);
+	in.seekg(header.chunksMicroOffset, in.cur);
 
 	size_t maxBufferSize = 0;
 
@@ -87,6 +90,7 @@ std::pair<Bundle::ErrorCode, uint64_t> Bundle::read(std::istream& in_, allocFunc
 
 	uintptr_t lastStoredSize = 0;
 
+	bool found = false;
 	// load and decompress (if required) chunks
 	for (size_t i = 0; i < header.chunkCount; i++)
 	{
@@ -97,12 +101,20 @@ std::pair<Bundle::ErrorCode, uint64_t> Bundle::read(std::istream& in_, allocFunc
 		{
 			continue;
 		}
+		if(!name_.empty())
+		{
+			if(name_ != std::string_view(dir.getName()))
+			{
+				continue;
+			}
+		}
+		found = true;
 
-		in_.seekg(dir.storedOffset - lastStoredSize, in_.cur);
+		in.seekg(dir.storedOffset - lastStoredSize, in.cur);
 		lastStoredSize = dir.storedSize;
 
-		in_.read((char*)loadBuffer, dir.storedSize);
-		if (in_.fail())
+		in.read((char*)loadBuffer, dir.storedSize);
+		if (in.fail())
 		{
 			return { ErrorCode::ReadError, 0ul };
 		}
@@ -128,7 +140,7 @@ std::pair<Bundle::ErrorCode, uint64_t> Bundle::read(std::istream& in_, allocFunc
 		Bundle::ChunkHeader const * cheader = (Bundle::ChunkHeader const*) fixupBuffer;
 
 		// callee owns this memory!
-		uint8_t* dataPtr = (uint8_t*) alloc_(cheader->dataSize);
+		uint8_t* dataPtr = (uint8_t*) permAlloc(cheader->dataSize);
 		// copy all the data over
 		std::memcpy(dataPtr, fixupBuffer + cheader->dataOffset, cheader->dataSize);
 
@@ -154,29 +166,31 @@ std::pair<Bundle::ErrorCode, uint64_t> Bundle::read(std::istream& in_, allocFunc
 
 		// call the callee back with memory, version etc for this chunk
 		// we've already skipped any ids we don't handle
-		handlerMap[dir.id](cheader->majorVersion, cheader->minorVersion, cheader->dataSize, (void*)dataPtr );
+		auto localFree = permFree; // this ensure the function pointer outlives the bundle
+		auto ptr = std::shared_ptr<void>((void*)dataPtr, [localFree](void* ptr) { localFree(ptr); });
+		handlerMap[dir.id](dir.getName(), cheader->majorVersion, cheader->minorVersion, ptr );
 	}
 
 	tmpFree(decompBuffer);
 	tmpFree(loadBuffer);
-
-	return { ErrorCode::Okay, header.userData };
+	if(found == false) return { ErrorCode::NotFound, header.userData };
+	else return { ErrorCode::Okay, header.userData };
 }
 
-std::pair<Bundle::ErrorCode, uint64_t> Bundle::peekAtHeader(std::istream& in_)
+std::pair<Bundle::ErrorCode, uint64_t> Bundle::peekAtHeader()
 {
 	Header header;
-	auto posInStream = in_.tellg();
-	auto ret = readHeader(in_, header);
-	in_.seekg(posInStream);
+	auto posInStream = in.tellg();
+	auto ret = readHeader(header);
+	in.seekg(posInStream);
 	return ret;
 }
 
-std::pair<Bundle::ErrorCode, uint64_t> Bundle::readHeader(std::istream& in_, Header& header)
+std::pair<Bundle::ErrorCode, uint64_t> Bundle::readHeader(Header& header)
 {
 	// read header
-	in_.read((char*)&header, sizeof(header));
-	if (in_.fail())
+	in.read((char*)&header, sizeof(header));
+	if (in.fail())
 	{
 		return { ErrorCode::ReadError, 0ul };
 	}
@@ -191,7 +205,25 @@ std::pair<Bundle::ErrorCode, uint64_t> Bundle::readHeader(std::istream& in_, Hea
 		return { ErrorCode::AddressLength, 0ul };
 	}
 
+	chunkCount = header.chunkCount;
+
 	return { ErrorCode::Okay, header.userData };
+}
+uint32_t Bundle::getDirectoryCount() {
+	if(chunkCount == 0)
+	{
+		peekAtHeader();
+	}
+	return chunkCount;
+};
+std::string_view Bundle::getDirectionEntry(uint32_t const index_)
+{
+	auto posInStream = in.tellg();
+	read({}, 0, nullptr);
+	in.seekg(posInStream);
+	assert(index_ < chunkCount);
+
+	return directory[index_].getName();
 }
 
 } // end namespace Core

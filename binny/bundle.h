@@ -6,15 +6,9 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include "binny/ibundle.h"
 
 namespace Binny {
-
-/// used to identify chunks, each should be unique to a project etc. IFF like
-constexpr uint32_t operator"" _bundle_id(char const* s, size_t count)
-{
-	assert(count==4);
-	return s[3] << 24 | s[2] << 16 | s[1] << 8 | s[0] << 0;
-}
 
 /// A bundle is binary resource file.
 /// The chunk allocs are never freed and are the callees responsbility
@@ -24,7 +18,7 @@ constexpr uint32_t operator"" _bundle_id(char const* s, size_t count)
 /// Pointers are fixed up before handlers are called 
 /// Bundle are designed to be endian specific currently and pointer size specific (however 32bit to 64bit is planned)
 /// raw text and binary chunks can be stored, these will be compressed by apart from that no fixups
-class Bundle
+class Bundle : public IBundle
 {
 public:
 	friend class BundleWriter;
@@ -35,33 +29,16 @@ public:
 
 	// these are for temporary allocations, alloc will be called whenever it needs some temporary
 	// memory and free called when no longer needed. None will outlive the Bundle
-	Bundle(allocFunc tmpAlloc_, freeFunc tmpFree_) : tmpAlloc(tmpAlloc_), tmpFree(tmpFree_) {}
+	Bundle(allocFunc tmpAlloc_, freeFunc tmpFree_, allocFunc alloc_, freeFunc free_, std::istream& in_) : tmpAlloc(tmpAlloc_), tmpFree(tmpFree_), permAlloc(alloc_), permFree(free_), in(in_) {}
 	~Bundle();
 
-	enum class ErrorCode
-	{
-		Okay = 0,			// no error
-		AddressLength,		// address length issues probably 64 bit bundle on 32 bit system
-		ReadError,			// stream issues
-		CorruptError,		// failed internal crc checks
-		CompressionError,	// decompression failed
-		MemoryError,		// error allocating memory	
-		OtherError			// generic error
-	};
-
 	// the chunkHandler hold processes the chunk once its been loaded and fixed up
-	// 1 alloc call per chunk thats handled
-	// the alloc memory will not be freed by the bundle, so its upto the callee to free
+	std::pair<ErrorCode, uint64_t> read(std::string_view name_, size_t handlerCount, chunkHandler const* const handlers) override;
+	uint32_t getDirectoryCount() override;
+	std::string_view getDirectionEntry(uint32_t const index_) override;
 
-	// minor version, major version, sizeof chunk, pointer to data (this will be the same as returned by alloc)
-	using chunkFunc = std::function<bool(uint16_t, uint16_t, size_t, void*)>;
 
-	// id, function to handle this id
-	using chunkHandler = std::tuple<uint32_t, chunkFunc>;
-
-	std::pair<ErrorCode, uint64_t> read(std::istream& in_, allocFunc alloc_, size_t handlerCount, chunkHandler const* const handlers);
-
-	std::pair<ErrorCode, uint64_t> peekAtHeader(std::istream& in_);
+	std::pair<ErrorCode, uint64_t> peekAtHeader();
 protected:
 	static const uint16_t majorVersion = 0;
 	static const uint16_t minorVersion = 4;
@@ -145,11 +122,15 @@ protected:
 
 	allocFunc tmpAlloc;
 	freeFunc tmpFree;
+	allocFunc permAlloc;
+	freeFunc permFree;
+	std::istream& in;
 
+	uint32_t chunkCount = 0;
 	DirEntry* directory = nullptr;
 	char* stringMemory = nullptr;
 
-	std::pair<ErrorCode, uint64_t> readHeader(std::istream& in_, Header & header);
+	std::pair<ErrorCode, uint64_t> readHeader(Header & header);
 
 };
 

@@ -62,9 +62,22 @@
 #	define CPU_FAMILY						CPU_X64
 #	define CPU_ENDIANESS		 			CPU_LITTLE_ENDIAN
 #	define CPU_BIT_SIZE						64
+#elif defined(__aarch64__)
+#	define CPU_FAMILY		 				CPU_ARM
+#	if defined(__AARCH64EB__)
+#		define CPU_ENDIANESS		 			CPU_BIG_ENDIAN
+#	else
+#		define CPU_ENDIANESS		 			CPU_LITTLE_ENDIAN
+#	endif
+
+#	define CPU_BIT_SIZE						64
 #elif defined( __arm__ ) || defined( __thumb__ ) || defined( __TARGET_ARCH_ARM ) || defined( __TARGET_ARCH_THUMB ) || defined( _ARM )
-#	define CPU_FAMILY		 			CPU_ARM
-#	define CPU_ENDIANESS		 			CPU_BIG_ENDIAN
+#	define CPU_FAMILY		 				CPU_ARM
+#	if defined(__ARMEB__) || defined(__THUMBEB__)
+#		define CPU_ENDIANESS		 			CPU_BIG_ENDIAN
+#	else
+#		define CPU_ENDIANESS		 			CPU_LITTLE_ENDIAN
+#	endif
 #	define CPU_BIT_SIZE						32
 #endif
 
@@ -94,7 +107,7 @@
 #		define COMPILER_VERSION				MS_VS2017
 #	endif
 
-#elif defined( __GNUC__ )
+#elif defined( __GNUC__ ) && !defined(__clang__)
 #	define COMPILER							GCC_COMPILER
 #elif defined( __clang__ )
 #	define COMPILER							CLANG_COMPILER
@@ -103,20 +116,15 @@
 #endif
 
 #if  __CUDACC__
-
-#		define PLATFORM 				GPU
+#		define PLATFORM 				NVGPU
 #		define PLATFORM_OS				CUSTOM
 #		define COMPILER					CUDA_COMPILER
-#		define CPU_ENDIANESS		CPU_LITTLE_ENDIAN
-
+#		define CPU_ENDIANESS			CPU_LITTLE_ENDIAN
 #endif
-
 // OS
 #if defined( WIN32 )
-
 #	define PLATFORM 					WINDOWS
 #	define PLATFORM_OS					MS_WINDOWS
-
 #elif defined(__APPLE__) && defined( __MACH__ )
 
 #	include "TargetConditionals.h"

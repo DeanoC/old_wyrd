@@ -282,7 +282,7 @@ void Viz::init(int32_t _argc, const char *const *_argv, uint32_t _width, uint32_
 
 		std::vector<void*> tests;
 		std::array<Bundle::chunkHandler, 1> handlers = {
-				{ {"TEST"_bundle_id, [&tests](uint16_t majorVersion_, uint16_t minorVersion_, size_t size_, void* ptr) -> bool
+				{ {"TEST"_bundle_id, [&tests](uint16_t majorVersion_, uint16_t minorVersion_, void* ptr) -> bool
 				  {
 					  if(majorVersion_ != 0) return false;
 					  if(minorVersion_ > 3) return false;
