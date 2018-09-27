@@ -19,7 +19,7 @@ struct DiskStorage : public IStorage {
 		return "disk"sv;
 	}
 
-	auto read(ResourceNameView const resourceName_, size_t handlerCount_, chunkHandler const* const handlers_) -> bool final
+	auto read(ResourceNameView const resourceName_, std::vector<ChunkHandler> const& handlers_) -> bool final
 	{
 		std::string_view prefix = resourceName_.getStorage();
 		assert(prefix == getPrefix());
@@ -34,7 +34,7 @@ struct DiskStorage : public IStorage {
 		if(stream.bad()) return false;
 
 		auto bundle = Binny::Bundle(&malloc, &free, &malloc, &free, stream);
-		auto okay = bundle.read(subObject, handlerCount_, handlers_);
+		auto okay = bundle.read(subObject, handlers_, false);
 		return okay.first == Binny::IBundle::ErrorCode::Okay;
 	}
 

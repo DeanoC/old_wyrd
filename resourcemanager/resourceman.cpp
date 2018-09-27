@@ -4,16 +4,16 @@
 
 #include "core/core.h"
 #include "resourceman.h"
+#include <array>
 
 namespace ResourceManager {
 
 std::string const ResourceMan::DeletedString =  { "**DELETED**" };
 
 // resource managers are sort of singletons, we keep a static registry to save a full ptr per resource etc.
-// intended usage pattern is to store the unique_ptr returned by create for the lifetime of the manager
+// intended usage pattern is to store the shared_ptr returned by create for the lifetime of the manager
 // and it should be released last thing after all resource are finished with by reseting the unique_ptr
-int const MaxResourceManagers = 4;
-std::weak_ptr<ResourceMan> s_resourceManagers[MaxResourceManagers];
+std::vector<std::weak_ptr<ResourceMan>> s_resourceManagers;
 int s_curResourceManagerCount = 0; // TODO keep a free list
 
 ResourceMan::ResourceMan() {}
@@ -28,7 +28,7 @@ auto ResourceMan::Create() -> std::shared_ptr<ResourceMan>
 	struct ResourceManCreator : public ResourceManager::ResourceMan {};
 
 	auto resourceMan = std::make_shared<ResourceManCreator>();
-	s_resourceManagers[s_curResourceManagerCount] = resourceMan;
+	s_resourceManagers.push_back(resourceMan);
 	resourceMan->myIndex = s_curResourceManagerCount++;
 
 	return resourceMan;
@@ -45,10 +45,16 @@ void ResourceMan::registerStorageHandler(IStorage::Ptr storage_)
 	prefixToStorage[storage_->getPrefix()] = storage_;
 }
 
-void ResourceMan::registerResourceType( IResourceFuncs::Ptr funcs_ )
+void ResourceMan::registerResourceHandler( uint32_t type_, int stage_, ResourceHandler handler_ )
 {
-	assert(typeToFuncs.find(funcs_->getType()) == typeToFuncs.end());
-	typeToFuncs[funcs_->getType()] = funcs_;
+	if(typeToHandler.find(type_) == typeToHandler.end())
+	{
+		typeToHandler[type_][stage_] = handler_;
+	} else
+	{
+		assert(std::get<0>(typeToHandler[type_][stage_]) == 0);
+		typeToHandler[type_][stage_] = handler_;
+	}
 }
 
 auto ResourceMan::getIdFromName(uint32_t type_,ResourceNameView name_) -> uint64_t
@@ -102,7 +108,7 @@ auto ResourceHandleBase::tryAcquire() -> ResourceBase::Ptr
 
 auto ResourceMan::acquire(ResourceHandleBase const& base_) -> ResourceBase::Ptr
 {
-	assert(typeToFuncs.find(base_.type) != typeToFuncs.end());
+	assert(typeToHandler.find(base_.type) != typeToHandler.end());
 	ResourceBase::Ptr ptr;
 	while(!ptr)
 	{
@@ -116,9 +122,7 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 	ResourceBase::Ptr cached = resourceCache.lookup(base_.id);
 	if(cached) return cached;
 
-	assert(typeToFuncs.find(base_.type) != typeToFuncs.end());
-	IResourceFuncs::Ptr funcs = typeToFuncs[base_.type];
-	assert(funcs->getType() == base_.type);
+	assert(typeToHandler.find(base_.type) != typeToHandler.end());
 
 	// get storage manager
 	assert(idToResourceName.find(base_.id) != idToResourceName.end());
@@ -134,39 +138,43 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 	IStorage::Ptr storage = prefixToStorage[prefix];
 
 	ChunkHandlers chunks;
-	chunks.reserve(typeToFuncs.size());
-	for(auto const [type, funcs] : typeToFuncs)
+	chunks.reserve(typeToHandler.size());
+
+	for(auto const& [type, orderedHandler] : typeToHandler)
 	{
-		auto initFunc = funcs->getInitFunc();
-		chunks.emplace_back(
-				type,
-				[this, base_, prefix, name, initFunc, subObject]( std::string_view name_, uint16_t majorVersion_, uint16_t minorVersion_, std::shared_ptr<void> ptr_ ) -> bool
-				{
-					uint64_t id;
-					bool found = false;
-					if(name_ != subObject)
-					{
-						// register this name even though we might not really care about it
-						ResourceName newName(prefix, name , subObject);
-						id = getIdFromName(base_.type, newName.getResourceName());
-					} else
-					{
-						found = true;
-						id = base_.id;
-					}
+		auto lambdaType = type;
 
-					auto ptr = std::static_pointer_cast<ResourceBase>(ptr_);
+		for(int i = 0; i < MaxHandlerStages; ++i)
+		{
+			int extramem = 0;
+			HandlerInit init;
+			std::tie(extramem, init, std::ignore) = orderedHandler[i];
+			if(init == nullptr) continue;
 
-					bool okay = initFunc( majorVersion_, minorVersion_, ptr );
-					if(okay)
+			chunks.emplace_back(
+					type,
+					i,
+					extramem,
+					[this, lambdaType, prefix, name, init]( std::string_view subObject_, uint16_t majorVersion_, uint16_t minorVersion_, std::shared_ptr<void> ptr_ ) -> bool
 					{
-						resourceCache.insert(id, ptr);
-					}
-					return found;
-				}
-				);
+						uint64_t id;
+						ResourceName newName(prefix, name , subObject_);
+						id = getIdFromName(lambdaType, newName.getResourceName());
+
+						auto ptr = std::static_pointer_cast<ResourceBase>(ptr_);
+
+						bool okay = init( majorVersion_, minorVersion_, ptr );
+						if(okay)
+						{
+							resourceCache.insert(id, ptr);
+							return true;
+						} else
+							return false;
+					});
+
+		}
 	}
-	bool okay = storage->read(resourceName, chunks.size(), chunks.data());
+	bool okay = storage->read(resourceName, chunks);
 	if(okay)
 	{
 		return resourceCache.lookup(base_.id);

@@ -32,8 +32,8 @@ public:
 	Bundle(allocFunc tmpAlloc_, freeFunc tmpFree_, allocFunc alloc_, freeFunc free_, std::istream& in_) : tmpAlloc(tmpAlloc_), tmpFree(tmpFree_), permAlloc(alloc_), permFree(free_), in(in_) {}
 	~Bundle();
 
-	// the chunkHandler hold processes the chunk once its been loaded and fixed up
-	std::pair<ErrorCode, uint64_t> read(std::string_view name_, size_t handlerCount, chunkHandler const* const handlers) override;
+	// the ChunkHandler hold processes the chunk once its been loaded and fixed up
+	std::pair<ErrorCode, uint64_t> read(std::string_view name_, std::vector<ChunkHandler> const& handlers_, bool forcePrefix_) override;
 	uint32_t getDirectoryCount() override;
 	std::string_view getDirectionEntry(uint32_t const index_) override;
 

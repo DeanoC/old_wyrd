@@ -13,13 +13,13 @@ namespace ResourceManager {
 struct IStorage
 {
 	using Ptr = std::shared_ptr<IStorage>;
-	using chunkFunc = Binny::IBundle::chunkFunc;
-	using chunkHandler = Binny::IBundle::chunkHandler;
+	using ChunkFunc = Binny::IBundle::ChunkFunc;
+	using ChunkHandler = Binny::IBundle::ChunkHandler;
 
 	// only every return a static string with global lifetime
 	virtual auto getPrefix() -> std::string_view = 0;
 
-	virtual auto read(ResourceNameView const resourceName_, size_t handlerCount_, chunkHandler const *const handlers_ ) -> bool = 0;
+	virtual auto read(ResourceNameView const resourceName_, std::vector<ChunkHandler> const& handlers_ ) -> bool = 0;
 };
 
 }

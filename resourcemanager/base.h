@@ -6,6 +6,13 @@
 #include "tbb/concurrent_hash_map.h"
 #include "cityhash/city.h"
 
+/// used to identify resources, each should be unique to a project etc. IFF like
+constexpr uint32_t operator"" _resource_id(char const* s, size_t count)
+{
+	assert(count==4);
+	return s[3] << 24 | s[2] << 16 | s[1] << 8 | s[0] << 0;
+}
+
 namespace ResourceManager
 {
 
@@ -30,9 +37,16 @@ public:
 	using WeakPtr = std::weak_ptr<Resource<type_>>;
 	using ConstWeakPtr = std::weak_ptr<Resource<type_> const>;
 
+	// note: this memory only exist if the resource handler asked for it
+	// so only use this if you know what the resource handler did
+	void* getExtraMemPtr(uint32_t stage_) const { return (void*) *(((uintptr_t*)this)-stage_); }
+
 protected:
 	Resource() = default;
 	~Resource() = default;
+	// Implementation note: we assume that the compiler is doing the empty object
+	// optimization, as we treat Resource as using no allocation space when classes
+	// derive from it.
 };
 
 // a resource handle is an opaque handle linked to a particular resource
@@ -40,6 +54,7 @@ protected:
 // the base class holds the basic elements for the typed handles that are actually used
 struct ResourceHandleBase
 {
+
 	friend class ResourceMan;
 	template<uint32_t type_> friend class ResourceHandle;
 
@@ -66,6 +81,16 @@ public:
 
 	auto tryAcquire() -> typename Resource<type_>::Ptr {
 		return std::static_pointer_cast<Resource<type_>>(base.tryAcquire());
+	}
+
+	template<typename T> auto acquire() -> typename std::shared_ptr<T> {
+		static_assert(T::Id == type_);
+		return std::static_pointer_cast<T>(base.acquire());
+	}
+
+	template<typename T> auto tryAcquire() -> typename std::shared_ptr<T> {
+		static_assert(T::Id == type_);
+		return std::static_pointer_cast<T>(base.tryAcquire());
 	}
 
 protected:
