@@ -1,10 +1,34 @@
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
+#define CATCH_CONFIG_RUNNER
 #define LOGURU_IMPLEMENTATION 1
 #define CX_ERROR_IMPLEMENTATION 1
 
-#include "catch.hpp"
 #include "core/core.h"
+#include "catch.hpp"
+#include "shell/shell.h"
 #include "cityhash/city.h"
+
+Shell::ShellInterface* globalShell;
+
+int Main(Shell::ShellInterface& shell_)
+{
+	globalShell = &shell_; // just for test cases
+
+	shell_.init({
+		"Tester",
+		true,
+		false,
+	});
+
+	auto args = shell_.getArguments();
+	std::vector<char const*> argv(args.size());
+	for(auto i = 0u; i < args.size(); ++i)
+	{
+		argv[i] = args[i].c_str();
+	}
+
+	return Catch::Session().run( (int)args.size(), (char**)argv.data() );
+
+}
 
 TEST_CASE( "CityHash128 100 bytes", "[CityHash]" )
 {
