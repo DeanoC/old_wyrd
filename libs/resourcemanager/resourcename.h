@@ -1,6 +1,6 @@
 #pragma once
-#ifndef WYRD_RESOURCEMAN_RESOURCENAME_H
-#define WYRD_RESOURCEMAN_RESOURCENAME_H
+#ifndef WYRD_RESOURCEMANANAGER_RESOURCENAME_H
+#define WYRD_RESOURCEMANANAGER_RESOURCENAME_H
 
 #include "core/core.h"
 #include "tbb/concurrent_hash_map.h"
@@ -12,19 +12,31 @@ namespace ResourceManager
 // 1) the storage
 // 2) the name / filename of a 'bundle'
 // 3) the sub object
-// the $ is used to delimit the 3 parts
+// the $ is used to delimit the 3 parts and cannot be used by part names
+// the |$|$ sequence is reserved and used inside bundles to refer to the bundle
+
 // the type should be short and is used to select the storage system to retrieve
-// the resource, e.g. disk or mem
+// the resource, e.g. disk or mem. null storage is special always available nullptr
+// for the null resource, the name is ignored but for stylistic reason null$null is
+// the prefered null reference indiacator
+
 // the name used by the storage system to locate the main bundle object
 // a filename or description are examples
+
 // the third is optional and allows access to sub-objects
 // by default if not supplied the first resource in the bundle of the correct type
 // is returned, if the third part is supplied then the name will be matched to the
 // bundles directory name.
+
+// inside a bundle the first and second parts set to |$|$ refer to the bundle (and
+// storage) itself.
+
 // examples
 // disk$/asset/texture/bob
 // mem$BobTheHero
 // disk$/asset/texture/bob$leg1
+// |$|$leg1 - legal inside a bundle to refer to this bundle and storage system
+// null$null - a nullptr/invalid resource handle.
 
 struct ResourceNameView
 {
@@ -41,6 +53,19 @@ struct ResourceNameView
 		return 	dollar0pos != resourceName.npos &&
 				  dollar0pos+1 != dollar1pos &&
 				  dollar0pos+1 != resourceName.size();
+	}
+
+	auto isCurrentLink() const -> bool
+	{
+		return isValid() &&
+			resourceName[0] == '|' &&
+			resourceName[2] == '|' &&
+			dollar1pos != resourceName.npos &&
+			dollar1pos+1 != resourceName.size();
+	}
+
+	auto isNull() const -> bool {
+		return isValid() && getStorage() == "null";
 	}
 
 	std::string_view getStorage() const
@@ -140,7 +165,11 @@ struct ResourceName
 
 	ResourceNameView getView() const { return ResourceNameView(resourceName); }
 
-	bool isValid() const { return getView().isValid(); }
+	auto isValid() -> bool const { return getView().isValid(); }
+
+	auto isCurrentLink() -> bool const { return getView().isCurrentLink(); }
+
+	auto isNull() -> bool const { return getView().isNull(); }
 
 	std::string_view getStorage() const { return getView().getStorage(); }
 

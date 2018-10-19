@@ -9,6 +9,7 @@
 #include "vulkan/display.h"
 #include <vector>
 #include <set>
+#include <array>
 
 namespace Vulkan
 {
@@ -24,9 +25,9 @@ public:
 	auto isGpuLowPower(uint32_t index_) const -> bool final;
 	auto createGpuDevice(uint32_t index_, Render::DeviceConfig const& config_) -> std::shared_ptr<Render::Device> final;
 
-	auto createGpuDevice(uint32_t deviceIndex_, bool render_, uint32_t minQueues_, std::vector<char const*> const& requiredExtensions) -> std::shared_ptr<Vulkan::Device>;
-
 private:
+	auto createGpuDevice(uint32_t deviceIndex_, bool render_, VkSurfaceKHR surface_, uint32_t minQueues_, std::vector<char const*> const& requiredExtensions) -> Vulkan::Device::Ptr;
+
 	auto addDesiredInstanceExtensions(std::string const& desired_)
 	{
 		desiredInstanceExtensions.insert( desired_ );
@@ -44,12 +45,16 @@ private:
 	std::vector<std::vector<VkExtensionProperties>> deviceExtensions;
 	std::vector<VkPhysicalDeviceProperties> deviceProperties;
 	std::vector<VkPhysicalDeviceFeatures> deviceFeatures;
-	std::vector<std::vector<VkQueueFamilyProperties>> deviceQueueFamilies;
+	std::vector<Device::QueueFamilies> deviceQueueFamilies;
 
 	std::set<std::string> desiredInstanceExtensions;
 
-
 	std::vector<std::shared_ptr<Vulkan::Display>> activeDisplays;
+
+	static constexpr bool enableValidationLayers = true;
+	inline static std::array<const char*, 1> validationLayers = {
+			"VK_LAYER_LUNARG_standard_validation"
+	};
 };
 
 }

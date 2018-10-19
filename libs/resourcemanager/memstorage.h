@@ -1,6 +1,6 @@
 #pragma once
-#ifndef WYRD_RESOURCEMAN_MEMSTORAGE_H
-#define WYRD_RESOURCEMAN_MEMSTORAGE_H
+#ifndef WYRD_RESOURCEMANANAGER_MEMSTORAGE_H
+#define WYRD_RESOURCEMANANAGER_MEMSTORAGE_H
 
 #include "core/core.h"
 #include <string_view>

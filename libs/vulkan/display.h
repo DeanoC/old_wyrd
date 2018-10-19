@@ -5,82 +5,43 @@
 #include "core/core.h"
 #include "render/display.h"
 #include "vulkan/api.h"
+#include "vulkan/device.h"
 #include "GLFW/glfw3.h"
 #include <vector>
 
 
-namespace Vulkan
-{
+namespace Vulkan {
 class Display : public Render::Display
 {
 public:
-	friend class Device;
-	friend class System;
+	Display(uint32_t width_, uint32_t height_,
+			Vulkan::Device::Ptr device_,
+			GLFWwindow *window_,
+			VkSurfaceKHR surface_)
+			: Render::Display{width_, height_},
+			window(window_),
+			weakDevice(device_),
+			surface(surface_) {}
 
-	Display(uint32_t width_,
-			uint32_t height_,
-			GLFWwindow* window_,
-			VkSurfaceKHR surface_) : window(window_), surface(surface_)
-	{
-		width = width_;
-		height = height_;
-	}
+	auto createSwapChain() -> void;
 
-	VkSurfaceFormatKHR chooseSwapSurfaceFormat() const
-	{
-		if (formats.size() == 1 && formats[0].format == VK_FORMAT_UNDEFINED)
-		{
-			return {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
-		}
+	auto present() -> bool final;
 
-		for (const auto& availableFormat : formats)
-		{
-			if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-			{
-				return availableFormat;
-			}
-		}
-
-		return formats[0];
-	}
-	VkPresentModeKHR chooseSwapPresentMode() const
-	{
-		VkPresentModeKHR bestMode = VK_PRESENT_MODE_FIFO_KHR;
-
-		for (const auto& availablePresentMode : presentModes)
-		{
-			if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
-			{
-				return availablePresentMode;
-			} else if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
-			{
-				bestMode = availablePresentMode;
-			}
-		}
-
-		return bestMode;
-	}
-	VkExtent2D chooseSwapExtent() const
-	{
-		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
-		{
-			return capabilities.currentExtent;
-		}
-		else
-		{
-			VkExtent2D actualExtent = {width, height};
-
-			actualExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actualExtent.width));
-			actualExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, actualExtent.height));
-
-			return actualExtent;
-		}
-	}
 private:
-	GLFWwindow* window;
+	VkSurfaceFormatKHR chooseSwapSurfaceFormat() const;
+	VkPresentModeKHR chooseSwapPresentMode() const;
+	VkExtent2D chooseSwapExtent() const;
+
+	Device::WeakPtr weakDevice;
+	GLFWwindow *window;
 	VkSurfaceKHR surface;
 	VkSwapchainKHR swapchainKHR;
+	VkSemaphore imageAvailable;
+	VkSemaphore presentComplete;
+	std::vector<VkImage> images;
+
 	VkSurfaceCapabilitiesKHR capabilities;
+	VkSwapchainCreateInfoKHR createInfo;
 	std::vector<VkSurfaceFormatKHR> formats;
 	std::vector<VkPresentModeKHR> presentModes;
 };

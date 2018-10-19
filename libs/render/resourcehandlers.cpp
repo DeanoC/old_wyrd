@@ -1,6 +1,7 @@
 #include "core/core.h"
 #include "binny/writehelper.h"
 #include "resourcemanager/resourceman.h"
+#include "resourcemanager/writer.h"
 #include "render/resourcehandlers.h"
 #include "render/image.h"
 #include "fmt/format.h"
@@ -16,7 +17,7 @@ auto RegisterResourceHandlers( ResourceManager::ResourceMan& rm_ ) -> void
 	rm_.registerResourceHandler(
 			GenericImage::Id,
 			{0,
-			 []( uint16_t majorVersion_, uint16_t minorVersion_, int stage,
+			 []( int stage, ResourceManager::ResolverInterface resolver_, uint16_t majorVersion_, uint16_t minorVersion_,
 				 std::shared_ptr<void> ptr_ ) -> bool
 			 {
 				 if(majorVersion_ != GenericImage::MajorVersion) return false;
@@ -43,22 +44,22 @@ auto RegisterResourceHandlers( ResourceManager::ResourceMan& rm_ ) -> void
 				saver_.setMajorVersion( GenericImage::MajorVersion );
 				saver_.setMinorVersion( GenericImage::MinorVersion );
 				saver_.setWriterFunction(
-						[image]( Binny::WriteHelper& h )
+						[image]( Writer& w_ )
 						{
-							h.allow_nan( false );
-							h.allow_infinity( true );
-							h.set_default_type<uint32_t>();
-							h.set_address_length( 64 );
-							h.write_as<uint64_t>( image->dataSize, "data size" );
-							h.write_as<uint64_t>( image->subClassData, "Subclass Data" );
-							h.write( image->width, "Width" );
-							h.write( image->height, "Height" );
-							h.write( image->depth, "Depth" );
-							h.write( image->slices, "Array size" );
-							h.write((uint32_t) image->format,
+							w_.allow_nan( false );
+							w_.allow_infinity( true );
+							w_.set_default_type<uint32_t>();
+							w_.set_address_length( 64 );
+							w_.write_as<uint64_t>( image->dataSize, "data size" );
+							w_.write_as<uint64_t>( image->subClassData, "Subclass Data" );
+							w_.write( image->width, "Width" );
+							w_.write( image->height, "Height" );
+							w_.write( image->depth, "Depth" );
+							w_.write( image->slices, "Array size" );
+							w_.write((uint32_t) image->format,
 									fmt::format( "Format: {0}", GtfCracker::name( image->format )));
-							h.align();
-							h.write_byte_array( image->dataStore, image->dataSize );
+							w_.align();
+							w_.write_byte_array( image->dataStore, image->dataSize );
 						} );
 				return true;
 			}

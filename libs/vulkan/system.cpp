@@ -1,9 +1,10 @@
-#include "core/core.h"
-#include <string_view>
-
 #define GLFW_INCLUDE_VULKAN
+
+#include "core/core.h"
 #include "vulkan/glfw/include/GLFW/glfw3.h"
-#include "system.h"
+#include "vulkan/system.h"
+#include "vulkan/display.h"
+#include <string_view>
 #include <array>
 
 #define CHK_F(x, call) result = (x); if(result != VK_SUCCESS) { LOG_S(ERROR) << "Vulkan Error: " << #call << " " << getVulkanResultString(result); return false; }
@@ -242,6 +243,7 @@ auto System::isGpuLowPower(uint32_t index_) const -> bool
 	// TODO see if this is an okay determination.
 	return(deviceProperties[index_].deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
 }
+
 auto System::createGpuDevice(uint32_t index_, Render::DeviceConfig const& config_) -> std::shared_ptr<Render::Device>
 {
 	std::vector<char const*> extensions;
@@ -256,126 +258,79 @@ auto System::createGpuDevice(uint32_t index_, Render::DeviceConfig const& config
 		extensions.push_back(s.c_str());
 	}
 
-	auto device = createGpuDevice(index_, config_.renderer, 1, extensions);
-
+	VkSurfaceKHR surface = nullptr;
+	GLFWwindow* window = nullptr;
 	if(config_.presentable)
 	{
 		// TODO make resizable option
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-		auto window = glfwCreateWindow(config_.width, config_.height,
-										"Vulkan", nullptr, nullptr);
-		if(window != nullptr)
-		{
-			VkSurfaceKHR surface;
-			CHKED(glfwCreateWindowSurface(instance, window, nullptr, &surface));
-
-			auto display = activeDisplays.emplace_back(
-					std::make_shared<Vulkan::Display>(
-							config_.width, config_.height, window, surface));
-			CHKED( vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-					physicalDevices[index_], surface, &display->capabilities));
-
-			uint32_t formatCount;
-			CHKED(vkGetPhysicalDeviceSurfaceFormatsKHR(
-					physicalDevices[index_], surface, &formatCount, nullptr));
-
-			if (formatCount != 0) {
-				display->formats.resize(formatCount);
-				CHKED(vkGetPhysicalDeviceSurfaceFormatsKHR(
-					physicalDevices[index_], surface, &formatCount, display->formats.data()));
-			}
-			uint32_t presentModeCount;
-			CHKED(vkGetPhysicalDeviceSurfacePresentModesKHR(
-					physicalDevices[index_], surface, &presentModeCount, nullptr));
-			if (presentModeCount != 0) {
-				display->presentModes.resize(presentModeCount);
-				CHKED(vkGetPhysicalDeviceSurfacePresentModesKHR(
-						physicalDevices[index_], surface, &presentModeCount, display->presentModes.data()));
-			}
-			uint32_t imageCount = display->capabilities.minImageCount + 1;
-			if (display->capabilities.maxImageCount > 0 && imageCount > display->capabilities.maxImageCount) {
-				imageCount = display->capabilities.maxImageCount;
-			}
-
-			auto swapFormat = display->chooseSwapSurfaceFormat();
-			VkSwapchainCreateInfoKHR createInfo = {};
-			createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-			createInfo.surface = surface;
-			createInfo.minImageCount = imageCount;
-			createInfo.imageFormat = swapFormat.format;
-			createInfo.imageColorSpace = swapFormat.colorSpace;
-			createInfo.imageExtent = display->chooseSwapExtent();
-			createInfo.imageArrayLayers = 1;
-			createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-			uint32_t qs[3];
-			uint32_t renderQ;
-			uint32_t computeQ;
-			uint32_t transferQ;
-			std::tie(renderQ, computeQ, transferQ) = findQueueFamily(index_, 1);
-			VkBool32 presentSupport = false;
-			CHKED(vkGetPhysicalDeviceSurfaceSupportKHR(
-					physicalDevices[index_], renderQ, surface, &presentSupport));
-
-			if (!presentSupport)
-			{
-				qs[0] = renderQ;
-				qs[1] = computeQ;
-				qs[2] = transferQ;
-				createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-				createInfo.queueFamilyIndexCount = 3;
-				createInfo.pQueueFamilyIndices = qs;
-			} else
-				{
-				createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-			}
-			createInfo.preTransform = display->capabilities.currentTransform;
-			createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-			createInfo.presentMode = display->chooseSwapPresentMode();
-			createInfo.clipped = VK_TRUE;
-			createInfo.oldSwapchain = nullptr;
-			CHKED(device->vkCreateSwapchainKHR(&createInfo, nullptr, &display->swapchainKHR));
-			device->display = display;
-
-			return device;
-		}
-
+		window = glfwCreateWindow(config_.width, config_.height, "Vulkan", nullptr, nullptr);
+		if(window == nullptr) return {};
+		CHKED(glfwCreateWindowSurface(instance, window, nullptr, &surface));
 	}
-	return {};
 
+	Device::Ptr device = createGpuDevice(index_,
+			config_.renderer,
+			surface,
+			1,
+			extensions);
+	if(!device) return {};
+
+	if(surface != nullptr)
+	{
+		auto display = activeDisplays.emplace_back(
+				std::make_shared<Vulkan::Display>(
+						config_.width, config_.height, device, window, surface));
+
+		display->createSwapChain();
+		device->display = display;
+	}
+
+	return device;
 }
-auto System::createGpuDevice(uint32_t deviceIndex_, bool render_, uint32_t minQueues_, std::vector<char const*> const& requiredExtensions) -> std::shared_ptr<Vulkan::Device>
+
+auto System::createGpuDevice(	uint32_t deviceIndex_,
+								bool render_,
+								VkSurfaceKHR surface_,
+								uint32_t minQueues_,
+								std::vector<char const*> const& requiredExtensions)
+								-> Vulkan::Device::Ptr
 {
 	// find queue of the desired type
-	uint32_t renderQ;
-	uint32_t computeQ;
-	uint32_t transferQ;
-	std::tie(renderQ, computeQ, transferQ) = findQueueFamily(deviceIndex_, minQueues_);
+	uint32_t qs[3]; // render, compute, transfer
+	std::tie(qs[0], qs[1], qs[2]) = findQueueFamily(deviceIndex_, minQueues_);
+
+	// render queues are optional but compute and transfer is required
+	if(render_ && qs[0] == ~0) return {};
+	if(qs[1] == ~0) return {};
+	if(qs[2] == ~0) return {};
 
 	// TODO queue prioritys
 	int queueCount = 0;
 	std::vector<float> queuePriority(minQueues_, 1.0f);
 	std::array<VkDeviceQueueCreateInfo,3> queueCreateInfos;
-	queueCreateInfos[queueCount].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queueCreateInfos[queueCount].queueFamilyIndex = computeQ;
-	queueCreateInfos[queueCount].queueCount = minQueues_;
-	queueCreateInfos[queueCount].pQueuePriorities = queuePriority.data();
-	queueCount++;
-	if(transferQ != computeQ)
+
+	uint32_t presentQ = ~0;
+	for(auto i = 0u; i < 3; ++i)
 	{
+		uint32_t q = qs[i];
+		// skip combined queues
+		if(i > 0 && qs[i-1] == q) continue;
+		if(i > 1 && qs[i-2] == q) continue;
+
 		queueCreateInfos[queueCount].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfos[queueCount].queueFamilyIndex = transferQ;
+		queueCreateInfos[queueCount].queueFamilyIndex = qs[i];
 		queueCreateInfos[queueCount].queueCount = minQueues_;
 		queueCreateInfos[queueCount].pQueuePriorities = queuePriority.data();
 		queueCount++;
-	}
-	if(render_ && renderQ != computeQ)
-	{
-		queueCreateInfos[queueCount].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfos[queueCount].queueFamilyIndex = renderQ;
-		queueCreateInfos[queueCount].queueCount = minQueues_;
-		queueCreateInfos[queueCount].pQueuePriorities = queuePriority.data();
-		queueCount++;
+
+		if(surface_ != nullptr && presentQ == ~0 )
+		{
+			VkBool32 presentSupport = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevices[deviceIndex_], qs[i], surface_, &presentSupport);
+			if(presentSupport) { presentQ = qs[i]; }
+		}
+
 	}
 
 	// TODO device feature selection
@@ -391,34 +346,20 @@ auto System::createGpuDevice(uint32_t deviceIndex_, bool render_, uint32_t minQu
 	createInfo.enabledExtensionCount = requiredExtensions.size();
 	createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
-	// TODO layers
-//	if (enableValidationLayers) {
-//		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-//		createInfo.ppEnabledLayerNames = validationLayers.data();
-//	} else {
+	if constexpr (enableValidationLayers)
+	{
+		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+		createInfo.ppEnabledLayerNames = validationLayers.data();
+	} else
+	{
 		createInfo.enabledLayerCount = 0;
-//	}
-	VkDevice vkdevice;
-	CHKED(vkCreateDevice(physicalDevices[deviceIndex_], &createInfo, nullptr, &vkdevice));
+	}
 
 	auto device = std::make_shared<Vulkan::Device>(
-			physicalDevices[deviceIndex_], vkdevice, renderQ, computeQ, transferQ);
-#define DEVICE_VULKAN_FUNC( name, level ) \
-   device->_##name = (PFN_##name)vkGetDeviceProcAddr( device->device, #name );       \
-   if( device->_##name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; }
-
-#define DEVICE_VK_FUNC( name ) DEVICE_VULKAN_FUNC(name, device)
-
-#define DEVICE_VK_FUNC_EXT( name, extension )            \
-	for( auto const& ext : requiredExtensions ) { \
-		if( std::string( ext ) == std::string( extension ) ) {\
-			DEVICE_VULKAN_FUNC(name, device extension) \
-		} \
-	}
-#include "functionlist.inl"
-	device->vkGetDeviceQueue(renderQ, 0, &device->renderQueue);
-	device->vkGetDeviceQueue(computeQ, 0, &device->computeQueue);
-	device->vkGetDeviceQueue(transferQ, 0, &device->transferQueue);
+			physicalDevices[deviceIndex_],
+			createInfo,
+			deviceQueueFamilies[deviceIndex_],
+			presentQ);
 
 	return device;
 }

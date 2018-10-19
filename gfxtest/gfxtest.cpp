@@ -40,5 +40,12 @@ int Main(Shell::ShellInterface& shell_)
 	auto device = gpuStable->createGpuDevice(pickedGpuIndex, config);
 	if(!device) return 10;
 
+	auto display = device->getDisplay();
+
+	while(true)
+	{
+		display->present();
+	}
+
 	return 0;
 }

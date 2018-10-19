@@ -43,12 +43,12 @@ public:
 		for(int j = 0; j < handlers_.size(); ++j)
 		{
 			uint32_t htype;
-			int order;
+			int stage;
 			int extramem;
-			std::tie( htype, order, extramem, std::ignore, std::ignore) = handlers_.at(j);
+			std::tie( htype, stage, extramem, std::ignore, std::ignore) = handlers_.at(j);
 			if(type == htype)
 			{
-				orderedHandlers[order] = j;
+				orderedHandlers[stage] = j;
 				totalExtraMem = extramem;
 			}
 		}
@@ -105,6 +105,7 @@ public:
 						int extramem;
 						ChunkCreateFunc func;
 						std::tie( htype, stage, extramem, func, std::ignore ) = handlers_.at(orderedHandlers[j]);
+						assert(stage == j);
 						if(extramem > 0)
 						{
 							std::memset(dataPtr, 0xB0 | stage, extramem);

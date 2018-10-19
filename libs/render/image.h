@@ -31,6 +31,7 @@ public:
 	using WeakPtr = std::weak_ptr<Image>;
 	using ConstWeakPtr = std::weak_ptr<Image const>;
 	static constexpr uint32_t Id = id_;
+	using Handle = ResourceManager::ResourceHandle<Id>;
 
 	// note, Image always requires to the first channel as R etc.
 	// this means that you ask for R and it will retrieve it from wherever

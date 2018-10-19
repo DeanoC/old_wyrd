@@ -12,10 +12,11 @@ auto Texture::RegisterResourceHandler( ResourceManager::ResourceMan& rm_, Device
 	Vulkan::System* system = Vulkan::System::Global;
 
 	rm_.registerNextResourceHandler( Id, { sizeof(Vulkan::Texture),
-		 [device_]( uint16_t, uint16_t, int stage, std::shared_ptr<void> ptr_ ) -> bool
+		 [device_]( int stage_, ResourceManager::ResolverInterface,
+		 		uint16_t, uint16_t, ResourceManager::ResourceBase::Ptr ptr_ ) -> bool
 		 {
 			 auto cpuTexture = std::static_pointer_cast<Render::Texture>( ptr_ );
-			 auto vkTexture = cpuTexture->getExtraMemPtr<Vulkan::Texture>(stage);
+			 auto vkTexture = cpuTexture->getExtraMemPtr<Vulkan::Texture>(stage_);
 
 			 auto device = device_.lock();
 			 if(!device) return false;
@@ -69,8 +70,11 @@ auto Texture::RegisterResourceHandler( ResourceManager::ResourceMan& rm_, Device
 			 		std::memset(info.pMappedData, 0, info.size);
 				} else
 				{
+			 		auto image = cpuTexture->imageHandle.acquire<Render::GenericImage>();
+			 		assert(image);
+
 			 		// mem copy
-//			 		if(cpuTexture->)
+			 		std::memcpy(info.pMappedData, image->data(), image->dataSize);
 				}
 			 } else
 			 {

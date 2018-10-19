@@ -6,6 +6,7 @@
 #include "core/utils.h"
 #include "resourcemanager/base.h"
 #include "render/generictextureformat.h"
+#include "render/image.h"
 
 namespace ResourceManager{ class ResourceMan; }
 namespace Render {
@@ -58,7 +59,7 @@ public:
 	uint32_t 				samples;				//!< sample count (usually 1)
 	GenericTextureFormat	format;					//!< format of this texture
 
-	uint8_t*				cpuData;				//!< pointer to cpu data at load and forever if KeepCpuCopy
+	GenericImage::Handle	imageHandle;
 
 };
 }

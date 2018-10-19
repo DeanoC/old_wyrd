@@ -6,7 +6,7 @@ set(TESTER_SOURCE
 		resourcemanager/resourcemanager_unittest.cpp
 		tester.cpp
 		render/generictextureformat_unittest.cpp
-		vulkan/system_unittest.cpp binny/bundle_unittest.cpp math/scalar_math_unittest.cpp render/image_unittest.cpp)
+		vulkan/system_unittest.cpp binny/bundle_unittest.cpp math/scalar_math_unittest.cpp render/image_unittest.cpp resourcemanager/resourcename_unittest.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/live)
 add_executable(tester WIN32 ${TESTER_SOURCE})

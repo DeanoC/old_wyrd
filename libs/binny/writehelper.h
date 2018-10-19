@@ -55,7 +55,7 @@ public:
 	void write_flags(std::string const& name, uint64_t flags, std::string const comment_ = ""s, bool noCommentEndStatement_ = true);
 
 	// string table functiona
-	void add_string(std::string const& str); 	///< adds it to the table and outputs a fixup
+	void add_string(std::string_view str); 	///< adds it to the table and outputs a fixup
 	std::string add_string_to_table(std::string const& str);
 	void set_string_table_base(std::string const& label);
 

@@ -8,8 +8,13 @@ namespace Render
 {
 struct Display
 {
+	Display(uint32_t width_, uint32_t height_) : width(width_), height(height_) {}
+	virtual ~Display() = default;
+
 	auto getWidth() const -> uint32_t { return width; }
 	auto getHeight() const -> uint32_t { return height; }
+
+	virtual auto present() -> bool = 0;
 
 	uint32_t width, height;
 };

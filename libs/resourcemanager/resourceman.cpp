@@ -6,9 +6,10 @@
 #include "resourceman.h"
 #include <array>
 #include "resourcemanager/textresource.h"
+
 namespace ResourceManager {
 
-std::string const ResourceMan::DeletedString =  { "**DELETED**" };
+std::string_view const ResourceMan::DeletedString = {"**DELETED**"};
 
 // resource managers are sort of singletons, we keep a static registry to save a full ptr per resource etc.
 // intended usage pattern is to store the shared_ptr returned by create for the lifetime of the manager
@@ -17,24 +18,28 @@ std::vector<std::weak_ptr<ResourceMan>> s_resourceManagers;
 int s_curResourceManagerCount = 0; // TODO keep a free list
 
 ResourceMan::ResourceMan() {}
+
 ResourceMan::~ResourceMan()
 {
-	assert(myIndex < s_curResourceManagerCount);
+	assert(managerIndex < s_curResourceManagerCount);
 	// TODO reclaim the index
 }
 
 auto ResourceMan::Create() -> std::shared_ptr<ResourceMan>
 {
-	struct ResourceManCreator : public ResourceManager::ResourceMan {};
+	struct ResourceManCreator : public ResourceManager::ResourceMan
+	{
+	};
 
 	auto resourceMan = std::make_shared<ResourceManCreator>();
 	s_resourceManagers.push_back(resourceMan);
-	resourceMan->myIndex = s_curResourceManagerCount++;
+	resourceMan->managerIndex = s_curResourceManagerCount++;
 
 	TextResource::RegisterResourceHandler(*resourceMan);
 
 	return resourceMan;
 }
+
 auto ResourceMan::GetFromIndex(uint32_t index_) -> std::shared_ptr<ResourceMan>
 {
 	assert(index_ < s_curResourceManagerCount);
@@ -47,11 +52,8 @@ void ResourceMan::registerStorageHandler(IStorage::Ptr storage_)
 	prefixToStorage[storage_->getPrefix()] = storage_;
 }
 
-void ResourceMan::registerResourceHandler(
-		uint32_t type_,
-		ResourceHandler handler_,
-		HasResourceChangedFunc changed_,
-		SaveResourceFunc save_)
+void ResourceMan::registerResourceHandler(uint32_t type_, ResourceHandler handler_, HasResourceChangedFunc changed_,
+										  SaveResourceFunc save_)
 {
 	if(typeToHandler.find(type_) != typeToHandler.end())
 	{
@@ -62,9 +64,9 @@ void ResourceMan::registerResourceHandler(
 	typeToSavers[type_] = {changed_, save_};
 }
 
-auto ResourceMan::registerNextResourceHandler( uint32_t type_, ResourceHandler handler_ ) -> int
+auto ResourceMan::registerNextResourceHandler(uint32_t type_, ResourceHandler handler_) -> int
 {
-	assert(typeToHandler.find( type_ ) != typeToHandler.end());
+	assert(typeToHandler.find(type_) != typeToHandler.end());
 	assert(std::get<1>(typeToHandler[type_][0]) != nullptr);
 
 	auto handlers = typeToHandler[type_];
@@ -82,7 +84,7 @@ auto ResourceMan::registerNextResourceHandler( uint32_t type_, ResourceHandler h
 
 auto ResourceMan::removeResourceHandler(uint32_t type_, int stage_) -> void
 {
-	assert(typeToHandler.find( type_ ) != typeToHandler.end());
+	assert(typeToHandler.find(type_) != typeToHandler.end());
 	if(stage_ == 0)
 	{
 		for(int i = 0; i < MaxHandlerStages; ++i)
@@ -95,41 +97,42 @@ auto ResourceMan::removeResourceHandler(uint32_t type_, int stage_) -> void
 	}
 }
 
-auto ResourceMan::getIdFromName(uint32_t type_,ResourceNameView name_) -> uint64_t
+auto ResourceMan::getIndexFromName(uint32_t type_, ResourceNameView const name_) -> uint64_t
 {
-	auto it = nameToResourceId.find(name_);
-	if(it == nameToResourceId.end())
+	auto it = nameToResourceIndex.find(name_);
+	if(it == nameToResourceIndex.end())
 	{
 		std::lock_guard guard(nameCacheLock);
 		// first re-check in case some one get here first
-		it = nameToResourceId.find(name_);
-		if(it == nameToResourceId.end())
+		it = nameToResourceIndex.find(name_);
+		if(it == nameToResourceIndex.end())
 		{
 			// lets do the allocation
 			ResourceName name(name_);
-			uint64_t id = idToBase.alloc();
-			idToResourceName[id] = name;
-			nameToResourceId[name_] = id;
+			uint64_t id = indexToBase.alloc();
+			indexToResourceName[id] = name;
+			nameToResourceIndex[name_] = id;
 
-			idToBase[id] = ResourceHandleBase{id, type_, myIndex, (uint16_t)0};
-			it = nameToResourceId.find(name_);
+			indexToBase[id] = ResourceHandleBase{id, type_, managerIndex, (uint16_t) 0};
+			it = nameToResourceIndex.find(name_);
 		}
 	}
 
-	return nameToResourceId[name_];
+	return it->second;
 }
 
-auto ResourceMan::getNameFromHandleBase(ResourceHandleBase const& base_) -> std::string_view
+auto ResourceMan::GetNameFromHandleBase(ResourceHandleBase const& base_) -> ResourceNameView
 {
-	if(idToBase[base_.id].generation != base_.generation) return DeletedString;
+	auto rm = GetFromIndex(base_.index);
+	if(rm->indexToBase[base_.index].generation != base_.generation) return ResourceNameView(DeletedString);
 
-	return idToResourceName[base_.id].getName();
+	return rm->indexToResourceName[base_.index].getName();
 }
 
 auto ResourceMan::openBaseResourceByTypeAndName(uint32_t type_, ResourceNameView const name_) -> ResourceHandleBase&
 {
-	uint64_t id = getIdFromName(type_, name_);
-	return idToBase[id];
+	uint64_t id = getIndexFromName(type_, name_);
+	return indexToBase[id];
 }
 
 auto ResourceHandleBase::acquire() -> ResourceBase::Ptr
@@ -146,6 +149,8 @@ auto ResourceHandleBase::tryAcquire() -> ResourceBase::Ptr
 
 auto ResourceMan::acquire(ResourceHandleBase const& base_) -> ResourceBase::Ptr
 {
+	if(base_.index == ResourceHandleBase::InvalidIndex) return ResourceBase::Ptr();
+
 	assert(typeToHandler.find(base_.type) != typeToHandler.end());
 	ResourceBase::Ptr ptr;
 	while(!ptr)
@@ -157,14 +162,16 @@ auto ResourceMan::acquire(ResourceHandleBase const& base_) -> ResourceBase::Ptr
 
 auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::Ptr
 {
-	ResourceBase::Ptr cached = resourceCache.lookup(base_.id);
+	if(base_.index == ResourceHandleBase::InvalidIndex) return ResourceBase::Ptr();
+
+	ResourceBase::Ptr cached = resourceCache.lookup(base_.index);
 	if(cached) return cached;
 
 	assert(typeToHandler.find(base_.type) != typeToHandler.end());
 
 	// get storage manager
-	assert(idToResourceName.find(base_.id) != idToResourceName.end());
-	ResourceNameView resourceName = idToResourceName[base_.id].getView();
+	assert(indexToResourceName.find(base_.index) != indexToResourceName.end());
+	ResourceNameView resourceName = indexToResourceName[base_.index].getView();
 	std::string_view prefix = resourceName.getStorage();
 	std::string_view name = resourceName.getName();
 	std::string_view subObject = resourceName.getSubObject();
@@ -175,10 +182,16 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 
 	IStorage::Ptr storage = prefixToStorage[prefix];
 
+	ResolverInterface resolver = {[this]() -> ResourceMan *
+								  { return this; }, [this, resourceName](ResourceHandleBase& base_) -> void
+								  {
+									  this->resolveLink(base_, resourceName);
+								  }};
+
 	ChunkHandlers chunks;
 	chunks.reserve(typeToHandler.size());
 
-	for(auto const& [type, orderedHandler] : typeToHandler)
+	for(auto const&[type, orderedHandler] : typeToHandler)
 	{
 		auto lambdaType = type;
 
@@ -190,44 +203,68 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 			std::tie(extramem, init, destroy) = orderedHandler[stage];
 			if(init == nullptr) continue;
 
-			chunks.emplace_back(
-					type,
-					stage,
-					extramem,
-					[this, lambdaType, prefix, name, init]( std::string_view subObject_, uint16_t majorVersion_, uint16_t minorVersion_, int stage, std::shared_ptr<void> ptr_ ) -> bool
-					{
-						uint64_t id;
-						ResourceName newName(prefix, name , subObject_);
-						id = getIdFromName(lambdaType, newName.getResourceName());
+			chunks.emplace_back(type,
+								stage,
+								extramem,
+								[this, lambdaType, resolver, prefix, name, init](std::string_view subObject_,
+																				 int stage_, uint16_t majorVersion_,
+																				 uint16_t minorVersion_,
+																				 std::shared_ptr<void> ptr_) -> bool
+								{
+									uint64_t id;
+									ResourceName newName(prefix, name, subObject_);
+									id = getIndexFromName(lambdaType, newName.getResourceName());
 
-						auto ptr = std::static_pointer_cast<ResourceBase>(ptr_);
+									auto ptr = std::static_pointer_cast<ResourceBase>(ptr_);
 
-						bool okay = init( majorVersion_, minorVersion_, stage, ptr );
-						if(okay)
-						{
-							resourceCache.insert(id, ptr);
-							return true;
-						} else
-							return false;
-					},
-					destroy
-			);
+									bool okay = init(stage_, resolver, majorVersion_, minorVersion_, ptr);
+									if(okay)
+									{
+										resourceCache.insert(id, ptr);
+										return true;
+									} else
+										return false;
+								},
+								destroy);
 
 		}
 	}
-	bool okay = storage->read(
-			resourceName,
-			&malloc,
-			&free,
-			chunks);
+	bool okay = storage->read(resourceName, &malloc, &free, chunks);
 	if(okay)
 	{
-		return resourceCache.lookup(base_.id);
+		return resourceCache.lookup(base_.index);
 	} else
 	{
 		return {};
 	}
 
 }
+
+auto ResourceMan::resolveLink(ResourceHandleBase& link_, ResourceNameView const& current_) -> void
+{
+	ResourceNameView nameView(std::string_view(link_.linkName, link_.linkNameLength));
+	if(nameView.isNull())
+	{
+		link_.index = ResourceHandleBase::InvalidIndex;
+		link_.managerIndex = 0;
+		link_.generation = 0;
+		return;
+	}
+
+	uint64_t index = 0;
+	if(nameView.isCurrentLink())
+	{
+		ResourceName name(current_.getStorage(), current_.getName(), nameView.getSubObject());
+		index = getIndexFromName(link_.type, name.getView());
+	} else
+	{
+		index = getIndexFromName(link_.type, nameView);
+	}
+
+	link_.index = index;
+	link_.managerIndex = managerIndex;
+	link_.generation = indexToBase.at(index).generation;
+}
+
 
 } // end namespace

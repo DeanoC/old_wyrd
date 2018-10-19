@@ -1,14 +1,15 @@
 #include "core/core.h"
 #include "resourcemanager/resourceman.h"
 #include "resourcemanager/textresource.h"
-#include "binny/writehelper.h"
+#include "resourcemanager/writer.h"
 
 namespace ResourceManager {
 auto TextResource::RegisterResourceHandler( ResourceManager::ResourceMan& rm_ ) -> void
 {
 	rm_.registerResourceHandler( TextResource::Id,
 		{ 0,
-			[]( int stage_, uint16_t majorVersion_, uint16_t minorVersion_, ResourceBase::Ptr ptr_ ) -> bool
+			[]( int stage_, ResourceManager::ResolverInterface,
+					uint16_t majorVersion_, uint16_t minorVersion_, ResourceBase::Ptr ptr_ ) -> bool
 			{
 				if(majorVersion_ != 0) return false;
 				if(minorVersion_ != 0) return false;
@@ -25,9 +26,9 @@ auto TextResource::RegisterResourceHandler( ResourceManager::ResourceMan& rm_ ) 
 			saver_.setMajorVersion( MajorVersion );
 			saver_.setMinorVersion( MinorVersion );
 			saver_.setWriterFunction(
-					[textResource](Binny::WriteHelper& h)
+					[textResource](Writer& w_)
 					{
-						h.add_string(textResource->getText());
+						w_.add_string(textResource->getText());
 					});
 			return true;
 		}

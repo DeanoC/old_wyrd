@@ -1,6 +1,6 @@
 #pragma once
-#ifndef WYRD_RESOURCEMAN_BASE_H
-#define WYRD_RESOURCEMAN_BASE_H
+#ifndef WYRD_RESOURCEMANANAGER_BASE_H
+#define WYRD_RESOURCEMANANAGER_BASE_H
 
 #include "core/core.h"
 #include "tbb/concurrent_hash_map.h"
@@ -78,21 +78,32 @@ protected:
 // a resource handle is an opaque handle linked to a particular resource
 
 // the base class holds the basic elements for the typed handles that are actually used
+// the linkXXX unions are whats stored on disk and resolved by the resource manager
 struct ResourceHandleBase
 {
 
 	friend class ResourceMan;
 	template<uint32_t id_> friend class ResourceHandle;
+	static constexpr uint64_t InvalidIndex = ~0;
 
-	uint64_t id;
+	union
+	{
+		uint64_t index = InvalidIndex;
+		char const* linkName;
+	};
 	uint32_t type;
-	uint16_t managerIndex;
+	union
+	{
+		uint16_t managerIndex;
+		uint16_t linkNameLength;
+	};
 	uint16_t generation;
 
 protected:
 	auto acquire() -> ResourceBase::Ptr;
 	auto tryAcquire() -> ResourceBase::Ptr;
 };
+static_assert(sizeof(ResourceHandleBase)== 16);
 
 template<uint32_t id_>
 class ResourceHandle
@@ -119,11 +130,9 @@ public:
 		return std::static_pointer_cast<T>(base.tryAcquire());
 	}
 
-protected:
 	explicit ResourceHandle(ResourceHandleBase base_) : base(base_) {}
 	ResourceHandleBase base;
 };
-
 
 
 } // end namespace

@@ -269,8 +269,9 @@ void WriteHelper::set_string_table_base(std::string const& label)
 	stringTableBase = label;
 }
 
-void WriteHelper::add_string(std::string const& str)
+void WriteHelper::add_string(std::string_view str_)
 {
+	std::string str = std::string(str_);
 	std::string stringLabel = add_string_to_table(str);
 	use_label(stringLabel, stringTableBase, false, true, str);
 }

@@ -1,6 +1,6 @@
 #pragma once
-#ifndef WYRD_RESOURCEMAN_RESOURCEMAN_H
-#define WYRD_RESOURCEMAN_RESOURCEMAN_H
+#ifndef WYRD_RESOURCEMANANAGER_RESOURCEMAN_H
+#define WYRD_RESOURCEMANANAGER_RESOURCEMAN_H
 
 #include "core/core.h"
 #include "binny/bundle.h"
@@ -15,12 +15,10 @@
 #include <unordered_map>
 #include <functional>
 
-namespace Binny
-{
-class WriteHelper;
-}
 
 namespace ResourceManager {
+class ResourceMan;
+class Writer;
 
 struct ISaver
 {
@@ -30,10 +28,12 @@ struct ISaver
 	virtual auto setMajorVersion(uint16_t majorVersion_) -> void = 0;
 	virtual auto setMinorVersion(uint16_t minorVersion_) -> void = 0;
 	virtual auto addDependency(uint32_t dependency_) -> void = 0;
-	virtual auto setWriterFunction(std::function<void( Binny::WriteHelper& helper )>) -> void = 0;
+	virtual auto setWriterFunction(std::function<void( Writer& writer_ )>) -> void = 0;
 };
-
-using HandlerInit = std::function<bool(int stage_, uint16_t majorVersion_, uint16_t minorVersion_, ResourceBase::Ptr ptr_ )>;
+using ResolveGetResourceMan = std::function<ResourceMan*()>;
+using ResolveLinkFunc = std::function<void(ResourceHandleBase&)>;
+using ResolverInterface = std::tuple<ResolveGetResourceMan, ResolveLinkFunc>;
+using HandlerInit = std::function<bool(int stage_, ResolverInterface resolver_, uint16_t majorVersion_, uint16_t minorVersion_, ResourceBase::Ptr ptr_ )>;
 using HandlerDestroy = std::function<bool(int stage_, void* ptr_)>;
 
 using HasResourceChangedFunc = std::function<bool(ResourceBase::ConstPtr ptr_)>;
@@ -53,6 +53,8 @@ public:
 
 	static auto GetFromIndex( uint32_t index ) -> std::shared_ptr<ResourceMan>;
 
+	static auto GetNameFromHandleBase( ResourceHandleBase const& base_ ) -> ResourceNameView;
+
 	~ResourceMan();
 
 	auto registerStorageHandler( IStorage::Ptr storage_ ) -> void;
@@ -68,7 +70,7 @@ public:
 	template<uint32_t type_>
 	auto openResourceById( uint64_t const id_ ) -> ResourceHandle<type_>
 	{
-		auto resourceHandleBase = idToBase[id_];
+		auto resourceHandleBase = indexToBase[id_];
 		assert( type_ == resourceHandleBase.type );
 		return ResourceHandle<type_>( resourceHandleBase );
 	}
@@ -76,16 +78,16 @@ public:
 	template<uint32_t type_>
 	auto openResourceByName( ResourceNameView const name_ ) -> ResourceHandle<type_>
 	{
-		uint64_t id = getIdFromName( type_, name_ );
+		uint64_t id = getIndexFromName(type_, name_);
 		return openResourceById<type_>( id );
 	}
 
-	auto getIdFromName( uint32_t type_, ResourceNameView const name_ ) -> uint64_t;
+	auto getIndexFromName(uint32_t type_, ResourceNameView const name_) -> uint64_t;
+
 
 protected:
 	ResourceMan();
 
-	auto getNameFromHandleBase( ResourceHandleBase const& base_ ) -> std::string_view;
 
 	auto openBaseResourceByTypeAndName( uint32_t type_, ResourceNameView const name_ ) -> ResourceHandleBase&;
 
@@ -93,11 +95,12 @@ protected:
 
 	auto tryAcquire( ResourceHandleBase const& base_ ) -> ResourceBase::Ptr;
 
-	using PrefixToStorage = std::unordered_map<std::string_view, IStorage::Ptr>;
+	auto resolveLink(ResourceHandleBase& link_, ResourceNameView const& current_) -> void;
 
-	using ResourceNameToId = tbb::concurrent_unordered_map<ResourceNameView, uint64_t>;
-	using IdToResourceName = tbb::concurrent_unordered_map<uint64_t, ResourceName>;
-	using IdToBase = Core::MTFreeList<ResourceHandleBase, uint64_t>;
+	using PrefixToStorage = std::unordered_map<std::string_view, IStorage::Ptr>;
+	using ResourceNameToIndex = tbb::concurrent_unordered_map<ResourceNameView, uint64_t>;
+	using IndexToResourceName = tbb::concurrent_unordered_map<uint64_t, ResourceName>;
+	using IndexToBase = Core::MTFreeList<ResourceHandleBase, uint64_t>;
 	using TypeToHandler = tbb::concurrent_unordered_map<uint32_t, std::array<ResourceHandler,MaxHandlerStages>>;
 	using TypeToSavers = tbb::concurrent_unordered_map<uint32_t, std::pair<HasResourceChangedFunc,SaveResourceFunc>>;
 	using ChunkHandlers = std::vector<IStorage::ChunkHandler>;
@@ -106,16 +109,16 @@ protected:
 	TypeToHandler typeToHandler;
 	TypeToSavers typeToSavers;
 
-	IdToResourceName idToResourceName;
-	ResourceNameToId nameToResourceId;
-	IdToBase idToBase;
+	IndexToResourceName indexToResourceName;
+	ResourceNameToIndex nameToResourceIndex;
+	IndexToBase indexToBase;
 	ResourceCache resourceCache;
 
 	std::mutex nameCacheLock;
 
-	uint16_t myIndex;
+	uint16_t managerIndex;
 
-	static std::string const DeletedString;
+	static std::string_view const DeletedString;
 };
 
 } // end namespace

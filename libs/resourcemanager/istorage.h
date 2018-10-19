@@ -1,6 +1,6 @@
 #pragma once
-#ifndef WYRD_RESOURCEMAN_STORAGE_H
-#define WYRD_RESOURCEMAN_STORAGE_H
+#ifndef WYRD_RESOURCEMANANAGER_STORAGE_H
+#define WYRD_RESOURCEMANANAGER_STORAGE_H
 
 #include <string_view>
 #include <iostream>

@@ -1,6 +1,6 @@
 #pragma once
-#ifndef WYRD_RESOURCEMAN_DISKSTORAGE_H
-#define WYRD_RESOURCEMAN_DISKSTORAGE_H
+#ifndef WYRD_RESOURCEMANANAGER_DISKSTORAGE_H
+#define WYRD_RESOURCEMANANAGER_DISKSTORAGE_H
 
 #include "core/core.h"
 #include <string_view>

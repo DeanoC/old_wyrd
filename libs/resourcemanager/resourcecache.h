@@ -1,6 +1,6 @@
 #pragma once
-#ifndef WYRD_RESOURCEMAN_RESOURCECACHE_H
-#define WYRD_RESOURCEMAN_RESOURCECACHE_H
+#ifndef WYRD_RESOURCEMANANAGER_RESOURCECACHE_H
+#define WYRD_RESOURCEMANANAGER_RESOURCECACHE_H
 
 #include "core/core.h"
 #include "core/freelist.h"
