@@ -114,7 +114,7 @@ set( RENDER_SRC
 		render/image_fetch.inl
 		render/image_put.inl
 		render/image.h
-		render/resourcehandlers.cpp render/resourcehandlers.h render/queue.cpp render/queue.h)
+		render/resourcehandlers.cpp render/resourcehandlers.h render/commandqueue.cpp render/commandqueue.h)
 
 set( MATH_SRC
 		math/vector_math.cpp
@@ -167,7 +167,7 @@ set( VULKAN_SRC
 		vulkan/functionlist.inl
 		vulkan/api.cpp
 		vulkan/api.h
-		vulkan/display.h vulkan/device.cpp vulkan/device.h vulkan/vk_mem_alloc.h vulkan/vk_mem_alloc.cpp vulkan/texture.cpp vulkan/texture.h vulkan/image.cpp vulkan/image.h vulkan/display.cpp vulkan/queue.cpp vulkan/queue.h)
+		vulkan/display.h vulkan/device.cpp vulkan/device.h vulkan/vk_mem_alloc.h vulkan/vk_mem_alloc.cpp vulkan/texture.cpp vulkan/texture.h vulkan/image.cpp vulkan/image.h vulkan/display.cpp vulkan/commandqueue.cpp vulkan/commandqueue.h)
 
 #-----------
 set(wryd_srcs

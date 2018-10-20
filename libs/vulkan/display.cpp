@@ -103,7 +103,7 @@ auto Display::present() -> bool
 			&imageIndex,
 			nullptr
 	};
-	auto pq = std::static_pointer_cast<Vulkan::Queue>(device->getMainPresentQueue());
+	auto pq = std::static_pointer_cast<Vulkan::CommandQueue>(device->getMainPresentQueue());
 	CHKED(device->_vkQueuePresentKHR(pq->getQueue(), &presentInfo));
 
 	return !glfwWindowShouldClose(window);

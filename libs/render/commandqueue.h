@@ -1,6 +1,6 @@
 #pragma once
-#ifndef WYRD_RENDER_QUEUE_H
-#define WYRD_RENDER_QUEUE_H
+#ifndef WYRD_RENDER_COMMANDQUEUE_H
+#define WYRD_RENDER_COMMANDQUEUE_H
 
 #include "core/core.h"
 #include "core/utils.h"
@@ -8,7 +8,7 @@
 namespace Render {
 class Display;
 
-class Queue
+class CommandQueue
 {
 public:
 	static constexpr uint32_t RenderFlavour = Core::Bit(0);
@@ -16,8 +16,8 @@ public:
 	static constexpr uint32_t BlitFlavour = Core::Bit(2);
 	static constexpr uint32_t PresentFlavour = Core::Bit(3);
 
-	using Ptr = std::shared_ptr<Queue>;
-	using WeakPtr = std::weak_ptr<Queue>;
+	using Ptr = std::shared_ptr<CommandQueue>;
+	using WeakPtr = std::weak_ptr<CommandQueue>;
 
 	auto isRenderFlavour() const -> bool { return flavour & RenderFlavour; }
 	auto isComputeFlavour() const -> bool { return flavour & ComputeFlavour; }
@@ -26,11 +26,11 @@ public:
 	auto getFlavour() const -> uint32_t { return flavour; }
 
 protected:
-	Queue(uint32_t flavour_) : flavour(flavour_) {}
-	virtual ~Queue() = default;
+	CommandQueue(uint32_t flavour_) : flavour(flavour_) {}
+	virtual ~CommandQueue() = default;
 	uint32_t const flavour = 0;
 };
 
 }
 
-#endif //WYRD_QUEUE_H
+#endif //WYRD_RENDER_COMMANDQUEUE_H

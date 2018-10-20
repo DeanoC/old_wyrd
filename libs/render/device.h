@@ -7,7 +7,7 @@
 
 namespace Render
 {
-class Queue;
+class CommandQueue;
 
 //opaque type
 using Semaphore = struct Semaphore_t *;
@@ -20,10 +20,10 @@ struct Device
 	virtual auto createSemaphore() -> Semaphore = 0;
 	virtual auto destroySemaphore(Semaphore semaphore_) -> void = 0;
 
-	virtual auto getMainRenderQueue() -> std::shared_ptr<Queue> = 0;
-	virtual auto getMainComputeQueue() -> std::shared_ptr<Queue> = 0;
-	virtual auto getMainBlitQueue() -> std::shared_ptr<Queue> = 0;
-	virtual auto getMainPresentQueue() -> std::shared_ptr<Queue> = 0;
+	virtual auto getMainRenderQueue() -> std::shared_ptr<CommandQueue> = 0;
+	virtual auto getMainComputeQueue() -> std::shared_ptr<CommandQueue> = 0;
+	virtual auto getMainBlitQueue() -> std::shared_ptr<CommandQueue> = 0;
+	virtual auto getMainPresentQueue() -> std::shared_ptr<CommandQueue> = 0;
 };
 
 }

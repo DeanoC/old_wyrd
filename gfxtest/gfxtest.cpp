@@ -42,10 +42,11 @@ int Main(Shell::ShellInterface& shell_)
 
 	auto display = device->getDisplay();
 
-	while(true)
+	do
 	{
-		display->present();
+
 	}
+	while(display->present());
 
 	return 0;
 }

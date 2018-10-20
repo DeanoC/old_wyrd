@@ -6,7 +6,7 @@
 #include "render/device.h"
 #include "vulkan/api.h"
 #include "vulkan/vk_mem_alloc.h"
-#include "vulkan/queue.h"
+#include "vulkan/commandqueue.h"
 #include <vector>
 
 namespace Vulkan {
@@ -40,10 +40,10 @@ public:
 	auto getDisplay() const -> std::shared_ptr<Render::Display> final;
 	auto createSemaphore() -> Render::Semaphore final;
 	auto destroySemaphore(Render::Semaphore semaphore_) -> void final;
-	virtual auto getMainRenderQueue() -> Render::Queue::Ptr final;
-	virtual auto getMainComputeQueue() ->Render::Queue::Ptr final;
-	virtual auto getMainBlitQueue() -> Render::Queue::Ptr final;
-	virtual auto getMainPresentQueue() -> Render::Queue::Ptr final;
+	virtual auto getMainRenderQueue() -> Render::CommandQueue::Ptr final;
+	virtual auto getMainComputeQueue() ->Render::CommandQueue::Ptr final;
+	virtual auto getMainBlitQueue() -> Render::CommandQueue::Ptr final;
+	virtual auto getMainPresentQueue() -> Render::CommandQueue::Ptr final;
 
 	auto getPhysicalDevice() const -> VkPhysicalDevice { return physicalDevice; }
 
@@ -73,11 +73,11 @@ private:
 
 	VkPhysicalDevice physicalDevice;
 	VkDevice device;
-	std::vector<Queue::Ptr> queues;
-	Queue::WeakPtr mainPresentQueue;
-	Queue::WeakPtr mainRenderQueue;
-	Queue::WeakPtr mainComputeQueue;
-	Queue::WeakPtr mainBlitQueue;
+	std::vector<CommandQueue::Ptr> queues;
+	CommandQueue::WeakPtr mainPresentQueue;
+	CommandQueue::WeakPtr mainRenderQueue;
+	CommandQueue::WeakPtr mainComputeQueue;
+	CommandQueue::WeakPtr mainBlitQueue;
 
 	VmaVulkanFunctions vmaVulkanFunctions;
 	VmaAllocator allocator;

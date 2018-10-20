@@ -3,7 +3,7 @@
 #include "core/core.h"
 #include "vulkan/device.h"
 #include "vulkan/display.h"
-#include "vulkan/queue.h"
+#include "vulkan/commandqueue.h"
 
 namespace Vulkan
 {
@@ -66,14 +66,14 @@ Device::Device(
 	for(auto i = 0u; i < createInfo_.queueCreateInfoCount; ++i)
 	{
 		uint32_t flavour = 0;
-		flavour |= queueFamilies_[i].queueFlags & VK_QUEUE_GRAPHICS_BIT ? Render::Queue::RenderFlavour : 0;
-		flavour |= queueFamilies_[i].queueFlags & VK_QUEUE_COMPUTE_BIT ? Render::Queue::ComputeFlavour : 0;
-		flavour |= queueFamilies_[i].queueFlags & VK_QUEUE_TRANSFER_BIT ? Render::Queue::BlitFlavour : 0;
-		flavour |= i == presentQ_ ? Render::Queue::PresentFlavour : 0;
+		flavour |= queueFamilies_[i].queueFlags & VK_QUEUE_GRAPHICS_BIT ? Render::CommandQueue::RenderFlavour : 0;
+		flavour |= queueFamilies_[i].queueFlags & VK_QUEUE_COMPUTE_BIT ? Render::CommandQueue::ComputeFlavour : 0;
+		flavour |= queueFamilies_[i].queueFlags & VK_QUEUE_TRANSFER_BIT ? Render::CommandQueue::BlitFlavour : 0;
+		flavour |= i == presentQ_ ? Render::CommandQueue::PresentFlavour : 0;
 
 		VkQueue q;
 		vkGetDeviceQueue(i, 0, &q);
-		auto que = queues.emplace_back(std::make_shared<Queue>(q, flavour));
+		auto que = queues.emplace_back(std::make_shared<CommandQueue>(q, flavour));
 		if(que->isPresentFlavour() && mainPresentQueue.expired()) mainPresentQueue = que;
 		if(que->isRenderFlavour() && mainRenderQueue.expired()) mainRenderQueue = que;
 		if(que->isComputeFlavour() && mainComputeQueue.expired()) mainComputeQueue = que;
@@ -142,22 +142,22 @@ auto Device::destroySemaphore(VkSemaphore semaphore_) -> void {
 	vkDestroySemaphore(semaphore_, nullptr);
 }
 
-auto Device::getMainRenderQueue() -> Render::Queue::Ptr
+auto Device::getMainRenderQueue() -> Render::CommandQueue::Ptr
 {
-	return std::static_pointer_cast<Render::Queue>(mainRenderQueue.lock());
+	return std::static_pointer_cast<Render::CommandQueue>(mainRenderQueue.lock());
 }
-auto Device::getMainComputeQueue() ->Render::Queue::Ptr
+auto Device::getMainComputeQueue() ->Render::CommandQueue::Ptr
 {
-	return std::static_pointer_cast<Render::Queue>(mainComputeQueue.lock());
+	return std::static_pointer_cast<Render::CommandQueue>(mainComputeQueue.lock());
 
 }
-auto Device::getMainBlitQueue() -> Render::Queue::Ptr
+auto Device::getMainBlitQueue() -> Render::CommandQueue::Ptr
 {
-	return std::static_pointer_cast<Render::Queue>(mainBlitQueue.lock());
+	return std::static_pointer_cast<Render::CommandQueue>(mainBlitQueue.lock());
 }
-auto Device::getMainPresentQueue() -> Render::Queue::Ptr
+auto Device::getMainPresentQueue() -> Render::CommandQueue::Ptr
 {
-	return std::static_pointer_cast<Render::Queue>(mainPresentQueue.lock());
+	return std::static_pointer_cast<Render::CommandQueue>(mainPresentQueue.lock());
 }
 
 
