@@ -110,7 +110,6 @@ CALL constexpr T Min(const T a, const T b) { return (a < b) ? a : b; }
 template<typename T>
 CALL constexpr T 	Clamp(const T a, const T mi, const T ma) { return Max(mi, Min(a, ma)); }
 
-#if PLATFORM_OS != MS_WINDOWS
 constexpr uint8_t s_LogTable256[] = {0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
 									 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
 									 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
@@ -121,7 +120,6 @@ constexpr uint8_t s_LogTable256[] = {0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3
 									 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
 									 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
 									 7, 7, 7, 7};
-#endif
 
 
 /// \brief	return Log2 of v.
@@ -131,14 +129,6 @@ constexpr uint8_t s_LogTable256[] = {0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3
 /// \return	log2(v).
 CALL constexpr unsigned int log2(unsigned int v)
 {
-	// TODO use an intrinsic so hw version portable to mac and linux at least
-#if PLATFORM_OS == MS_WINDOWS
-	unsigned long log2 = 0;
-
-	_BitScanReverse( &log2, v );
-
-	return unsigned int( log2 );
-#else
 	unsigned int r = 0;     // r will be lg(v)
 	unsigned int t = 0, tt = 0; // temporaries
 
@@ -150,7 +140,6 @@ CALL constexpr unsigned int log2(unsigned int v)
 		r = ((t = v >> 8) != 0) ? 8 + ((unsigned int) s_LogTable256[t]) : ((unsigned int) s_LogTable256[v]);
 	}
 	return r;
-#endif
 }
 
 // From Chunk Walbourns code from DirectXTexConvert.cpp
@@ -301,7 +290,7 @@ static uint16_t float2half(float f_)
 	FP32 f;
 	f.f = f_;
 
-	uint sign = f.u & sign_mask;
+	uint32_t sign = f.u & sign_mask;
 	f.u ^= sign;
 
 	// NOTE all the integer compares in this function can be safely
@@ -367,13 +356,13 @@ static float half2float(uint16_t h_)
 	};
 
 	static const FP32 magic = { 113 << 23 };
-	static const uint shifted_exp = 0x7c00 << 13; // exponent mask after shift
+	static const uint32_t shifted_exp = 0x7c00 << 13; // exponent mask after shift
 	FP16 h;
 	h.u = h_;
 	FP32 o;
 
 	o.u = (h.u & 0x7fff) << 13;     // exponent/mantissa bits
-	uint exp = shifted_exp & o.u;   // just the exponent
+	uint32_t exp = shifted_exp & o.u;   // just the exponent
 	o.u += (127 - 15) << 23;        // exponent adjust
 
 	// handle exponent special cases

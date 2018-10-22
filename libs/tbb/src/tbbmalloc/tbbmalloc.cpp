@@ -17,7 +17,7 @@
 
 
 */
-
+#define _HAS_STD_BYTE 0
 #include "TypeDefinitions.h" // Customize.h and proxy.h get included
 #include "tbbmalloc_internal_api.h"
 

@@ -20,7 +20,7 @@
 
 // Source file for miscellaneous entities that are infrequently referenced by
 // an executing program.
-
+#define _HAS_STD_BYTE 0
 #include "tbb/tbb_stddef.h"
 #include "tbb_assert_impl.h" // Out-of-line TBB assertion handling routines are instantiated here.
 #include "tbb/tbb_exception.h"

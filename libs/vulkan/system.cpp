@@ -258,7 +258,7 @@ auto System::createGpuDevice(uint32_t index_, Render::DeviceConfig const& config
 		extensions.push_back(s.c_str());
 	}
 
-	VkSurfaceKHR surface = nullptr;
+	VkSurfaceKHR surface = VK_NULL_HANDLE;
 	GLFWwindow* window = nullptr;
 	if(config_.presentable)
 	{
@@ -276,7 +276,7 @@ auto System::createGpuDevice(uint32_t index_, Render::DeviceConfig const& config
 			extensions);
 	if(!device) return {};
 
-	if(surface != nullptr)
+	if(surface != VK_NULL_HANDLE)
 	{
 		auto display = activeDisplays.emplace_back(
 				std::make_shared<Vulkan::Display>(
@@ -319,12 +319,13 @@ auto System::createGpuDevice(	uint32_t deviceIndex_,
 		if(i > 1 && qs[i-2] == q) continue;
 
 		queueCreateInfos[queueCount].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfos[queueCount].pNext = nullptr;
 		queueCreateInfos[queueCount].queueFamilyIndex = qs[i];
 		queueCreateInfos[queueCount].queueCount = minQueues_;
 		queueCreateInfos[queueCount].pQueuePriorities = queuePriority.data();
 		queueCount++;
 
-		if(surface_ != nullptr && presentQ == ~0 )
+		if(surface_ != VK_NULL_HANDLE && presentQ == ~0 )
 		{
 			VkBool32 presentSupport = false;
 			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevices[deviceIndex_], qs[i], surface_, &presentSupport);

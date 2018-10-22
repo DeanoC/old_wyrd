@@ -1,5 +1,6 @@
 
 
+#include <algorithm>
 #include "core/core.h"
 #include "vulkan/device.h"
 #include "vulkan/display.h"
@@ -39,10 +40,11 @@ auto Display::createSwapChain() -> void
 		imageCount = capabilities.maxImageCount;
 	}
 
-	createInfo.pQueueFamilyIndices = nullptr;
-	createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	createInfo.pNext = nullptr;
+	createInfo.pQueueFamilyIndices = nullptr;
+	createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	createInfo.surface = surface;
 	createInfo.minImageCount = imageCount;
 	createInfo.imageFormat = swapFormat.format;
@@ -54,7 +56,7 @@ auto Display::createSwapChain() -> void
 	createInfo.presentMode = chooseSwapPresentMode();
 	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 	createInfo.clipped = VK_TRUE;
-	createInfo.oldSwapchain = nullptr;
+	createInfo.oldSwapchain = VK_NULL_HANDLE;
 	swapchainKHR = device->createSwapchain(createInfo);
 
 	uint32_t swapchainImageCount = 0;
@@ -74,10 +76,11 @@ auto Display::present() -> bool
 
 	uint32_t imageIndex = ~0;
 
+	VkFence nullFence = VK_NULL_HANDLE;
 	VkResult result = device->vkAcquireNextImageKHR(
 			swapchainKHR,
 			PresentTimeOut,
-			imageAvailable, nullptr, &imageIndex);
+			imageAvailable, nullFence, &imageIndex);
 
 	switch( result )
 	{
@@ -90,9 +93,7 @@ auto Display::present() -> bool
 			return false;
 	}
 
-	VkSemaphore presentSemaphores[]{
-		reinterpret_cast<VkSemaphore>(presentComplete)
-	};
+	VkSemaphore presentSemaphores[]{ presentComplete };
 	VkPresentInfoKHR presentInfo = {
 			VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 			nullptr,

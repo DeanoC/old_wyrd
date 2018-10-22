@@ -9,6 +9,7 @@ namespace Vulkan
 auto Image::pixelAt( 	unsigned int x_, unsigned int y_,
 			  			unsigned int z_, unsigned int slice_ ) const -> Pixel
 {
+	return {};
 /*	case GenericTextureFormat::A2R10G10B10_SNORM_PACK32:
 		if(channel_ == Channel::A)
 			return fetchChannel_A2R10G10B10_UNORM( swizzle( ARGB, channel_ ), ptr_ );
