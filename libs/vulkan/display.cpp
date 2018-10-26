@@ -1,9 +1,8 @@
-
-
-#include <algorithm>
 #include "core/core.h"
 #include "vulkan/device.h"
 #include "vulkan/display.h"
+#include "vulkan/commandqueue.h"
+#include <algorithm>
 
 namespace Vulkan {
 constexpr auto PresentTimeOut = 2000000000;
@@ -105,7 +104,7 @@ auto Display::present() -> bool
 			nullptr
 	};
 	auto pq = std::static_pointer_cast<Vulkan::CommandQueue>(device->getMainPresentQueue());
-	CHKED(device->_vkQueuePresentKHR(pq->getQueue(), &presentInfo));
+	pq->vkQueuePresentKHR(&presentInfo);
 
 	return !glfwWindowShouldClose(window);
 }

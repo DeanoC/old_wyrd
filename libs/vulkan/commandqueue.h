@@ -14,18 +14,33 @@ class Display;
 class CommandQueue : public Render::CommandQueue
 {
 public:
-	CommandQueue(VkQueue queue_, uint32_t flavour_);
+	CommandQueue(QueueVkVTable *vtable_, VkQueue queue_, uint32_t familyIndex_, uint32_t flavour_);
 
 	friend class System;
 	friend class Device;
+
+	friend class Display;
+
 	using Ptr = std::shared_ptr<CommandQueue>;
 	using WeakPtr = std::weak_ptr<CommandQueue>;
 
 	auto getQueue() -> VkQueue { return queue; };
 
-protected:
+	auto getFamilyIndex() const -> uint32_t { return familyIndex; }
 
+	auto submit(std::shared_ptr<Render::Encoder> const& encoder_) -> void final;
+
+protected:
+#define QUEUE_VK_FUNC(name) \
+    template<typename... Args> auto name(Args... args) { return vtable-> name(queue, args...); }
+#define QUEUE_VK_FUNC_EXT(name, extension) \
+    template<typename... Args> auto name(Args... args) { return vtable-> name(queue, args...); }
+
+#include "functionlist.inl"
+
+	QueueVkVTable *vtable;
 	VkQueue queue;
+	uint32_t familyIndex;
 };
 
 }

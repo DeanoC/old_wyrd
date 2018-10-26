@@ -8,6 +8,8 @@
 namespace Render {
 class Display;
 
+class Encoder;
+
 class CommandQueue
 {
 public:
@@ -24,6 +26,8 @@ public:
 	auto isBlitFlavour() const -> bool { return flavour & BlitFlavour; }
 	auto isPresentFlavour() const -> bool { return flavour &PresentFlavour; }
 	auto getFlavour() const -> uint32_t { return flavour; }
+
+	virtual auto submit(std::shared_ptr<Encoder> const& encoder_) -> void = 0;
 
 protected:
 	CommandQueue(uint32_t flavour_) : flavour(flavour_) {}
