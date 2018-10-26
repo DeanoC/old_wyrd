@@ -16,7 +16,13 @@ auto CommandQueue::submit(std::shared_ptr<Render::Encoder> const& encoder_) -> v
 	auto encoder = std::static_pointer_cast<Vulkan::Encoder>(encoder_);
 
 	//	vkQueueSubmit(encoder->commandBuffer);
+
+	assert(false);
 }
 
+auto CommandQueue::stallTillIdle() -> void
+{
+	vkQueueWaitIdle();
+}
 
 }

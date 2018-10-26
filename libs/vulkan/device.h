@@ -76,16 +76,64 @@ public:
 private:
 
 	DeviceVkVTable deviceVkVTable;
+
+	//--
+	// functions also in device table
+	FenceVkVTable fenceVkVTable;
+	SemaphoreVkVTable semaphoreVkVTable;
+	EventVkVTable eventVkVTable;
+	QueryPoolVkVTable queryPoolVkVTable;
+	BufferVkVTable bufferVkVTable;
+	BufferViewVkVTable bufferViewVkVTable;
+	ImageVkVTable imageVkVTable;
+	ImageViewVkVTable imageViewVkVTable;
+	ShaderModuleVkVTable shaderModuleVkVTable;
+	PipelineVkVTable pipelineVkVTable;
+	SamplerVkVTable samplerVkVTable;
+	DescriptorSetVkVTable descriptorSetVkVTable;
+	FramebufferVkVTable framebufferVkVTable;
+	RenderPassVkVTable renderPassVkVTable;
+	CommandPoolVkVTable commandPoolVkVTable;
+
+	//--
 	QueueVkVTable queueVkVTable;
 
 	GraphicsCBVkVTable graphicsCBVkVTable;
 	ComputeCBVkVTable computeCBVkVTable;
 	TransferCBVkVTable transferCBVkVTable;
-#define DEVICE_VK_FUNC( name ) \
-    template<typename... Args> auto name(Args... args) { return deviceVkVTable. name(device, args...); }
-#define DEVICE_VK_FUNC_EXT( name, extension ) \
-    template<typename... Args> auto name(Args... args) { return deviceVkVTable. name(device, args...); }
 
+#define DEVICE_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return deviceVkVTable. name(device, args...); }
+#define DEVICE_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
+#define FENCE_VK_FUNC(name) DEVICE_VK_FUNC(name)
+#define FENCE_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
+#define SEMAPHORE_VK_FUNC(name) DEVICE_VK_FUNC(name)
+#define SEMAPHORE_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
+#define EVENT_VK_FUNC(name) DEVICE_VK_FUNC(name)
+#define EVENT_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
+#define QUERYPOOL_VK_FUNC(name) DEVICE_VK_FUNC(name)
+#define QUERYPOOL_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
+#define BUFFER_VK_FUNC(name) DEVICE_VK_FUNC(name)
+#define BUFFER_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
+#define BUFFERVIEW_VK_FUNC(name) DEVICE_VK_FUNC(name)
+#define BUFFERVIEW_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
+#define IMAGE_VK_FUNC(name) DEVICE_VK_FUNC(name)
+#define IMAGE_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
+#define IMAGEVIEW_VK_FUNC(name) DEVICE_VK_FUNC(name)
+#define IMAGEVIEW_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
+#define SHADERMODULE_VK_FUNC(name) DEVICE_VK_FUNC(name)
+#define SHADERMODULE_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
+#define PIPELINE_VK_FUNC(name) DEVICE_VK_FUNC(name)
+#define PIPELINE_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
+#define SAMPLER_VK_FUNC(name) DEVICE_VK_FUNC(name)
+#define SAMPLER_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
+#define DESCRIPTORSET_VK_FUNC(name) DEVICE_VK_FUNC(name)
+#define DESCRIPTORSET_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
+#define FRAMEBUFFER_VK_FUNC(name) DEVICE_VK_FUNC(name)
+#define FRAMEBUFFER_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
+#define RENDERPASS_VK_FUNC(name) DEVICE_VK_FUNC(name)
+#define RENDERPASS_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
+#define COMMANDPOOL_VK_FUNC(name) DEVICE_VK_FUNC(name)
+#define COMMANDPOOL_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
 #include "functionlist.inl"
 
 	std::shared_ptr<Display> display; // can be null for headless

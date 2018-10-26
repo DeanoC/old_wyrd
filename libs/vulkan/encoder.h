@@ -44,9 +44,10 @@ struct BlitEncoder : public Render::IBlitEncoder
 
 struct Encoder : public Render::Encoder
 {
-	Encoder(EncoderPool& owner_, VkCommandBuffer commandBuffer_, GraphicsCBVkVTable *graphicsVTable_,
-			ComputeCBVkVTable *computeVTable_, TransferCBVkVTable *transferVTable_);
-	~Encoder() override = default;
+	Encoder(EncoderPool& owner_, uint32_t encodeFlags_, VkCommandBuffer commandBuffer_,
+			GraphicsCBVkVTable *graphicsVTable_, ComputeCBVkVTable *computeVTable_,
+			TransferCBVkVTable *transferVTable_);
+	~Encoder() override;
 
 	Render::IRenderEncoder *asRenderEncoder() final
 	{
@@ -75,8 +76,17 @@ struct Encoder : public Render::Encoder
 		} else return nullptr;
 	}
 
+	auto reset() -> void final;
+
+#define GENERAL_CB_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(commandBuffer, args...); }
+#define GENERAL_CB_VK_FUNC_EXT(name, extension) GENERAL_CB_VK_FUNC(name)
+
+#include "functionlist.inl"
+
 	EncoderPool& owner;
 	VkCommandBuffer commandBuffer;
+	GeneralCBVkVTable *vtable;
+
 	RenderEncoder renderEncoder;
 	ComputeEncoder computeEncoder;
 	BlitEncoder blitEncoder;
@@ -84,11 +94,18 @@ struct Encoder : public Render::Encoder
 
 struct EncoderPool : public Render::EncoderPool
 {
-	EncoderPool(VkDevice device_, VkCommandPool commandPool_, DeviceVkVTable *deviceCBCTable_,
+	EncoderPool(VkDevice device_, VkCommandPool commandPool_, CommandPoolVkVTable *commandPoolVTable_,
 				GraphicsCBVkVTable *graphicsCBVTable_, ComputeCBVkVTable *computeCBVTable_,
 				TransferCBVkVTable *transferCBVTable_);
 
-	auto allocatePrimaryEncoder(uint32_t encoderFlags_) -> Render::Encoder::Ptr final;
+	auto allocateEncoder(uint32_t encoderFlags_) -> Render::Encoder::Ptr final;
+	auto reset() -> void final;
+	auto destroyEncoder(Vulkan::Encoder *encoder_) -> void;
+
+#define COMMANDPOOL_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable->name(device, commandPool, args...); }
+#define COMMANDPOOL_VK_FUNC_EXT(name, extension) COMMANDPOOL_VK_FUNC(name)
+
+#include "functionlist.inl"
 
 	VkDevice device;
 	VkCommandPool commandPool;
@@ -96,7 +113,7 @@ struct EncoderPool : public Render::EncoderPool
 	GraphicsCBVkVTable *graphicsCBVTable;
 	ComputeCBVkVTable *computeCBVTable;
 	TransferCBVkVTable *transferCBVTable;
-	DeviceVkVTable *deviceVkVTable;
+	CommandPoolVkVTable *vtable;
 
 };
 

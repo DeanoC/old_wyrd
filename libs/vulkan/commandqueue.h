@@ -30,12 +30,11 @@ public:
 
 	auto submit(std::shared_ptr<Render::Encoder> const& encoder_) -> void final;
 
-protected:
-#define QUEUE_VK_FUNC(name) \
-    template<typename... Args> auto name(Args... args) { return vtable-> name(queue, args...); }
-#define QUEUE_VK_FUNC_EXT(name, extension) \
-    template<typename... Args> auto name(Args... args) { return vtable-> name(queue, args...); }
+	auto stallTillIdle() -> void final;
 
+protected:
+#define QUEUE_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(queue, args...); }
+#define QUEUE_VK_FUNC_EXT(name, extension) QUEUE_VK_FUNC(name)
 #include "functionlist.inl"
 
 	QueueVkVTable *vtable;
