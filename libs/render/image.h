@@ -15,13 +15,17 @@ namespace ResourceManager { class ResourceMan; }
 
 namespace Render {
 
+struct ImageBase
+{
+};
+
 // Upto 3D image data, stored as packed formats but accessed as double
 // upto 4 channels per pixel always RGBA (R = channel 0, A = channel 3)
 // Support image arrays/slices
 // the default is the generic texture format image (GIMG) but can be subclassed
 // to handle specific a
 template<uint32_t id_ = "GIMG"_resource_id>
-class Image : public ResourceManager::Resource<id_>
+class Image : public ResourceManager::Resource<id_>, public ImageBase
 {
 public:
 	friend auto RegisterResourceHandlers(ResourceManager::ResourceMan& rm_) -> void;

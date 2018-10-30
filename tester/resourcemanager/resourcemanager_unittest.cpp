@@ -90,7 +90,7 @@ SCENARIO("Resource Manager has mem storage", "[resourcemanager]")
 					 auto txtr = std::static_pointer_cast<TextResource>(ptr_);
 					 std::string txt = txtr->getText();
 					 REQUIRE(txt == testText);
-					 uint8_t *bytePtr = txtr->getExtraMemPtr<uint8_t>(stage_);
+					 uint8_t* bytePtr = txtr->getStage<uint8_t>(stage_);
 					 for(auto i = 0u; i < 10; ++i)
 					 {
 						 REQUIRE(bytePtr[i] == 0xB1);
@@ -122,10 +122,10 @@ SCENARIO("Resource Manager has mem storage", "[resourcemanager]")
 			REQUIRE(t1);
 			REQUIRE(std::strcmp(t0, t1) == 0);
 
-			REQUIRE(r0->getExtraMemPtr<void>(1) != nullptr);
-			REQUIRE(r1->getExtraMemPtr<void>(1) != nullptr);
-			auto exm0 = r0->getExtraMemPtr<uint8_t>(1);
-			auto exm1 = r1->getExtraMemPtr<uint8_t>(1);
+			REQUIRE(r0->getStage<void>(1) != nullptr);
+			REQUIRE(r1->getStage<void>(1) != nullptr);
+			auto exm0 = r0->getStage<uint8_t>(1);
+			auto exm1 = r1->getStage<uint8_t>(1);
 			for(auto j = 0u; j < 10u; ++j)
 			{
 				REQUIRE(exm0[j] == 0xAA);

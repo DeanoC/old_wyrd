@@ -6,13 +6,12 @@
 #include "core/utils.h"
 
 namespace Render {
-class Display;
+struct Display;
+struct Encoder;
+struct Fence;
 
-class Encoder;
-
-class CommandQueue
+struct CommandQueue
 {
-public:
 	static constexpr uint32_t RenderFlavour = Core::Bit(0);
 	static constexpr uint32_t ComputeFlavour = Core::Bit(1);
 	static constexpr uint32_t BlitFlavour = Core::Bit(2);
@@ -27,7 +26,8 @@ public:
 	auto isPresentFlavour() const -> bool { return flavour &PresentFlavour; }
 	auto getFlavour() const -> uint32_t { return flavour; }
 
-	virtual auto submit(std::shared_ptr<Encoder> const& encoder_) -> void = 0;
+	virtual auto enqueue(std::shared_ptr<Render::Encoder> const& encoder_) -> void = 0;
+	virtual auto submit(std::shared_ptr<Render::Fence> const& fence_ = {}) -> void = 0;
 	virtual auto stallTillIdle() -> void = 0;
 
 protected:

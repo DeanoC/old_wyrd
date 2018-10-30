@@ -14,6 +14,11 @@ namespace Render {
 class Texture : public ResourceManager::Resource<"TXTR"_resource_id>
 {
 public:
+	using Ptr = std::shared_ptr<Texture>;
+	using ConstPtr = std::shared_ptr<Texture const>;
+	using WeakPtr = std::weak_ptr<Texture>;
+	using ConstWeakPtr = std::weak_ptr<Texture const>;
+
 	static auto RegisterResourceHandler( ResourceManager::ResourceMan& rm_) -> void;
 
 	static constexpr uint16_t MajorVersion = 1;

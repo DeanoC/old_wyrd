@@ -46,7 +46,8 @@ public:
 	// note: this memory only exist if the resource handler asked for it
 	// so only use this if you know what the resource handler did
 	template<typename T>
-	T* getExtraMemPtr(uint32_t stage_) const {
+	T* getStage(uint32_t stage_) const
+	{
 		uintptr_t* ptr = (((uintptr_t*)this)-(stage_+1));
 		if constexpr (sizeof(uintptr_t) == 4)
 		{

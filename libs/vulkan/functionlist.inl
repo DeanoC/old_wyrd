@@ -148,12 +148,12 @@
 #define COMMANDPOOL_VK_FUNC_EXT(function, extension)
 #endif
 
-#ifndef GRAPHICS_CB_VK_FUNC
-#define GRAPHICS_CB_VK_FUNC(function)
+#ifndef GRAPHIC_CB_VK_FUNC
+#define GRAPHIC_CB_VK_FUNC(function)
 #endif
 
-#ifndef GRAPHICS_CB_VK_FUNC_EXT
-#define GRAPHICS_CB_VK_FUNC_EXT( function, extension )
+#ifndef GFX_CB_VK_FUNC_EXT
+#define GFX_CB_VK_FUNC_EXT(function, extension)
 #endif
 
 #ifndef COMPUTE_CB_VK_FUNC
@@ -161,7 +161,7 @@
 #endif
 
 #ifndef COMPUTE_CB_VK_FUNC_EXT
-#define COMPUTE_CB_VK_FUNC_EXT( functionm, extension )
+#define COMPUTE_CB_VK_FUNC_EXT(function, extension)
 #endif
 
 #ifndef TRANSFER_CB_VK_FUNC
@@ -173,30 +173,20 @@
 #endif
 
 #ifndef GENERAL_CB_VK_FUNC
-#define GENERAL_CB_VK_FUNC(function) \
-            GRAPHICS_CB_VK_FUNC(function) \
-            COMPUTE_CB_VK_FUNC(function) \
-            TRANSFER_CB_VK_FUNC(function)
+#define GENERAL_CB_VK_FUNC(function)
 #endif
 
 #ifndef GENERAL_CB_VK_FUNC_EXT
-#define GENERAL_CB_VK_FUNC_EXT(function, extension) \
-            GRAPHICS_CB_VK_FUNC_EXT(function) \
-            COMPUTE_CB_VK_FUNC_EXT(function) \
-            TRANSFER_CB_VK_FUNC_EXT(function)
+#define GENERAL_CB_VK_FUNC_EXT(function, extension)
 #endif
 
 
-#ifndef GC_CB_VK_FUNC
-#define GC_CB_VK_FUNC(function) \
-            GRAPHICS_CB_VK_FUNC(function) \
-            COMPUTE_CB_VK_FUNC(function)
+#ifndef GFXCOMP_CB_VK_FUNC
+#define GFXCOMP_CB_VK_FUNC(function)
 #endif
 
-#ifndef GC_CB_VK_FUNC_EXT
-#define GC_CB_VK_FUNC_EXT(function, extension) \
-            GRAPHICS_CB_VK_FUNC(function, extension) \
-            COMPUTE_CB_VK_FUNC(function, extension)
+#ifndef GFXCOMP_CB_VK_FUNC_EXT
+#define GFXCOMP_CB_VK_FUNC_EXT(function, extension)
 #endif
 
 GLOBAL_VK_FUNC(vkEnumerateInstanceExtensionProperties)
@@ -330,58 +320,58 @@ QUEUE_VK_FUNC(vkQueueWaitIdle)
 QUEUE_VK_FUNC(vkQueueBindSparse)
 QUEUE_VK_FUNC_EXT(vkQueuePresentKHR, VK_KHR_SWAPCHAIN_EXTENSION_NAME)
 
-// these functions must be placed in the vtable before the
+// General functions must be placed in the vtable before the
 // type specific vtable function, which happens if place here
 GENERAL_CB_VK_FUNC(vkBeginCommandBuffer)
 GENERAL_CB_VK_FUNC(vkEndCommandBuffer)
 GENERAL_CB_VK_FUNC(vkResetCommandBuffer)
+GENERAL_CB_VK_FUNC(vkCmdBeginQuery)
+GENERAL_CB_VK_FUNC(vkCmdBlitImage)
+GENERAL_CB_VK_FUNC(vkCmdClearAttachments)
 GENERAL_CB_VK_FUNC(vkCmdCopyBuffer)
 GENERAL_CB_VK_FUNC(vkCmdCopyImage)
-GENERAL_CB_VK_FUNC(vkCmdBlitImage)
 GENERAL_CB_VK_FUNC(vkCmdCopyBufferToImage)
 GENERAL_CB_VK_FUNC(vkCmdCopyImageToBuffer)
-GENERAL_CB_VK_FUNC(vkCmdUpdateBuffer)
+GENERAL_CB_VK_FUNC(vkCmdCopyQueryPoolResults)
+GENERAL_CB_VK_FUNC(vkCmdEndQuery)
+GENERAL_CB_VK_FUNC(vkCmdExecuteCommands)
 GENERAL_CB_VK_FUNC(vkCmdFillBuffer)
-GENERAL_CB_VK_FUNC(vkCmdClearColorImage)
-GENERAL_CB_VK_FUNC(vkCmdClearDepthStencilImage)
-GENERAL_CB_VK_FUNC(vkCmdClearAttachments)
-GENERAL_CB_VK_FUNC(vkCmdResolveImage)
+GENERAL_CB_VK_FUNC(vkCmdNextSubpass)
+GENERAL_CB_VK_FUNC(vkCmdPipelineBarrier)
+GENERAL_CB_VK_FUNC(vkCmdPushConstants)
 GENERAL_CB_VK_FUNC(vkCmdSetEvent)
 GENERAL_CB_VK_FUNC(vkCmdResetEvent)
-GENERAL_CB_VK_FUNC(vkCmdWaitEvents)
-GENERAL_CB_VK_FUNC(vkCmdPipelineBarrier)
-GENERAL_CB_VK_FUNC(vkCmdBeginQuery)
-GENERAL_CB_VK_FUNC(vkCmdEndQuery)
 GENERAL_CB_VK_FUNC(vkCmdResetQueryPool)
+GENERAL_CB_VK_FUNC(vkCmdResolveImage)
+GENERAL_CB_VK_FUNC(vkCmdUpdateBuffer)
+GENERAL_CB_VK_FUNC(vkCmdWaitEvents)
 GENERAL_CB_VK_FUNC(vkCmdWriteTimestamp)
-GENERAL_CB_VK_FUNC(vkCmdCopyQueryPoolResults)
-GENERAL_CB_VK_FUNC(vkCmdPushConstants)
-GENERAL_CB_VK_FUNC(vkCmdBeginRenderPass)
-GENERAL_CB_VK_FUNC(vkCmdNextSubpass)
-GENERAL_CB_VK_FUNC(vkCmdEndRenderPass)
-GENERAL_CB_VK_FUNC(vkCmdExecuteCommands)
 
-GC_CB_VK_FUNC(vkCmdBindPipeline)
-GC_CB_VK_FUNC(vkCmdBindDescriptorSets)
-
-GRAPHICS_CB_VK_FUNC(vkCmdSetViewport)
-GRAPHICS_CB_VK_FUNC(vkCmdSetScissor)
-GRAPHICS_CB_VK_FUNC(vkCmdSetLineWidth)
-GRAPHICS_CB_VK_FUNC(vkCmdSetDepthBias)
-GRAPHICS_CB_VK_FUNC(vkCmdSetBlendConstants)
-GRAPHICS_CB_VK_FUNC(vkCmdSetDepthBounds)
-GRAPHICS_CB_VK_FUNC(vkCmdSetStencilCompareMask)
-GRAPHICS_CB_VK_FUNC(vkCmdSetStencilWriteMask)
-GRAPHICS_CB_VK_FUNC(vkCmdSetStencilReference)
-GRAPHICS_CB_VK_FUNC(vkCmdBindIndexBuffer)
-GRAPHICS_CB_VK_FUNC(vkCmdBindVertexBuffers)
-GRAPHICS_CB_VK_FUNC(vkCmdDraw)
-GRAPHICS_CB_VK_FUNC(vkCmdDrawIndexed)
-GRAPHICS_CB_VK_FUNC(vkCmdDrawIndirect)
-GRAPHICS_CB_VK_FUNC(vkCmdDrawIndexedIndirect)
-
+// specialised function go here, general must come first - up there ^^^^
+GRAPHIC_CB_VK_FUNC(vkCmdBeginRenderPass)
+GFXCOMP_CB_VK_FUNC(vkCmdBindDescriptorSets)
+GRAPHIC_CB_VK_FUNC(vkCmdBindIndexBuffer)
+GFXCOMP_CB_VK_FUNC(vkCmdBindPipeline)
+GRAPHIC_CB_VK_FUNC(vkCmdBindVertexBuffers)
+GFXCOMP_CB_VK_FUNC(vkCmdClearColorImage)
+GRAPHIC_CB_VK_FUNC(vkCmdClearDepthStencilImage)
 COMPUTE_CB_VK_FUNC(vkCmdDispatch)
 COMPUTE_CB_VK_FUNC(vkCmdDispatchIndirect)
+GRAPHIC_CB_VK_FUNC(vkCmdDraw)
+GRAPHIC_CB_VK_FUNC(vkCmdDrawIndexed)
+GRAPHIC_CB_VK_FUNC(vkCmdDrawIndirect)
+GRAPHIC_CB_VK_FUNC(vkCmdDrawIndexedIndirect)
+GRAPHIC_CB_VK_FUNC(vkCmdEndRenderPass)
+GRAPHIC_CB_VK_FUNC(vkCmdSetDepthBias)
+GRAPHIC_CB_VK_FUNC(vkCmdSetBlendConstants)
+GRAPHIC_CB_VK_FUNC(vkCmdSetDepthBounds)
+GRAPHIC_CB_VK_FUNC(vkCmdSetLineWidth)
+GRAPHIC_CB_VK_FUNC(vkCmdSetScissor)
+GRAPHIC_CB_VK_FUNC(vkCmdSetStencilCompareMask)
+GRAPHIC_CB_VK_FUNC(vkCmdSetStencilWriteMask)
+GRAPHIC_CB_VK_FUNC(vkCmdSetStencilReference)
+GRAPHIC_CB_VK_FUNC(vkCmdSetViewport)
+
 
 
 #undef GLOBAL_VK_FUNC
@@ -424,15 +414,15 @@ COMPUTE_CB_VK_FUNC(vkCmdDispatchIndirect)
 #undef QUEUE_VK_FUNC
 #undef QUEUE_VK_FUNC_EXT
 
-#undef GRAPHICS_CB_VK_FUNC
+#undef GRAPHIC_CB_VK_FUNC
 #undef COMPUTE_CB_VK_FUNC
 #undef TRANSFER_CB_VK_FUNC
 
-#undef GRAPHICS_CB_VK_FUNC_EXT
+#undef GFX_CB_VK_FUNC_EXT
 #undef COMPUTE_CB_VK_FUNC_EXT
 #undef TRANSFER_CB_VK_FUNC_EXT
 
 #undef GENERAL_CB_VK_FUNC
-#undef GC_CB_VK_FUNC
+#undef GFXCOMP_CB_VK_FUNC
 #undef GENERAL_CB_VK_FUNC_EXT
-#undef GC_CB_VK_FUNC_EXT
+#undef GFXCOMP_CB_VK_FUNC_EXT

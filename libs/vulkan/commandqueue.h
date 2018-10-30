@@ -5,41 +5,53 @@
 #include "core/core.h"
 #include "vulkan/api.h"
 #include "render/commandqueue.h"
+#include <vector>
 
 namespace Vulkan {
 
-class Device;
-class Display;
+struct Device;
+struct Encoder;
+struct Fence;
 
-class CommandQueue : public Render::CommandQueue
+struct CommandQueue : public Render::CommandQueue
 {
 public:
-	CommandQueue(QueueVkVTable *vtable_, VkQueue queue_, uint32_t familyIndex_, uint32_t flavour_);
+	CommandQueue(
+			VkDevice device_,
+			QueueVkVTable* vtable_,
+			VkQueue queue_,
+			uint32_t familyIndex_,
+			uint32_t flavour_);
+	~CommandQueue() final;
 
 	friend class System;
-	friend class Device;
 
-	friend class Display;
+	friend struct Device;
+	friend struct Display;
 
 	using Ptr = std::shared_ptr<CommandQueue>;
 	using WeakPtr = std::weak_ptr<CommandQueue>;
 
-	auto getQueue() -> VkQueue { return queue; };
-
-	auto getFamilyIndex() const -> uint32_t { return familyIndex; }
-
-	auto submit(std::shared_ptr<Render::Encoder> const& encoder_) -> void final;
-
+	auto enqueue(std::shared_ptr<Render::Encoder> const& encoder_) -> void final;
+	auto submit(std::shared_ptr<Render::Fence> const& fence_) -> void final;
 	auto stallTillIdle() -> void final;
 
+
+	auto getQueue() -> VkQueue { return queue; };
+	auto getFamilyIndex() const -> uint32_t { return familyIndex; }
 protected:
 #define QUEUE_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(queue, args...); }
 #define QUEUE_VK_FUNC_EXT(name, extension) QUEUE_VK_FUNC(name)
+
 #include "functionlist.inl"
 
-	QueueVkVTable *vtable;
+	VkDevice device;
+	QueueVkVTable* vtable;
 	VkQueue queue;
 	uint32_t familyIndex;
+
+	std::vector<std::shared_ptr<Encoder>> enqueuedEncoders;
+
 };
 
 }

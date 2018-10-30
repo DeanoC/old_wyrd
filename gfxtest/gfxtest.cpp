@@ -1,11 +1,16 @@
 #define LOGURU_IMPLEMENTATION 1
 #define CX_ERROR_IMPLEMENTATION 1
+
 #include "core/core.h"
 #include "shell/shell.h"
 #include "render/stable.h"
+#include "render/commandqueue.h"
+#include "render/encoder.h"
 
 int Main(Shell::ShellInterface& shell_)
 {
+	using namespace Render;
+
 	bool okay = shell_.init({
 						"Gfx Test",
 						true,
@@ -42,9 +47,23 @@ int Main(Shell::ShellInterface& shell_)
 
 	auto display = device->getDisplay();
 
+	auto renderQueue = device->getMainRenderQueue();
+	auto rEncoderPool = device->makeEncoderPool(true, CommandQueue::RenderFlavour);
+
 	do
 	{
+		auto encoder = rEncoderPool->allocateEncoder(CommandQueue::RenderFlavour);
 
+		encoder->begin();
+
+		auto renderEncoder = encoder->asRenderEncoder();
+		renderEncoder->beginRenderPass();
+		renderEncoder->endRenderPass();
+		encoder->end();
+
+		renderQueue->enqueue(encoder);
+		renderQueue->submit();
+		renderQueue->stallTillIdle();
 	}
 	while(display->present());
 

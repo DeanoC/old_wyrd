@@ -7,6 +7,27 @@
 namespace Vulkan {
 constexpr auto PresentTimeOut = 2000000000;
 
+Display::Display(
+		uint32_t width_,
+		uint32_t height_,
+		Vulkan::Device::Ptr device_,
+		GLFWwindow* window_,
+		VkSurfaceKHR surface_) :
+		Render::Display{width_, height_},
+		window(window_),
+		weakDevice(device_),
+		surface(surface_)
+{
+}
+
+Display::~Display()
+{
+	auto device = weakDevice.lock();
+	if(device)
+	{
+		device->destroySwapchain(swapchainKHR);
+	}
+}
 auto Display::createSwapChain() -> void
 {
 	auto device = weakDevice.lock();
@@ -64,8 +85,8 @@ auto Display::createSwapChain() -> void
 	CHKED(device->vkGetSwapchainImagesKHR(swapchainKHR, &swapchainImageCount, images.data()));
 
 	// present complete semaphore, to tell us we can reuse the image
-	imageAvailable = AsSemaphore(device->createSemaphore());
-	presentComplete = AsSemaphore(device->createSemaphore());
+	imageAvailable = std::static_pointer_cast<Semaphore>(device->makeSemaphore());
+	presentComplete = std::static_pointer_cast<Semaphore>(device->makeSemaphore());
 
 }
 
@@ -79,7 +100,7 @@ auto Display::present() -> bool
 	VkResult result = device->vkAcquireNextImageKHR(
 			swapchainKHR,
 			PresentTimeOut,
-			imageAvailable, nullFence, &imageIndex);
+			imageAvailable->vulkanSemaphore, nullFence, &imageIndex);
 
 	switch( result )
 	{
@@ -92,7 +113,7 @@ auto Display::present() -> bool
 			return false;
 	}
 
-	VkSemaphore presentSemaphores[]{ presentComplete };
+	VkSemaphore presentSemaphores[]{presentComplete->vulkanSemaphore};
 	VkPresentInfoKHR presentInfo = {
 			VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 			nullptr,

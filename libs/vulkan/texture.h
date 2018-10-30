@@ -8,20 +8,30 @@
 #include "vulkan/device.h"
 
 namespace Vulkan {
+class Device;
 
-class Texture
+struct Texture
 {
-public:
-	static auto RegisterResourceHandler( ResourceManager::ResourceMan& rm_, Device::WeakPtr device_) -> void;
+	using Ptr = std::shared_ptr<Texture>;
+	using ConstPtr = std::shared_ptr<Texture const>;
+	using WeakPtr = std::weak_ptr<Texture>;
+	using ConstWeakPtr = std::weak_ptr<Texture const>;
 
-private:
+	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_, std::weak_ptr<Device> device_) -> void;
+	inline static int s_stage = -1;
+
 	Texture() = delete;
 	~Texture();
 
 	constexpr static uint32_t Id = Render::Texture::Id;
 
-	Render::Texture* cpuTexture;
-	Device::Image image;
+	Render::Texture::ConstWeakPtr cpuTexture;
+	VkImage image;
+	VmaAllocation allocation;
+
+	VkImageViewType imageViewType;
+	VkImageView imageView; // the default view same as when created
+	VkImageSubresourceRange entireRange;
 };
 
 }
