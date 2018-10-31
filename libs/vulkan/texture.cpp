@@ -57,14 +57,23 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 			}
 		}
 
-		VkImageCreateInfo imageCreateInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO, nullptr,
-											 cpuTexture->isCubeMap() ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0u, type,
-											 VkfCracker::fromGeneric(cpuTexture->format),
-											 {cpuTexture->width, cpuTexture->height, cpuTexture->depth},
-											 cpuTexture->mipLevels, cpuTexture->slices,
-											 (VkSampleCountFlagBits) cpuTexture->samples, VK_IMAGE_TILING_OPTIMAL,
-											 usageflags, VK_SHARING_MODE_EXCLUSIVE, 0, nullptr,
-											 VK_IMAGE_LAYOUT_UNDEFINED};
+		VkImageCreateInfo imageCreateInfo{
+				VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+				nullptr,
+				cpuTexture->isCubeMap() ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0u,
+				type,
+				VkfCracker::fromGeneric(cpuTexture->format),
+				{cpuTexture->width, cpuTexture->height, cpuTexture->depth},
+				cpuTexture->mipLevels,
+				cpuTexture->slices,
+				(VkSampleCountFlagBits) cpuTexture->samples,
+				VK_IMAGE_TILING_OPTIMAL,
+				usageflags,
+				VK_SHARING_MODE_EXCLUSIVE,
+				0,
+				nullptr,
+				VK_IMAGE_LAYOUT_UNDEFINED
+		};
 		VmaAllocationCreateInfo gpuAllocInfo{};
 		gpuAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 		gpuAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -81,7 +90,11 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 			// is host mappable, so just memcpy/memset it directly
 			if(cpuTexture->flags & Render::Texture::InitZeroFlag)
 			{
-				std::memset(info.pMappedData, 0, info.size);
+				for(auto i = 0u; i < cpuTexture->width * cpuTexture->height; ++i)
+				{
+					((uint32_t*) info.pMappedData)[i] = 0xFF0000FF;
+				}
+				//				std::memset(info.pMappedData, 0x0, info.size);
 			} else
 			{
 				auto image = cpuTexture->imageHandle.acquire<Render::GenericImage>();
@@ -90,6 +103,7 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 				// mem copy
 				std::memcpy(info.pMappedData, image->data(), image->dataSize);
 			}
+
 		} else
 		{
 			// no host mappable, so create a temp transfer buffer and

@@ -163,14 +163,20 @@ auto RenderEncoder::blit(std::shared_ptr<Render::Texture> const& src_,
 	auto src = src_->getStage<Texture>(Texture::s_stage);
 	auto dst = src_->getStage<Texture>(Texture::s_stage);
 
-	VkImageBlit blitter =
-			{{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-			 {0,                         0, 0},
-			 {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-			 {0,                         0, 0},};
+	VkImageBlit blitter = {
+			{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+			{{0, 0, 0},                 {(int32_t) src_->width, (int32_t) src_->height, 1}},
+			{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+			{{0, 0, 0},                 {(int32_t) dst_->width, (int32_t) dst_->height, 1}},
+	};
 
-	vkCmdBlitImage(src->image, src->imageLayout, dst->image, dst->imageLayout,
-				   1, &blitter, VK_FILTER_LINEAR);
+	vkCmdBlitImage(src->image,
+				   src->imageLayout,
+				   dst->image,
+				   dst->imageLayout,
+				   1,
+				   &blitter,
+				   VK_FILTER_LINEAR);
 }
 
 auto RenderEncoder::beginRenderPass() -> void
@@ -180,7 +186,7 @@ auto RenderEncoder::beginRenderPass() -> void
 	beginInfo.pNext = nullptr;
 	beginInfo.clearValueCount = 0;
 	beginInfo.pClearValues = nullptr;
-	// 	beginInfo.framebuffer
+	//		beginInfo.framebuffer
 }
 
 auto RenderEncoder::endRenderPass() -> void
@@ -205,11 +211,13 @@ auto RenderEncoder::blitDisplay(std::shared_ptr<Render::Texture> const& src_, Vk
 {
 	auto src = src_->getStage<Texture>(Texture::s_stage);
 
-	VkImageBlit blitter =
-			{{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-			 {0,                         0, 0},
-			 {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-			 {0,                         0, 0},};
+
+	VkImageBlit blitter = {
+			{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+			{{0, 0, 0},                 {(int32_t) src_->width, (int32_t) src_->height, 1}},
+			{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+			{{0, 0, 0},                 {(int32_t) src_->width, (int32_t) src_->height, 1}},
+	};
 
 	vkCmdBlitImage(src->image, src->imageLayout, display_, VK_IMAGE_LAYOUT_GENERAL,
 				   1, &blitter, VK_FILTER_NEAREST);

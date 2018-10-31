@@ -83,7 +83,6 @@ auto Display::createSwapChain() -> void
 	images.resize(swapchainImageCount);
 	CHKED(device->vkGetSwapchainImagesKHR(swapchainKHR, &swapchainImageCount, images.data()));
 
-	// present complete semaphore, to tell us we can reuse the image
 	imageAvailable = std::static_pointer_cast<Semaphore>(device->makeSemaphore());
 	presentComplete = std::static_pointer_cast<Semaphore>(device->makeSemaphore());
 
@@ -117,12 +116,11 @@ auto Display::present(std::shared_ptr<Render::Texture> const& src_) -> bool
 	auto enc = blitterPool->allocateEncoder(Render::CommandQueue::RenderFlavour);
 	assert(enc->canEncodeRenderCommands());
 
-	enc->begin();
+	enc->begin(imageAvailable);
 	RenderEncoder* encoder = (RenderEncoder*) enc->asRenderEncoder();
 	encoder->blitDisplay(src_, images[imageIndex]);
-	enc->end();
+	enc->end(presentComplete);
 	q->enqueue(enc);
-	q->submit();
 
 	VkSemaphore presentSemaphores[]{presentComplete->vulkanSemaphore};
 	VkPresentInfoKHR presentInfo = {
@@ -136,9 +134,9 @@ auto Display::present(std::shared_ptr<Render::Texture> const& src_) -> bool
 			nullptr
 	};
 	auto pq = std::static_pointer_cast<Vulkan::CommandQueue>(device->getMainPresentQueue());
-	pq->vkQueuePresentKHR(&presentInfo);
-	pq->submit();
+	CHKED(pq->vkQueuePresentKHR(&presentInfo));
 
+	glfwPollEvents();
 	return !glfwWindowShouldClose(window);
 }
 

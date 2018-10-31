@@ -79,20 +79,22 @@ int Main(Shell::ShellInterface& shell_)
 	auto renderQueue = device->getMainRenderQueue();
 	auto rEncoderPool = device->makeEncoderPool(true, CommandQueue::RenderFlavour);
 
+	Render::Encoder::Ptr encoder;
 	do
 	{
-		auto encoder = rEncoderPool->allocateEncoder(CommandQueue::RenderFlavour);
+		/*		rEncoderPool->reset();
+				encoder = rEncoderPool->allocateEncoder(CommandQueue::RenderFlavour);
 
-		encoder->begin();
+				encoder->begin();
 
-		auto renderEncoder = encoder->asRenderEncoder();
-		renderEncoder->beginRenderPass();
-		renderEncoder->endRenderPass();
-		encoder->end();
+				auto renderEncoder = encoder->asRenderEncoder();
+				renderEncoder->beginRenderPass();
+				renderEncoder->endRenderPass();
+				encoder->end();
 
-		renderQueue->enqueue(encoder);
-		renderQueue->submit();
-		renderQueue->stallTillIdle();
+				renderQueue->enqueue(encoder);
+				renderQueue->submit();
+		//		renderQueue->stallTillIdle();*/
 	} while(display->present(blankTex));
 
 	return 0;
