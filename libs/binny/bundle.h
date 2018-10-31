@@ -43,12 +43,10 @@ public:
 				in(in_) {}
 	~Bundle();
 
-	// the ChunkHandler hold processes the chunk once its been loaded and fixed up
-	std::pair<ErrorCode, uint64_t> read(std::string_view name_,
-			std::vector<ChunkHandler> const& handlers_, bool forcePrefix_) override;
-	uint32_t getDirectoryCount() override;
-	std::string_view getDirectoryEntry(uint32_t const index_) override;
-
+	// the ChunkHandler is called to process the chunk once its been loaded and fixed up
+	auto read(std::string_view name_, std::vector<ChunkHandler> const& handlers_) -> ReadReturn final;
+	uint32_t getDirectoryCount() final;
+	std::string_view getDirectoryEntry(uint32_t const index_) final;
 
 	std::pair<ErrorCode, uint64_t> peekAtHeader();
 protected:

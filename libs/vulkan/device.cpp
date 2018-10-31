@@ -1,13 +1,16 @@
 
 
 #include "core/core.h"
+#include "render/gtfcracker.h"
 #include "vulkan/device.h"
-
 #include "vulkan/commandqueue.h"
 #include "vulkan/display.h"
 #include "vulkan/encoder.h"
 #include "vulkan/fence.h"
 #include "vulkan/semaphore.h"
+#include "vulkan/renderpass.h"
+#include "vulkan/rendertarget.h"
+#include "vulkan/vkfcracker.h"
 #include <unordered_set>
 #include <stdlib.h>
 
@@ -54,8 +57,14 @@ auto VulkanInternalFreeNotify(void* pUserData, size_t size, VkInternalAllocation
 namespace Vulkan {
 
 
-Device::Device(VkPhysicalDevice physicalDevice_, VkDeviceCreateInfo createInfo_, QueueFamilies const& queueFamilies_,
-			   uint32_t presentQ_) : physicalDevice(physicalDevice_), deviceCreateInfo(createInfo_)
+Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
+			   VkPhysicalDevice physicalDevice_,
+			   VkDeviceCreateInfo createInfo_,
+			   QueueFamilies const& queueFamilies_,
+			   uint32_t presentQ_) :
+		resourceMan(resourceMan_),
+		physicalDevice(physicalDevice_),
+		deviceCreateInfo(createInfo_)
 {
 
 	allocationCallbacks.pfnAllocation = &VulkanAlloc;
@@ -306,6 +315,7 @@ Device::Device(VkPhysicalDevice physicalDevice_, VkDeviceCreateInfo createInfo_,
 			if(queues[0x3] != nullptr && ((i & 0x1) || (i & 0x2))) queues[i] = queues[0x3];
 		}
 	}
+
 }
 
 Device::~Device()
@@ -350,10 +360,6 @@ auto Device::destroyFence(VkFence semaphore_) -> void
 }
 
 
-auto Device::destroyEncoderPool(VkCommandPool const& commandPool_) -> void
-{
-	vkDestroyCommandPool(commandPool_, &allocationCallbacks);
-}
 
 auto Device::createImage(VkImageCreateInfo const& createInfo_, VmaAllocationCreateInfo const& allocInfo_,
 						 VmaAllocationInfo& outInfo_) -> std::pair<VkImage, VmaAllocation>
@@ -406,22 +412,26 @@ auto Device::destroyRenderPass(VkRenderPass renderPass_) -> void
 	vkDestroyRenderPass(renderPass_, &allocationCallbacks);
 }
 
-auto Device::createEncoderPool(VkCommandPoolCreateInfo const& createInfo_) -> VkCommandPool
+auto Device::createCommandPool(VkCommandPoolCreateInfo const& createInfo_) -> VkCommandPool
 {
 	VkCommandPool commandPool;
 	CHKED(vkCreateCommandPool(&createInfo_, &allocationCallbacks, &commandPool));
 	return commandPool;
 }
 
-auto Device::createRenderTarget(VkFramebufferCreateInfo const& createInfo_) -> VkFramebuffer
+auto Device::destroyCommandPool(VkCommandPool const& commandPool_) -> void
 {
+	vkDestroyCommandPool(commandPool_, &allocationCallbacks);
+}
 
+auto Device::createFramebuffer(VkFramebufferCreateInfo const& createInfo_) -> VkFramebuffer
+{
 	VkFramebuffer framebuffer;
 	CHKED(vkCreateFramebuffer(&createInfo_, &allocationCallbacks, &framebuffer));
 	return framebuffer;
 }
 
-auto Device::destroyRenderTarget(VkFramebuffer frameBuffer_) -> void
+auto Device::destroyFramebuffer(VkFramebuffer frameBuffer_) -> void
 {
 	vkDestroyFramebuffer(frameBuffer_, &allocationCallbacks);
 }
@@ -441,7 +451,7 @@ auto Device::makeEncoderPool(bool frameLifetime_, uint32_t queueFlavour_) -> std
 	assert(queue != nullptr);
 	createInfo.queueFamilyIndex = queue->getFamilyIndex();
 
-	VkCommandPool commandPool = createEncoderPool(createInfo);
+	VkCommandPool commandPool = createCommandPool(createInfo);
 
 	auto encoderPool = std::make_shared<EncoderPool>(
 			this->shared_from_this(),
@@ -482,7 +492,140 @@ auto Device::makeSemaphore() -> std::shared_ptr<Render::Semaphore>
 	return std::static_pointer_cast<Render::Semaphore>(semaphore);
 }
 
+auto Device::makeRenderPass(
+		std::vector<Render::RenderPass::Target> const& targets_) -> std::shared_ptr<Render::RenderPass>
+{
+	// convert between RenderPass::Load/Store and vulkans
+	static constexpr VkAttachmentLoadOp LoadConvertor[3] =
+			{
+					VK_ATTACHMENT_LOAD_OP_LOAD,
+					VK_ATTACHMENT_LOAD_OP_CLEAR,
+					VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			};
+	static constexpr VkAttachmentStoreOp StoreConvertor[3] =
+			{
+					VK_ATTACHMENT_STORE_OP_STORE,
+					VK_ATTACHMENT_STORE_OP_DONT_CARE
+			};
 
+	VkRenderPassCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	createInfo.pNext = nullptr;
+
+	std::vector<VkAttachmentDescription> attachments(targets_.size());
+	std::vector<VkAttachmentReference> cReferences;
+	cReferences.reserve(targets_.size());
+	VkAttachmentReference dsReference = {~0u, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+
+	for(auto i = 0u; i < targets_.size(); ++i)
+	{
+		auto& attach = attachments[i];
+		auto const& target = targets_[i];
+
+		attach.flags = 0;
+		attach.samples = VK_SAMPLE_COUNT_1_BIT; // TODO
+		if(target.load == Render::RenderPass::Load::Load)
+		{
+			// TODO need to know what the layour was we are loading from?
+			attach.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+		} else
+		{
+			// we don't care, but we can't load from undefined
+			attach.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		}
+		attach.finalLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+		attach.loadOp = LoadConvertor[(int) target.load];
+		attach.storeOp = StoreConvertor[(int) target.store];
+		if(Render::GtfCracker::isStencil(target.format))
+		{
+			attach.stencilLoadOp = LoadConvertor[(int) target.stencilLoad];
+			attach.stencilStoreOp = StoreConvertor[(int) target.stencilStore];
+		}
+		attach.format = VkfCracker::fromGeneric(target.format);
+
+		if(Render::GtfCracker::isDepth(target.format) ||
+		   Render::GtfCracker::isStencil(target.format))
+		{
+			dsReference = {i, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+		} else
+		{
+			cReferences.emplace_back(
+					VkAttachmentReference{i, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+		}
+	}
+
+	// TODO subpasses, for now assume 1 and it matches the entire render target
+	VkSubpassDescription subpass = {};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount = cReferences.size();
+	subpass.pColorAttachments = cReferences.data();
+	subpass.pDepthStencilAttachment =
+			(dsReference.attachment != ~0) ? &dsReference : nullptr;
+
+	createInfo.attachmentCount = attachments.size();
+	createInfo.pAttachments = attachments.data();
+	createInfo.flags = 0;
+	createInfo.subpassCount = 1;
+	createInfo.pSubpasses = &subpass;
+	createInfo.dependencyCount = 0;
+	createInfo.pDependencies = nullptr;
+
+	VkRenderPass vulkanRenderPass = createRenderPass(createInfo);
+
+	RenderPass::Ptr renderPass = std::make_shared<RenderPass>();
+	return std::static_pointer_cast<Render::RenderPass>(renderPass);
+
+}
+
+auto Device::makeRenderTarget(
+		std::shared_ptr<Render::RenderPass> const& pass_,
+		std::vector<Render::Texture::Ptr> const& targets_) -> std::shared_ptr<Render::RenderTarget>
+{
+
+	assert(targets_.empty() == false);
+
+	std::vector<VkImageView> images(targets_.size());
+
+	uint32_t const width = targets_[0]->width;
+	uint32_t const height = targets_[0]->height;
+	for(auto i = 0u; i < targets_.size(); ++i)
+	{
+		auto& rtarget = targets_[i];
+		assert(rtarget->width == width);
+		assert(rtarget->height == height);
+
+		auto target = rtarget->getStage<Texture>(Texture::s_stage);
+		images[i] = target->imageView;
+		if(Render::GtfCracker::isDepth(rtarget->format) ||
+		   Render::GtfCracker::isStencil(rtarget->format))
+		{
+			target->imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		} else
+		{
+			target->imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		}
+	}
+	auto renderPass = std::static_pointer_cast<Vulkan::RenderPass>(pass_);
+
+	VkFramebufferCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	createInfo.pNext = nullptr;
+	createInfo.flags = 0;
+	createInfo.renderPass = renderPass->renderpass;
+	createInfo.width = width;
+	createInfo.height = height;
+	createInfo.attachmentCount = images.size();
+	createInfo.pAttachments = images.data();
+	createInfo.layers = 0;
+	VkFramebuffer framebuffer = createFramebuffer(createInfo);
+
+	RenderTarget::Ptr renderTargets = std::make_shared<RenderTarget>(
+			this->shared_from_this());
+
+	return std::static_pointer_cast<Render::RenderTarget>(renderTargets);
+
+}
 auto Device::getMainRenderQueue() -> Render::CommandQueue::Ptr
 {
 	return queues[ToQueueIndex(true, false, false)];

@@ -26,7 +26,7 @@ EncoderPool::~EncoderPool()
 	auto device = weakDevice.lock();
 	if(device)
 	{
-		device->destroyEncoderPool(commandPool);
+		device->destroyCommandPool(commandPool);
 	}
 }
 
@@ -157,6 +157,22 @@ auto RenderEncoder::clearTexture(std::shared_ptr<Render::Texture> const& texture
 	}
 }
 
+auto RenderEncoder::blit(std::shared_ptr<Render::Texture> const& src_,
+						 std::shared_ptr<Render::Texture> const& dst_) -> void
+{
+	auto src = src_->getStage<Texture>(Texture::s_stage);
+	auto dst = src_->getStage<Texture>(Texture::s_stage);
+
+	VkImageBlit blitter =
+			{{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+			 {0,                         0, 0},
+			 {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+			 {0,                         0, 0},};
+
+	vkCmdBlitImage(src->image, src->imageLayout, dst->image, dst->imageLayout,
+				   1, &blitter, VK_FILTER_LINEAR);
+}
+
 auto RenderEncoder::beginRenderPass() -> void
 {
 	VkRenderPassBeginInfo beginInfo;
@@ -182,6 +198,21 @@ auto ComputeEncoder::clearTexture(std::shared_ptr<Render::Texture> const& textur
 	VkClearColorValue colour;
 	std::memcpy(&colour.float32, floats_.data(), floats_.size() * sizeof(float));
 	vkCmdClearColorImage(texture->image, VK_IMAGE_LAYOUT_GENERAL, &colour, 1, &texture->entireRange);
+}
+
+
+auto RenderEncoder::blitDisplay(std::shared_ptr<Render::Texture> const& src_, VkImage display_) -> void
+{
+	auto src = src_->getStage<Texture>(Texture::s_stage);
+
+	VkImageBlit blitter =
+			{{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+			 {0,                         0, 0},
+			 {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+			 {0,                         0, 0},};
+
+	vkCmdBlitImage(src->image, src->imageLayout, display_, VK_IMAGE_LAYOUT_GENERAL,
+				   1, &blitter, VK_FILTER_NEAREST);
 }
 
 }

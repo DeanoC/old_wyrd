@@ -62,8 +62,8 @@ SCENARIO("Resource Manager has mem storage", "[resourcemanager]")
 				REQUIRE(resource0);
 				auto resource1 = handle1.acquire();
 				REQUIRE(resource1);
-				auto txt0 = (char const *) resource0.get();
-				auto txt1 = (char const *) resource1.get();
+				auto txt0 = ((char const*) resource0.get()) + sizeof(ResourceBase);
+				auto txt1 = ((char const*) resource1.get()) + sizeof(ResourceBase);
 				REQUIRE(testText == std::string(txt0));
 				REQUIRE(testText == std::string(txt1));
 				REQUIRE(std::string(txt0) == std::string(txt1));

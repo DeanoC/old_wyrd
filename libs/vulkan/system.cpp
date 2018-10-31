@@ -9,21 +9,20 @@
 
 #define CHK_F(x, call) result = (x); if(result != VK_SUCCESS) { LOG_S(ERROR) << "Vulkan Error: " << #call << " " << getVulkanResultString(result); return false; }
 
-#define VULKAN_FUNC( name, level ) \
+#define VULKAN_FUNC(name, level) \
    name = (PFN_##name)glfwGetInstanceProcAddress( nullptr, #name );       \
    if( name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; \
      return false;                                                   \
    }
-#define GLOBAL_VK_FUNC( name ) VULKAN_FUNC(name, global)
-#define INSTANCE_VK_FUNC( name ) VULKAN_FUNC(name, instance)
+#define GLOBAL_VK_FUNC(name) VULKAN_FUNC(name, global)
+#define INSTANCE_VK_FUNC(name) VULKAN_FUNC(name, instance)
 
-namespace Vulkan
-{
+namespace Vulkan {
 // borrow glfw result to string function
 std::string_view const getVulkanResultString(VkResult result)
 {
 	using namespace std::string_view_literals;
-	switch (result)
+	switch(result)
 	{
 		case VK_SUCCESS:
 			return "Success"sv;
@@ -76,13 +75,14 @@ std::string_view const getVulkanResultString(VkResult result)
 	}
 }
 
-bool System::Init(std::string const& appName_, std::vector<std::string> const& desiredInstanceExtensions_)
+bool System::Init(std::string const& appName_,
+				  std::vector<std::string> const& desiredInstanceExtensions_)
 {
-//	assert(Global == nullptr);
+	//	assert(Global == nullptr);
 	Global = this;
 	glfwInit();
 
-	if (!glfwVulkanSupported())
+	if(!glfwVulkanSupported())
 	{
 		LOG_S(INFO) << "No Vulkan";
 		return false;
@@ -92,16 +92,20 @@ bool System::Init(std::string const& appName_, std::vector<std::string> const& d
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-	for( auto const& ext : desiredInstanceExtensions_)
+	for(auto const& ext : desiredInstanceExtensions_)
 	{
 		addDesiredInstanceExtensions(ext);
 	}
 
 	uint32_t instanceExtensionsCount = 0;
 	VkResult result = VK_SUCCESS;
-	result = vkEnumerateInstanceExtensionProperties( nullptr,
-													 &instanceExtensionsCount, nullptr );
-	if(result != VK_SUCCESS) { LOG_S(ERROR) << "Vulkan Error: " << getVulkanResultString(result); return false; }
+	result = vkEnumerateInstanceExtensionProperties(nullptr,
+													&instanceExtensionsCount, nullptr);
+	if(result != VK_SUCCESS)
+	{
+		LOG_S(ERROR) << "Vulkan Error: " << getVulkanResultString(result);
+		return false;
+	}
 
 	uint32_t glfwRequiredInstanceExtensionCount;
 	const char** extensions = glfwGetRequiredInstanceExtensions(&glfwRequiredInstanceExtensionCount);
@@ -115,9 +119,9 @@ bool System::Init(std::string const& appName_, std::vector<std::string> const& d
 		addDesiredInstanceExtensions(extensions[i]);
 	}
 
-	instanceExtensions.resize( instanceExtensionsCount );
+	instanceExtensions.resize(instanceExtensionsCount);
 	result = vkEnumerateInstanceExtensionProperties(
-			nullptr, &instanceExtensionsCount, &instanceExtensions[0] );
+			nullptr, &instanceExtensionsCount, &instanceExtensions[0]);
 	CHK_F(result, vkEnumerateInstanceExtensionProperties)
 
 	std::vector<char const*> desiredInstanceExt;
@@ -133,7 +137,7 @@ bool System::Init(std::string const& appName_, std::vector<std::string> const& d
 						return true;
 					else
 						return false;
-				}) ;
+				});
 		if(it == instanceExtensions.end())
 		{
 			LOG_S(ERROR) << "The extension " << desired << "is required by not available";
@@ -151,21 +155,22 @@ bool System::Init(std::string const& appName_, std::vector<std::string> const& d
 	result = vkEnumerateInstanceLayerProperties(&instanceLayerCount, instanceLayers.data());
 	CHK_F(result, vkEnumerateInstanceLayerProperties);
 
-#define INSTANCE_VK_FUNC_EXT( name, extension )            \
-	for( auto const& ext : desiredInstanceExtensions ) { \
-		if( ext == std::string( extension ) ) {\
-			VULKAN_FUNC(name, instance extension) \
-		} \
-	}
+#define INSTANCE_VK_FUNC_EXT(name, extension)            \
+    for( auto const& ext : desiredInstanceExtensions ) { \
+        if( ext == std::string( extension ) ) {\
+            VULKAN_FUNC(name, instance extension) \
+        } \
+    }
+
 #include "functionlist.inl"
 
 	VkApplicationInfo application_info = {
 			VK_STRUCTURE_TYPE_APPLICATION_INFO,
 			nullptr,
 			appName_.c_str(),
-			VK_MAKE_VERSION( 1, 0, 0 ),
+			VK_MAKE_VERSION(1, 0, 0),
 			"Wyrd",
-			VK_MAKE_VERSION( 1, 0, 0 ),
+			VK_MAKE_VERSION(1, 0, 0),
 			0
 	};
 	VkInstanceCreateInfo instance_create_info = {
@@ -179,7 +184,7 @@ bool System::Init(std::string const& appName_, std::vector<std::string> const& d
 			desiredInstanceExt.size() > 0 ? desiredInstanceExt.data() : nullptr
 	};
 
-	result = vkCreateInstance( &instance_create_info, nullptr, &instance );
+	result = vkCreateInstance(&instance_create_info, nullptr, &instance);
 	CHK_F(result, vkCreateInstance);
 
 	uint32_t physDeviceCount;
@@ -200,7 +205,10 @@ bool System::Init(std::string const& appName_, std::vector<std::string> const& d
 		result = vkEnumerateDeviceExtensionProperties(physicalDevices[i], nullptr, &deviceExtCount, nullptr);
 		CHK_F(result, vkEnumerateDeviceExtensionProperties);
 		deviceExtensions[i].resize(deviceExtCount);
-		result = vkEnumerateDeviceExtensionProperties(physicalDevices[i], nullptr, &deviceExtCount, deviceExtensions[i].data());
+		result = vkEnumerateDeviceExtensionProperties(physicalDevices[i],
+													  nullptr,
+													  &deviceExtCount,
+													  deviceExtensions[i].data());
 		CHK_F(result, vkEnumerateDeviceExtensionProperties);
 		vkGetPhysicalDeviceProperties(physicalDevices[i], &deviceProperties[i]);
 		vkGetPhysicalDeviceFeatures(physicalDevices[i], &deviceFeatures[i]);
@@ -241,13 +249,14 @@ auto System::isGpuLowPower(uint32_t index_) const -> bool
 {
 	assert(index_ < physicalDevices.size());
 	// TODO see if this is an okay determination.
-	return(deviceProperties[index_].deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+	return (deviceProperties[index_].deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
 }
 
-auto System::createGpuDevice(uint32_t index_, Render::DeviceConfig const& config_) -> std::shared_ptr<Render::Device>
+auto System::createGpuDevice(uint32_t index_, Render::DeviceConfig const& config_,
+							 std::shared_ptr<ResourceManager::ResourceMan> const& resourceManager_) -> std::shared_ptr<Render::Device>
 {
 	std::vector<char const*> extensions;
-	extensions.reserve(config_.requiredExtensions.size()+1);
+	extensions.reserve(config_.requiredExtensions.size() + 1);
 	if(config_.presentable)
 	{
 		extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -270,11 +279,14 @@ auto System::createGpuDevice(uint32_t index_, Render::DeviceConfig const& config
 	}
 
 	Device::Ptr device = createGpuDevice(index_,
-			config_.renderer,
-			surface,
-			1,
-			extensions);
+										 config_.renderer,
+										 surface,
+										 1,
+										 extensions,
+										 resourceManager_);
 	if(!device) return {};
+
+	Texture::RegisterResourceHandler(*resourceManager_, device);
 
 	if(surface != VK_NULL_HANDLE)
 	{
@@ -289,12 +301,13 @@ auto System::createGpuDevice(uint32_t index_, Render::DeviceConfig const& config
 	return device;
 }
 
-auto System::createGpuDevice(	uint32_t deviceIndex_,
-								bool render_,
-								VkSurfaceKHR surface_,
-								uint32_t minQueues_,
-								std::vector<char const*> const& requiredExtensions)
-								-> Vulkan::Device::Ptr
+auto System::createGpuDevice(uint32_t deviceIndex_,
+							 bool render_,
+							 VkSurfaceKHR surface_,
+							 uint32_t minQueues_,
+							 std::vector<char const*> const& requiredExtensions,
+							 std::shared_ptr<ResourceManager::ResourceMan> const& resourceManager_)
+-> Vulkan::Device::Ptr
 {
 	// find queue of the desired type
 	uint32_t qs[3]; // render, compute, transfer
@@ -308,15 +321,15 @@ auto System::createGpuDevice(	uint32_t deviceIndex_,
 	// TODO queue prioritys
 	int queueCount = 0;
 	std::vector<float> queuePriority(minQueues_, 1.0f);
-	std::array<VkDeviceQueueCreateInfo,3> queueCreateInfos;
+	std::array<VkDeviceQueueCreateInfo, 3> queueCreateInfos;
 
 	uint32_t presentQ = ~0;
 	for(auto i = 0u; i < 3; ++i)
 	{
 		uint32_t q = qs[i];
 		// skip combined queues
-		if(i > 0 && qs[i-1] == q) continue;
-		if(i > 1 && qs[i-2] == q) continue;
+		if(i > 0 && qs[i - 1] == q) continue;
+		if(i > 1 && qs[i - 2] == q) continue;
 
 		queueCreateInfos[queueCount].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		queueCreateInfos[queueCount].pNext = nullptr;
@@ -325,7 +338,7 @@ auto System::createGpuDevice(	uint32_t deviceIndex_,
 		queueCreateInfos[queueCount].pQueuePriorities = queuePriority.data();
 		queueCount++;
 
-		if(surface_ != VK_NULL_HANDLE && presentQ == ~0 )
+		if(surface_ != VK_NULL_HANDLE && presentQ == ~0)
 		{
 			VkBool32 presentSupport = false;
 			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevices[deviceIndex_], qs[i], surface_, &presentSupport);
@@ -357,6 +370,7 @@ auto System::createGpuDevice(	uint32_t deviceIndex_,
 	}
 
 	auto device = std::make_shared<Vulkan::Device>(
+			resourceManager_,
 			physicalDevices[deviceIndex_],
 			createInfo,
 			deviceQueueFamilies[deviceIndex_],
@@ -372,7 +386,7 @@ auto System::findQueueFamily(uint32_t deviceIndex_, uint32_t minQueues_) -> std:
 	auto computeIndex = ~0;
 	auto transferIndex = ~0;
 
-	for( auto const& familyQueue : deviceQueueFamilies[deviceIndex_])
+	for(auto const& familyQueue : deviceQueueFamilies[deviceIndex_])
 	{
 		if(familyQueue.queueCount < minQueues_) continue;
 
@@ -389,7 +403,7 @@ auto System::findQueueFamily(uint32_t deviceIndex_, uint32_t minQueues_) -> std:
 			transferIndex = &familyQueue - deviceQueueFamilies[deviceIndex_].data();
 		}
 	}
-	return { graphicsIndex, computeIndex, transferIndex};
+	return {graphicsIndex, computeIndex, transferIndex};
 }
 
 }

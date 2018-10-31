@@ -33,7 +33,7 @@ public:
 	using WeakPtr = std::weak_ptr<CommandQueue>;
 
 	auto enqueue(std::shared_ptr<Render::Encoder> const& encoder_) -> void final;
-	auto submit(std::shared_ptr<Render::Fence> const& fence_) -> void final;
+	auto submit(std::shared_ptr<Render::Fence> const& fence_ = {}) -> void final;
 	auto stallTillIdle() -> void final;
 
 

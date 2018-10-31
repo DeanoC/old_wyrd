@@ -21,10 +21,12 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void
 
 			 if(texture->flags & InitZeroFlag)
 			 {
-				 if(texture->imageHandle.acquire() != nullptr) return false;
+				 if(texture->imageHandle.isValid()) return false;
 			 } else
 			 {
-				 if(texture->imageHandle.acquire() == nullptr) return false;
+				 if(!texture->imageHandle.isValid() ||
+					texture->imageHandle.acquire() == nullptr)
+					 return false;
 			 }
 
 			 if(texture->width == 0) return false;

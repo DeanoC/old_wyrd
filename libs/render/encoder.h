@@ -60,6 +60,7 @@ struct IRenderEncoder
 	clearTexture(std::shared_ptr<Texture> const& texture_, std::array<float_t, 4> const& floats_) -> void = 0;
 	virtual auto beginRenderPass() -> void = 0;
 	virtual auto endRenderPass() -> void = 0;
+	virtual auto blit(std::shared_ptr<Texture> const& src_, std::shared_ptr<Texture> const& dst_) -> void = 0;
 };
 
 struct IComputeEncoder

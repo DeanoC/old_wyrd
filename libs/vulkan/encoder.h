@@ -22,6 +22,7 @@ struct RenderEncoder : public Render::IRenderEncoder
 					  std::array<float_t, 4> const& floats_) -> void final;
 	auto beginRenderPass() -> void final;
 	auto endRenderPass() -> void final;
+	auto blit(std::shared_ptr<Render::Texture> const& src_, std::shared_ptr<Render::Texture> const& dst_) -> void final;
 
 #define GENERAL_CB_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(commandBuffer, args...); }
 #define GENERAL_CB_VK_FUNC_EXT(name, extension) GENERAL_CB_VK_FUNC(name)
@@ -31,6 +32,9 @@ struct RenderEncoder : public Render::IRenderEncoder
 #define GFX_CB_VK_FUNC_EXT(name, extension) GENERAL_CB_VK_FUNC(name)
 
 #include "functionlist.inl"
+
+	// special case for the vulkan swap chain
+	auto blitDisplay(std::shared_ptr<Render::Texture> const& src_, VkImage display_) -> void;
 
 	EncoderPool& owner;
 	VkCommandBuffer commandBuffer;
@@ -88,8 +92,8 @@ struct Encoder : public Render::Encoder
 	auto asRenderEncoder() -> Render::IRenderEncoder* final;
 	auto asComputeEncoder() -> Render::IComputeEncoder* final;
 	auto asBlitEncoder() -> Render::IBlitEncoder* final;
-	auto begin(std::shared_ptr<Render::Semaphore> const& semaphore_) -> void final;
-	auto end(std::shared_ptr<Render::Semaphore> const& semaphore_) -> void final;
+	auto begin(std::shared_ptr<Render::Semaphore> const& semaphore_ = {}) -> void final;
+	auto end(std::shared_ptr<Render::Semaphore> const& semaphore_ = {}) -> void final;
 	auto reset() -> void final;
 
 #define GENERAL_CB_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(commandBuffer, args...); }

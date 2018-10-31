@@ -182,7 +182,7 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 
 	IStorage::Ptr storage = prefixToStorage[prefix];
 
-	ResolverInterface resolver = {[this]() -> ResourceMan *
+	ResolverInterface resolver = {[this]() -> ResourceMan*
 								  { return this; }, [this, resourceName](ResourceHandleBase& base_) -> void
 								  {
 									  this->resolveLink(base_, resourceName);
@@ -197,35 +197,35 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 
 		for(int stage = 0; stage < MaxHandlerStages; ++stage)
 		{
-			int extramem = 0;
+			uint32_t extramem = 0;
 			HandlerInit init;
 			HandlerDestroy destroy;
 			std::tie(extramem, init, destroy) = orderedHandler[stage];
 			if(init == nullptr) continue;
 
-			chunks.emplace_back(type,
-								stage,
-								extramem,
-								[this, lambdaType, resolver, prefix, name, init](std::string_view subObject_,
-																				 int stage_, uint16_t majorVersion_,
-																				 uint16_t minorVersion_,
-																				 std::shared_ptr<void> ptr_) -> bool
-								{
-									uint64_t id;
-									ResourceName newName(prefix, name, subObject_);
-									id = getIndexFromName(lambdaType, newName.getResourceName());
+			auto createFun = [this, lambdaType, resolver, prefix, name, init]
+					(std::string_view subObject_, int stage_,
+					 uint16_t majorVersion_, uint16_t minorVersion_,
+					 std::shared_ptr<void> ptr_) -> bool
+			{
+				uint64_t id;
+				ResourceName newName(prefix, name, subObject_);
+				id = getIndexFromName(lambdaType, newName.getResourceName());
 
-									auto ptr = std::static_pointer_cast<ResourceBase>(ptr_);
+				auto ptr = std::static_pointer_cast<ResourceBase>(ptr_);
 
-									bool okay = init(stage_, resolver, majorVersion_, minorVersion_, ptr);
-									if(okay)
-									{
-										resourceCache.insert(id, ptr);
-										return true;
-									} else
-										return false;
-								},
-								destroy);
+				bool okay = init(stage_, resolver, majorVersion_, minorVersion_, ptr);
+				if(okay)
+				{
+					resourceCache.insert(id, ptr);
+					return true;
+				} else
+					return false;
+			};
+
+			chunks.emplace_back(
+					Binny::IBundle::ChunkHandler{type, stage, extramem, createFun, destroy, true, false}
+			);
 
 		}
 	}
@@ -242,8 +242,16 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 
 auto ResourceMan::resolveLink(ResourceHandleBase& link_, ResourceNameView const& current_) -> void
 {
+	if(!link_.isValid())
+	{
+		link_.index = ResourceHandleBase::InvalidIndex;
+		link_.managerIndex = 0;
+		link_.generation = 0;
+		return;
+	}
+
 	ResourceNameView nameView(std::string_view(link_.linkName, link_.linkNameLength));
-	if(nameView.isNull())
+	if(!nameView.isValid() || nameView.isNull())
 	{
 		link_.index = ResourceHandleBase::InvalidIndex;
 		link_.managerIndex = 0;

@@ -77,6 +77,6 @@ TEST_CASE( "Bundle chunks write/read", "[Binny]" )
 	};
 
 	Bundle testRead( &malloc, &free, &malloc, &free, in );
-	auto result = testRead.read(""sv, handlers, false);
+	auto result = testRead.read(""sv, handlers);
 	REQUIRE(result.first != Bundle::ErrorCode::Okay);
 }

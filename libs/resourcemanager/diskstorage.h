@@ -37,7 +37,7 @@ struct DiskStorage : public IStorage {
 		if(stream.bad()) return false;
 
 		auto bundle = Binny::Bundle(alloc_, free_, &malloc, &free, stream);
-		auto okay = bundle.read(subObject, handlers_, false);
+		auto okay = bundle.read(subObject, handlers_);
 		return okay.first == Binny::IBundle::ErrorCode::Okay;
 	}
 

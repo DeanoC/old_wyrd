@@ -17,16 +17,20 @@ class System : public Render::Stable {
 public:
 	inline static System* Global = nullptr;
 
-	auto Init(std::string const& appName_, std::vector<std::string> const& desiredInstanceExtensions_) -> bool final;
+	auto Init(std::string const& appName_,
+			  std::vector<std::string> const& desiredInstanceExtensions_) -> bool final;
 	auto Finish() -> void final;
 
 	auto getGpuCount() const -> uint32_t final { return (uint32_t) physicalDevices.size(); }
 	auto canGpuPresent(uint32_t index_) const -> bool final;
 	auto isGpuLowPower(uint32_t index_) const -> bool final;
-	auto createGpuDevice(uint32_t index_, Render::DeviceConfig const& config_) -> std::shared_ptr<Render::Device> final;
+	auto createGpuDevice(uint32_t index_, Render::DeviceConfig const& config_,
+						 std::shared_ptr<ResourceManager::ResourceMan> const& resourceManager_) -> std::shared_ptr<Render::Device> final;
 
 private:
-	auto createGpuDevice(uint32_t deviceIndex_, bool render_, VkSurfaceKHR surface_, uint32_t minQueues_, std::vector<char const*> const& requiredExtensions) -> Vulkan::Device::Ptr;
+	auto createGpuDevice(uint32_t deviceIndex_, bool render_, VkSurfaceKHR surface_, uint32_t minQueues_,
+						 std::vector<char const*> const& requiredExtensions,
+						 std::shared_ptr<ResourceManager::ResourceMan> const& resourceManager_) -> Vulkan::Device::Ptr;
 
 	auto addDesiredInstanceExtensions(std::string const& desired_)
 	{

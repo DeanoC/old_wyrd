@@ -25,13 +25,16 @@ struct Texture
 
 	constexpr static uint32_t Id = Render::Texture::Id;
 
-	Render::Texture::ConstWeakPtr cpuTexture;
+	Render::Texture* cpuTexture; // safe raw pointer its we are really a single memory block
 	VkImage image;
 	VmaAllocation allocation;
 
 	VkImageViewType imageViewType;
 	VkImageView imageView; // the default view same as when created
 	VkImageSubresourceRange entireRange;
+
+	// note this assumes a single writer of this state!
+	VkImageLayout imageLayout; // this holds the current layout
 };
 
 }

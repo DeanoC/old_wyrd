@@ -8,6 +8,7 @@
 #include "vulkan/device.h"
 #include "vulkan/semaphore.h"
 #include "GLFW/glfw3.h"
+#include "encoder.h"
 #include <vector>
 
 
@@ -24,7 +25,7 @@ public:
 
 	auto createSwapChain() -> void;
 
-	auto present() -> bool final;
+	auto present(std::shared_ptr<Render::Texture> const& src_) -> bool final;
 
 private:
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat() const;
@@ -43,6 +44,8 @@ private:
 	VkSwapchainCreateInfoKHR createInfo;
 	std::vector<VkSurfaceFormatKHR> formats;
 	std::vector<VkPresentModeKHR> presentModes;
+
+	EncoderPool::Ptr blitterPool;
 };
 }
 

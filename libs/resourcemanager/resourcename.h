@@ -140,7 +140,7 @@ struct ResourceName
 
 	explicit ResourceName(ResourceNameView const view_) : ResourceName(view_.resourceName) {}
 
-	explicit ResourceName(std::string_view storage_, std::string_view name_, std::string_view subObject_)
+	explicit ResourceName(std::string_view storage_, std::string_view name_, std::string_view subObject_ = {})
 	{
 		resourceName.reserve(storage_.size() + name_.size() + subObject_.size() + 2);
 		resourceName = storage_;

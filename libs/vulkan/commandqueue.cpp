@@ -80,7 +80,7 @@ auto CommandQueue::submit(std::shared_ptr<Render::Fence> const& fence_) -> void
 		auto fence = std::static_pointer_cast<Fence>(fence_);
 		vulkanFence = fence->vulkanFence;
 	}
-	vkQueueSubmit(1, &submitInfo, vulkanFence);
+	CHKED(vkQueueSubmit(1, &submitInfo, vulkanFence));
 
 	enqueuedEncoders.clear();
 }

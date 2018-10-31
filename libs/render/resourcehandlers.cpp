@@ -5,6 +5,7 @@
 #include "render/resourcehandlers.h"
 #include "render/image.h"
 #include "fmt/format.h"
+#include "texture.h"
 
 namespace Render {
 
@@ -65,6 +66,7 @@ auto RegisterResourceHandlers( ResourceManager::ResourceMan& rm_ ) -> void
 			}
 	);
 
+	Texture::RegisterResourceHandler(rm_);
 
 }
 

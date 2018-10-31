@@ -26,10 +26,11 @@ public:
 	using WeakPtr = std::weak_ptr<Device>;
 	using QueueFamilies = std::vector<VkQueueFamilyProperties>;
 
-	Device( VkPhysicalDevice physicalDevice_,
-			VkDeviceCreateInfo createInfo_,
-			QueueFamilies const& queueFamilies_,
-			uint32_t presentQ_ = ~0);
+	Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
+		   VkPhysicalDevice physicalDevice_,
+		   VkDeviceCreateInfo createInfo_,
+		   QueueFamilies const& queueFamilies_,
+		   uint32_t presentQ_ = ~0);
 	~Device();
 
 	auto getVkDevice() -> VkDevice { return device; }
@@ -40,6 +41,10 @@ public:
 	auto makeEncoderPool(bool frameLifetime_, uint32_t queueType_) -> std::shared_ptr<Render::EncoderPool> final;
 	auto makeFence() -> std::shared_ptr<Render::Fence> final;
 	auto makeSemaphore() -> std::shared_ptr<Render::Semaphore> final;
+	auto makeRenderPass(
+			std::vector<Render::RenderPass::Target> const& targets_) -> std::shared_ptr<Render::RenderPass> final;
+	auto makeRenderTarget(std::shared_ptr<Render::RenderPass> const& pass_,
+						  std::vector<Render::Texture::Ptr> const& targets_) -> std::shared_ptr<Render::RenderTarget> final;
 
 	auto getMainRenderQueue() -> Render::CommandQueue::Ptr final;
 	auto getMainComputeQueue() -> Render::CommandQueue::Ptr final;
@@ -67,14 +72,14 @@ public:
 	auto createFence(VkFenceCreateInfo const& createInfo_) -> VkFence;
 	auto destroyFence(VkFence semaphore_) -> void;
 
-	auto createEncoderPool(VkCommandPoolCreateInfo const& createInfo_) -> VkCommandPool;
-	auto destroyEncoderPool(VkCommandPool const& commandPool_) -> void;
+	auto createCommandPool(VkCommandPoolCreateInfo const& createInfo_) -> VkCommandPool;
+	auto destroyCommandPool(VkCommandPool const& commandPool_) -> void;
 
 	auto createRenderPass(VkRenderPassCreateInfo const& createInfo_) -> VkRenderPass;
 	auto destroyRenderPass(VkRenderPass renderPass_) -> void;
 
-	auto createRenderTarget(VkFramebufferCreateInfo const& createInfo_) -> VkFramebuffer;
-	auto destroyRenderTarget(VkFramebuffer frameBuffer_) -> void;
+	auto createFramebuffer(VkFramebufferCreateInfo const& createInfo_) -> VkFramebuffer;
+	auto destroyFramebuffer(VkFramebuffer frameBuffer_) -> void;
 
 private:
 
@@ -138,6 +143,9 @@ private:
 #define COMMANDPOOL_VK_FUNC(name) DEVICE_VK_FUNC(name)
 #define COMMANDPOOL_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
 #include "functionlist.inl"
+
+	// hold a reference to the resource manager we were created with
+	std::shared_ptr<ResourceManager::ResourceMan> resourceMan;
 
 	std::shared_ptr<Display> display; // can be null for headless
 

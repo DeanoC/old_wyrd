@@ -16,7 +16,7 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 	{
 		auto cpuTexture = std::static_pointer_cast<Render::Texture>(ptr_);
 		auto vulkanTexture = cpuTexture->getStage<Vulkan::Texture>(stage_);
-		vulkanTexture->cpuTexture = cpuTexture;
+		vulkanTexture->cpuTexture = cpuTexture.get();
 
 		auto device = device_.lock();
 		if(!device) return false;
@@ -65,9 +65,12 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 											 (VkSampleCountFlagBits) cpuTexture->samples, VK_IMAGE_TILING_OPTIMAL,
 											 usageflags, VK_SHARING_MODE_EXCLUSIVE, 0, nullptr,
 											 VK_IMAGE_LAYOUT_UNDEFINED};
-		VmaAllocationCreateInfo gpuAllocInfo;
-		gpuAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+		VmaAllocationCreateInfo gpuAllocInfo{};
 		gpuAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+		gpuAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+		gpuAllocInfo.pool = VK_NULL_HANDLE;
+		gpuAllocInfo.pUserData = nullptr;
+
 		VmaAllocationInfo info;
 		auto[image, alloc] = device->createImage(imageCreateInfo, gpuAllocInfo, info);
 		vulkanTexture->image = image;
@@ -120,6 +123,8 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 		imageViewCreateInfo.viewType = vulkanTexture->imageViewType;
 		imageViewCreateInfo.flags = imageCreateInfo.flags;
 		vulkanTexture->imageView = device->createImageView(imageViewCreateInfo);
+
+		vulkanTexture->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 		return true;
 	};

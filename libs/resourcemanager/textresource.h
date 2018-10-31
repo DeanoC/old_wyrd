@@ -16,7 +16,7 @@ struct TextResource : public Resource<"TEXT"_resource_id>
 
 	auto static RegisterResourceHandler( ResourceManager::ResourceMan& rm_ ) -> void;
 
-	char const* const getText() const { return (char const* const)this;}
+	char const* const getText() const { return (char const* const) this + sizeof(ResourceBase); }
 };
 
 }

@@ -6,6 +6,8 @@
 
 namespace Render
 {
+struct Texture;
+
 struct Display
 {
 	Display(uint32_t width_, uint32_t height_) : width(width_), height(height_) {}
@@ -14,7 +16,7 @@ struct Display
 	auto getWidth() const -> uint32_t { return width; }
 	auto getHeight() const -> uint32_t { return height; }
 
-	virtual auto present() -> bool = 0;
+	virtual auto present(std::shared_ptr<Render::Texture> const& src_) -> bool = 0;
 
 	uint32_t width, height;
 };

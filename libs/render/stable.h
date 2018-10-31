@@ -7,8 +7,8 @@
 #include "render/device.h"
 #include <vector>
 
-
 namespace Render {
+
 
 struct DeviceConfig
 {
@@ -28,14 +28,16 @@ struct DeviceConfig
 /// The stable holds your throughbred gpu ready to go galloping
 struct Stable
 {
-	virtual ~Stable(){};
-	virtual auto Init(std::string const& appName_, std::vector<std::string> const& backendSpecific_) -> bool = 0;
+	virtual ~Stable() = default;
+	virtual auto Init(std::string const& appName_,
+					  std::vector<std::string> const& backendSpecific_) -> bool = 0;
 	virtual auto Finish() -> void = 0;
 
 	virtual auto getGpuCount() const -> uint32_t = 0;
 	virtual auto canGpuPresent(uint32_t index_) const -> bool = 0;
 	virtual auto isGpuLowPower(uint32_t index_) const -> bool = 0;
-	virtual auto createGpuDevice(uint32_t index_, DeviceConfig const& config_) -> std::shared_ptr<Render::Device> = 0;
+	virtual auto createGpuDevice(uint32_t index_, DeviceConfig const& config_,
+								 std::shared_ptr<ResourceManager::ResourceMan> const& resourceManager_) -> std::shared_ptr<Render::Device> = 0;
 
 };
 

@@ -60,7 +60,6 @@ auto Display::createSwapChain() -> void
 		imageCount = capabilities.maxImageCount;
 	}
 
-
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	createInfo.pNext = nullptr;
 	createInfo.pQueueFamilyIndices = nullptr;
@@ -88,9 +87,10 @@ auto Display::createSwapChain() -> void
 	imageAvailable = std::static_pointer_cast<Semaphore>(device->makeSemaphore());
 	presentComplete = std::static_pointer_cast<Semaphore>(device->makeSemaphore());
 
+	blitterPool = device->makeEncoderPool(true, Render::CommandQueue::RenderFlavour);
 }
 
-auto Display::present() -> bool
+auto Display::present(std::shared_ptr<Render::Texture> const& src_) -> bool
 {
 	auto device = weakDevice.lock();
 
@@ -113,6 +113,17 @@ auto Display::present() -> bool
 			return false;
 	}
 
+	auto q = device->getMainRenderQueue();
+	auto enc = blitterPool->allocateEncoder(Render::CommandQueue::RenderFlavour);
+	assert(enc->canEncodeRenderCommands());
+
+	enc->begin();
+	RenderEncoder* encoder = (RenderEncoder*) enc->asRenderEncoder();
+	encoder->blitDisplay(src_, images[imageIndex]);
+	enc->end();
+	q->enqueue(enc);
+	q->submit();
+
 	VkSemaphore presentSemaphores[]{presentComplete->vulkanSemaphore};
 	VkPresentInfoKHR presentInfo = {
 			VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -126,6 +137,7 @@ auto Display::present() -> bool
 	};
 	auto pq = std::static_pointer_cast<Vulkan::CommandQueue>(device->getMainPresentQueue());
 	pq->vkQueuePresentKHR(&presentInfo);
+	pq->submit();
 
 	return !glfwWindowShouldClose(window);
 }

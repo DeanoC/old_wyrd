@@ -16,7 +16,7 @@ namespace ResourceManager {
 
 struct MemStorage : public IStorage
 {
-	using FilenameToMemory = tbb::concurrent_unordered_map<std::string, std::tuple<uint32_t, uint16_t, uint16_t,void const*, size_t>>;
+	using FilenameToMemory = tbb::concurrent_unordered_map<std::string, std::tuple<uint32_t, uint16_t, uint16_t, std::vector<uint8_t>>>;
 
 	auto getPrefix() -> std::string_view final
 	{
@@ -32,10 +32,10 @@ struct MemStorage : public IStorage
 		std::string name = std::string(resourceName_.getNameAndSubObject());
 		if(filenameToMemory.find(name) == filenameToMemory.end())
 			return false;
-		auto const [type, majorVersion, minorVersion, ptr, size] = filenameToMemory[name];
+		auto const[type, majorVersion, minorVersion, mem] = filenameToMemory[name];
 
-		Binny::InMemBundle bundle(alloc_, free_, type, majorVersion, minorVersion, ptr, size);
-		auto okay = bundle.read(resourceName_.getSubObject(), handlers_, false);
+		Binny::InMemBundle bundle(alloc_, free_, type, majorVersion, minorVersion, mem.data(), mem.size());
+		auto okay = bundle.read(resourceName_.getSubObject(), handlers_);
 		return okay.first == Binny::IBundle::ErrorCode::Okay;
 	}
 
@@ -44,7 +44,11 @@ struct MemStorage : public IStorage
 	{
 		if(filenameToMemory.find(name_) != filenameToMemory.end())
 			return false;
-		filenameToMemory[name_] = { type_, majorVersion_, minorVersion_, mem_, size_ };
+
+		std::vector<uint8_t> mem(size_);
+		std::memcpy(mem.data(), mem_, size_);
+
+		filenameToMemory[name_] = {type_, majorVersion_, minorVersion_, std::move(mem)};
 		return true;
 	}
 
