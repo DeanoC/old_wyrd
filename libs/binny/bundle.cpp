@@ -2,6 +2,8 @@
 #include <unordered_map>
 #include <array>
 #include "bundle.h"
+#include "crc32c/crc32c.h"
+#include "lz4/lz4.h"
 
 namespace Binny {
 

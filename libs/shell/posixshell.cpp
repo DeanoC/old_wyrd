@@ -1,4 +1,5 @@
-
+#include "core/core.h"
+#include "shell/posixshell.h"
 
 #if PLATFORM == POSIX || PLATFORM == APPLE_MAC
 namespace Shell

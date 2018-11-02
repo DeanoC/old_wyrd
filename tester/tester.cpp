@@ -1,7 +1,4 @@
 #define CATCH_CONFIG_RUNNER
-#define LOGURU_IMPLEMENTATION 1
-#define CX_ERROR_IMPLEMENTATION 1
-
 #include "core/core.h"
 #include "catch.hpp"
 #include "shell/interface.h"

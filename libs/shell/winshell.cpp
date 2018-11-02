@@ -1,6 +1,8 @@
 
 #include "core/core.h"
 #include "shell/winshell.h"
+#include <fcntl.h>
+#include <io.h>
 
 #if PLATFORM == WINDOWS
 
@@ -214,17 +216,17 @@ auto WinShell::init(ShellConfig const& init_) -> bool
 	// Register class
 	WNDCLASSEX wcex;
 	wcex.cbSize = sizeof(WNDCLASSEX);
-	wcex.style = CS_HREDRAW | CS_VREDRAW;
+	wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	wcex.lpfnWndProc = WndProc;
 	wcex.cbClsExtra = 0;
 	wcex.cbWndExtra = 0;
 	wcex.hInstance = w->hInstance;
-	wcex.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+	wcex.hIcon = NULL;//LoadIcon( hInstance, ( LPCTSTR )IDI_TUTORIAL1 );
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground = (HBRUSH) GetStockObject(BLACK_BRUSH);;
+	wcex.hbrBackground = (HBRUSH) (COLOR_WINDOW + 1);
 	wcex.lpszMenuName = NULL;
 	wcex.lpszClassName = "Wyrd";
-	wcex.hIconSm = LoadIcon(NULL, IDI_WINLOGO);
+	wcex.hIconSm = NULL;//LoadIcon( wcex.hInstance, ( LPCTSTR )IDI_TUTORIAL1 );
 	if(!RegisterClassEx(&wcex))
 		return false;
 
@@ -242,18 +244,12 @@ auto WinShell::createPresentableWindow(PresentableWindowConfig const& config_) -
 {
 	// Create window
 	RECT rc = {0, 0, (LONG) config_.width, (LONG) config_.height};
-	DWORD style;
-	DWORD styleEx;
-	if(config_.fullscreen)
+	DWORD style = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
+	DWORD styleEx = 0;
+	if(config_.fullscreen == false)
 	{
-		styleEx = WS_EX_APPWINDOW;
-		style = WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
-	} else
-	{
-		styleEx = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
-		style = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+		AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 	}
-	AdjustWindowRectEx(&rc, style, FALSE, styleEx);
 
 	HWND hwnd = CreateWindowEx(styleEx,
 							   "Wyrd",

@@ -1,3 +1,5 @@
+#define LOGURU_IMPLEMENTATION 1
+#define CX_ERROR_IMPLEMENTATION 1
 #include "core/core.h"
 #include "shell/consoleapp.h"
 #include "vulkan/system.h"

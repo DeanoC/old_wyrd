@@ -1,3 +1,5 @@
+#include <resourcemanager/memstorage.h>
+#include <render/resourcehandlers.h>
 #include "core/core.h"
 #include "shell/interface.h"
 #include "render/stable.h"
@@ -11,10 +13,10 @@ int Main(Shell::ShellInterface& shell_)
 	using namespace std::string_view_literals;
 
 	bool okay = shell_.init({
-						"Gfx Test",
-						true,
-						true,
-				});
+									"Gfx Test",
+									true,
+									true,
+							});
 	if(!okay) return 10;
 
 	auto resourceManager = ResourceManager::ResourceMan::Create();

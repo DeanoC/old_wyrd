@@ -240,6 +240,7 @@ bool System::Init(std::string const& appName_,
 
 	}
 
+
 	return true;
 }
 
