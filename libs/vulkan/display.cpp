@@ -11,7 +11,7 @@ Display::Display(
 		uint32_t width_,
 		uint32_t height_,
 		Vulkan::Device::Ptr device_,
-		GLFWwindow* window_,
+		Shell::PresentableWindow* window_,
 		VkSurfaceKHR surface_) :
 		Render::Display{width_, height_},
 		window(window_),
@@ -60,20 +60,24 @@ auto Display::createSwapChain() -> void
 		imageCount = capabilities.maxImageCount;
 	}
 
+	createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	createInfo.pNext = nullptr;
-	createInfo.pQueueFamilyIndices = nullptr;
-	createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	createInfo.flags = 0;
 	createInfo.surface = surface;
 	createInfo.minImageCount = imageCount;
 	createInfo.imageFormat = swapFormat.format;
 	createInfo.imageColorSpace = swapFormat.colorSpace;
 	createInfo.imageExtent = chooseSwapExtent();
 	createInfo.imageArrayLayers = 1;
-	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+							VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	createInfo.queueFamilyIndexCount = 0;
+	createInfo.pQueueFamilyIndices = nullptr;
 	createInfo.preTransform = capabilities.currentTransform;
-	createInfo.presentMode = chooseSwapPresentMode();
 	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	createInfo.presentMode = chooseSwapPresentMode();
 	createInfo.clipped = VK_TRUE;
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
 	swapchainKHR = device->createSwapchain(createInfo);
@@ -86,10 +90,10 @@ auto Display::createSwapChain() -> void
 	imageAvailable = std::static_pointer_cast<Semaphore>(device->makeSemaphore());
 	presentComplete = std::static_pointer_cast<Semaphore>(device->makeSemaphore());
 
-	blitterPool = device->makeEncoderPool(true, Render::CommandQueue::RenderFlavour);
+	blitterPool = device->makeEncoderPool(true, Render::CommandQueueFlavour::Render);
 }
 
-auto Display::present(std::shared_ptr<Render::Texture> const& src_) -> bool
+auto Display::present(std::shared_ptr<Render::Texture> const& src_) -> void
 {
 	auto device = weakDevice.lock();
 
@@ -109,35 +113,48 @@ auto Display::present(std::shared_ptr<Render::Texture> const& src_) -> bool
 
 		default:
 			CHKED(result);
-			return false;
+			return;
 	}
 
-	auto q = device->getMainRenderQueue();
-	auto enc = blitterPool->allocateEncoder(Render::CommandQueue::RenderFlavour);
+	auto q = device->getGeneralQueue();
+	auto enc = blitterPool->allocateEncoder(Render::EncoderFlag::RenderEncoder);
 	assert(enc->canEncodeRenderCommands());
 
 	enc->begin(imageAvailable);
-	RenderEncoder* encoder = (RenderEncoder*) enc->asRenderEncoder();
-	encoder->blitDisplay(src_, images[imageIndex]);
+	auto* renc = (RenderEncoder*) enc->asRenderEncoder();
+	VkClearColorValue clear;
+	clear.float32[0] = 0.0f;
+	clear.float32[1] = 255.0f;
+	clear.float32[2] = 0.0f;
+	clear.float32[3] = 255.0f;
+	VkImageSubresourceRange range;
+	range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	range.layerCount = 1;
+	range.levelCount = 1;
+	range.baseMipLevel = 0;
+	range.baseArrayLayer = 0;
+
+	renc->vkCmdClearColorImage(images[imageIndex],
+							   VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, &clear, 1, &range);
+	//	renc->blitDisplay(src_, images[imageIndex]);
+
 	enc->end(presentComplete);
 	q->enqueue(enc);
+	q->submit();
 
-	VkSemaphore presentSemaphores[]{presentComplete->vulkanSemaphore};
-	VkPresentInfoKHR presentInfo = {
-			VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-			nullptr,
-			1,
-			presentSemaphores,
-			1u,
-			&swapchainKHR,
-			&imageIndex,
-			nullptr
-	};
-	auto pq = std::static_pointer_cast<Vulkan::CommandQueue>(device->getMainPresentQueue());
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.pNext = nullptr;
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = &swapchainKHR;
+	presentInfo.pImageIndices = &imageIndex;
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = &presentComplete->vulkanSemaphore;
+	presentInfo.pResults = nullptr;
+
+	//	auto pq = std::static_pointer_cast<Vulkan::Com90mandQueue>(device->getPresentQueue());
+	auto pq = std::static_pointer_cast<Vulkan::CommandQueue>(q);
 	CHKED(pq->vkQueuePresentKHR(&presentInfo));
-
-	glfwPollEvents();
-	return !glfwWindowShouldClose(window);
 }
 
 VkSurfaceFormatKHR Display::chooseSwapSurfaceFormat() const

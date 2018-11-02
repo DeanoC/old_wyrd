@@ -45,7 +45,7 @@ using ResourceHandler = std::tuple<int, HandlerInit, HandlerDestroy>;
 class ResourceMan
 {
 public:
-	friend class ResourceHandleBase;
+	friend struct ResourceHandleBase;
 
 	constexpr static unsigned int MaxHandlerStages = Binny::IBundle::MaxHandlerStages;
 

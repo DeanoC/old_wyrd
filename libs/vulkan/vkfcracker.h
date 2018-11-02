@@ -56,47 +56,47 @@ struct VkfCracker
 	constexpr static auto isDepthFormat( VkFormat const fmt_ ) -> bool
 	{
 		// vulkan only formats
-		switch(fmt_)
-		{
-			default: break;
-		}
+		/*		switch(fmt_)
+				{
+					default: break;
+				}*/
 		return Render::GtfCracker::isDepth(toGeneric(fmt_));
 	}
 	constexpr static auto isStencil( VkFormat  const fmt_ ) -> bool
 	{
 		// vulkan only formats
-		switch(fmt_)
-		{
-			default: break;
-		}
+		/*		switch(fmt_)
+				{
+					default: break;
+				}*/
 		return Render::GtfCracker::isStencil(toGeneric(fmt_));
 	}
 	constexpr static auto isDepthStencil( VkFormat const fmt_ ) -> bool
 	{
 		// vulkan only formats
-		switch(fmt_)
-		{
-			default: break;
-		}
+		/*		switch(fmt_)
+				{
+					default: break;
+				}*/
 		return Render::GtfCracker::isDepthStencil(toGeneric(fmt_));
 	}
 
 	constexpr static auto isCompressed( VkFormat const fmt_ ) -> unsigned int
 	{
 		// vulkan only formats
-		switch(fmt_)
-		{
-			default: break;
-		}
+		/*		switch(fmt_)
+				{
+					default: break;
+				}*/
 		return Render::GtfCracker::isCompressed(toGeneric(fmt_));
 	}
 	constexpr static auto isFloat( VkFormat const fmt_ ) -> bool
 	{
 		// vulkan only formats
-		switch(fmt_)
-		{
-			default: break;
-		}
+		/*		switch(fmt_)
+				{
+					default: break;
+				}*/
 		return Render::GtfCracker::isFloat(toGeneric(fmt_));
 	}
 	constexpr static auto isNormalised( VkFormat const fmt_ ) -> bool

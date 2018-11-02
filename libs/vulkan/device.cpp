@@ -1,6 +1,5 @@
-
-
 #include "core/core.h"
+#include "render/types.h"
 #include "render/gtfcracker.h"
 #include "vulkan/device.h"
 #include "vulkan/commandqueue.h"
@@ -15,39 +14,32 @@
 #include <stdlib.h>
 
 namespace {
-auto ToQueueIndex(bool render_, bool compute_, bool blit_) -> int
-{
-	int index = render_ ? Render::CommandQueue::RenderFlavour : 0;
-	index |= compute_ ? Render::CommandQueue::ComputeFlavour : 0;
-	index |= blit_ ? Render::CommandQueue::BlitFlavour : 0;
-	return index;
-}
-
-auto VulkanAlloc(void* pUserData, size_t size, size_t alignment, VkSystemAllocationScope allocationScope) -> void*
+auto VKAPI_PTR VulkanAlloc(void* pUserData, size_t size, size_t alignment,
+						   VkSystemAllocationScope allocationScope) -> void*
 {
 	assert(alignment <= alignof(max_align_t));
 	return std::malloc(size); //
 }
 
-auto VulkanFree(void* pUserData, void* pMemory) -> void
+auto VKAPI_PTR VulkanFree(void* pUserData, void* pMemory) -> void
 {
 	std::free(pMemory);
 }
 
-auto VulkanRealloc(void* pUserData, void* pOriginal, size_t size, size_t alignment,
-				   VkSystemAllocationScope allocationScope) -> void*
+auto VKAPI_PTR VulkanRealloc(void* pUserData, void* pOriginal, size_t size, size_t alignment,
+							 VkSystemAllocationScope allocationScope) -> void*
 {
 	assert(alignment <= alignof(max_align_t));
 	return std::realloc(pOriginal, size);
 }
 
-auto VulkanInternalAllocNotify(void* pUserData, size_t size, VkInternalAllocationType allocationType,
-							   VkSystemAllocationScope allocationScope) -> void
+auto VKAPI_PTR VulkanInternalAllocNotify(void* pUserData, size_t size, VkInternalAllocationType allocationType,
+										 VkSystemAllocationScope allocationScope) -> void
 {
 }
 
-auto VulkanInternalFreeNotify(void* pUserData, size_t size, VkInternalAllocationType allocationType,
-							  VkSystemAllocationScope allocationScope) -> void
+auto VKAPI_PTR VulkanInternalFreeNotify(void* pUserData, size_t size, VkInternalAllocationType allocationType,
+										VkSystemAllocationScope allocationScope) -> void
 {
 }
 
@@ -56,15 +48,35 @@ auto VulkanInternalFreeNotify(void* pUserData, size_t size, VkInternalAllocation
 
 namespace Vulkan {
 
-
 Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
+			   bool renderCapable_,
 			   VkPhysicalDevice physicalDevice_,
 			   VkDeviceCreateInfo createInfo_,
 			   QueueFamilies const& queueFamilies_,
 			   uint32_t presentQ_) :
 		resourceMan(resourceMan_),
+		renderCapable(renderCapable_),
 		physicalDevice(physicalDevice_),
-		deviceCreateInfo(createInfo_)
+		deviceCreateInfo(createInfo_),
+		deviceVkVTable{},
+		fenceVkVTable{},
+		semaphoreVkVTable{},
+		eventVkVTable{},
+		queryPoolVkVTable{},
+		bufferVkVTable{},
+		bufferViewVkVTable{},
+		imageVkVTable{},
+		imageViewVkVTable{},
+		shaderModuleVkVTable{},
+		pipelineVkVTable{},
+		samplerVkVTable{},
+		descriptorSetVkVTable{},
+		framebufferVkVTable{},
+		renderPassVkVTable{},
+		commandPoolVkVTable{},
+		queueVkVTable{},
+		graphicsCBVkVTable{},
+		computeCBVkVTable{}
 {
 
 	allocationCallbacks.pfnAllocation = &VulkanAlloc;
@@ -76,7 +88,7 @@ Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
 
 	CHKED(vkCreateDevice(physicalDevice_, &deviceCreateInfo, &allocationCallbacks, &device));
 
-	std::unordered_set<char const*> extensions;
+	std::unordered_set<std::string> extensions;
 	for(auto j = 0u; j < deviceCreateInfo.enabledExtensionCount; ++j)
 	{
 		auto const& ext = deviceCreateInfo.ppEnabledExtensionNames[j];
@@ -175,19 +187,15 @@ Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
    { computeCBVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
    if( computeCBVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
-#define TRANSFER_CB_VULKAN_FUNC(name, level) \
-   { transferCBVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   if( transferCBVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+#define GENERAL_CB_VULKAN_FUNC(name, level) \
+   { graphicsCBVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   computeCBVkVTable. name = graphicsCBVkVTable. name;       \
+   generalCBVkVTable. name = graphicsCBVkVTable. name;      \
+   if( graphicsCBVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define GFXCOMP_CB_VULKAN_FUNC(name, level) \
    { graphicsCBVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
    computeCBVkVTable. name = graphicsCBVkVTable. name;       \
-   if( graphicsCBVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
-
-#define GENERAL_CB_VULKAN_FUNC(name, level) \
-   { graphicsCBVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   computeCBVkVTable. name = graphicsCBVkVTable. name;       \
-   transferCBVkVTable. name = graphicsCBVkVTable. name;      \
    if( graphicsCBVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define CHK_EXT(extension) if( extensions.find(extension) != extensions.end())
@@ -227,17 +235,14 @@ Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
 #define QUEUE_VK_FUNC(name) QUEUE_VULKAN_FUNC(name, queue);
 #define QUEUE_VK_FUNC_EXT(name, extension) CHK_EXT(extension) QUEUE_VULKAN_FUNC(name, queue extension);
 #define GRAPHIC_CB_VK_FUNC(name) GRAPHICS_CB_VULKAN_FUNC(name, graphics command buffer);
-#define GFX_CB_VK_FUNC_EXT(name, extension) CHK_EXT(extension) GRAPHICS_CB_VULKAN_FUNC(name, graphic command buffer extension);
+#define GRAPHIC_CB_VK_FUNC_EXT(name, extension) CHK_EXT(extension) GRAPHICS_CB_VULKAN_FUNC(name, graphic command buffer extension);
 #define COMPUTE_CB_VK_FUNC(name) COMPUTE_CB_VULKAN_FUNC(name, compute command buffer);
 #define COMPUTE_CB_VK_FUNC_EXT(name, extension) CHK_EXT(extension) COMPUTE_CB_VULKAN_FUNC(name, compute command buffer extension);
-#define TRANSFER_CB_VK_FUNC(name) TRANSFER_CB_VULKAN_FUNC(name, transfer command buffer);
-#define TRANSFER_CB_VK_FUNC_EXT(name, extension) CHK_EXT(extension) TRANSFER_CB_VULKAN_FUNC(name, transfer command buffer extension);
-
+#define GENERAL_CB_VK_FUNC(name) GENERAL_CB_VULKAN_FUNC(name, transfer command buffer);
+#define GENERAL_CB_VK_FUNC_EXT(name, extension) CHK_EXT(extension) GENERAL_CB_VULKAN_FUNC(name, transfer command buffer extension);
 #define GFXCOMP_CB_VK_FUNC(name) GFXCOMP_CB_VULKAN_FUNC(name, graphics & compute command buffer);
 #define GFXCOMP_CB_VK_FUNC_EXT(name, extension) CHK_EXT(extension) GFXCOMP_CB_VULKAN_FUNC(name, graphics & compute command buffer extension);
 
-#define GENERAL_CB_VK_FUNC(name) GENERAL_CB_VULKAN_FUNC(name, general command buffer);
-#define GENERAL_CB_VK_FUNC_EXT(name, extension) CHK_EXT(extension) GENERAL_CB_VULKAN_FUNC(name, general command buffer extension);
 
 #include "functionlist.inl"
 
@@ -275,11 +280,18 @@ Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
 
 	for(auto i = 0u; i < createInfo_.queueCreateInfoCount; ++i)
 	{
-		uint32_t flavour = 0;
-		flavour |= queueFamilies_[i].queueFlags & VK_QUEUE_GRAPHICS_BIT ? Render::CommandQueue::RenderFlavour : 0;
-		flavour |= queueFamilies_[i].queueFlags & VK_QUEUE_COMPUTE_BIT ? Render::CommandQueue::ComputeFlavour : 0;
-		flavour |= queueFamilies_[i].queueFlags & VK_QUEUE_TRANSFER_BIT ? Render::CommandQueue::BlitFlavour : 0;
-		flavour |= i == presentQ_ ? Render::CommandQueue::PresentFlavour : 0;
+		using namespace Render;
+		using namespace Core::bitmask;
+
+		CommandQueueFlavour flavour{zero<CommandQueueFlavour>()};
+		flavour |= (renderCapable && queueFamilies_[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) ?
+				   CommandQueueFlavour::Render : zero<CommandQueueFlavour>();
+		flavour |= (queueFamilies_[i].queueFlags & VK_QUEUE_COMPUTE_BIT) ?
+				   CommandQueueFlavour::Compute : zero<CommandQueueFlavour>();
+		flavour |= queueFamilies_[i].queueFlags & VK_QUEUE_TRANSFER_BIT ?
+				   CommandQueueFlavour::DMA : zero<CommandQueueFlavour>();
+		flavour |= i == presentQ_ ?
+				   CommandQueueFlavour::Present : zero<CommandQueueFlavour>();
 
 		VkQueue q;
 		vkGetDeviceQueue(i, 0, &q);
@@ -293,33 +305,60 @@ Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
 
 	for(auto que : cqs)
 	{
-		int index = que->getFlavour() & 0x7;
-		queues[index] = que;
-		if(que->isPresentFlavour() && mainPresentQueue.expired())
+		using namespace Render;
+		using namespace Core::bitmask;
+		if(!renderSpecificQueue && test_equal(que->getFlavour(), CommandQueueFlavour::Render |
+																 CommandQueueFlavour::DMA))
 		{
-			mainPresentQueue = que;
+			renderSpecificQueue = que;
+		}
+		if(!computeSpecificQueue && test_equal(que->getFlavour(), CommandQueueFlavour::Compute |
+																  CommandQueueFlavour::DMA))
+		{
+			computeSpecificQueue = que;
+		}
+		if(!dmaOnlyQueue && test_equal(que->getFlavour(), CommandQueueFlavour::DMA))
+		{
+			dmaOnlyQueue = que;
+		}
+		if(!allQueue && test_equal(que->getFlavour(), CommandQueueFlavour::Render |
+													  CommandQueueFlavour::Compute |
+													  CommandQueueFlavour::DMA))
+		{
+			allQueue = que;
+		}
+
+		if(que->isPresentFlavour() && presentQueue.expired())
+		{
+			presentQueue = que;
 		}
 	}
 
-	// now spread multi-capable queues to any holes in the array
-	// easy case is if we have a fully flexible queue
-	for(auto i = 0u; i < 6; ++i)
+	// if we don't have specific queues, use multiple capable one
+	if(renderCapable)
 	{
-		if(queues[i] != nullptr) continue;
-
-		if(queues[0x7] != nullptr) queues[i] = queues[0x7];
-		else
-		{
-			if(queues[0x6] != nullptr && ((i & 0x2) || (i & 0x4))) queues[i] = queues[0x6];
-			if(queues[0x5] != nullptr && ((i & 0x1) || (i & 0x4))) queues[i] = queues[0x5];
-			if(queues[0x3] != nullptr && ((i & 0x1) || (i & 0x2))) queues[i] = queues[0x3];
-		}
+		// currently render capable requires 1 general queue
+		assert(allQueue);
+		renderSpecificQueue = renderSpecificQueue ? renderSpecificQueue : allQueue;
+		computeSpecificQueue = computeSpecificQueue ? computeSpecificQueue : allQueue;
+		dmaOnlyQueue = dmaOnlyQueue ? dmaOnlyQueue : allQueue;
+	} else
+	{
+		// compute requires a compute queue
+		assert(computeSpecificQueue);
+		dmaOnlyQueue = dmaOnlyQueue ? dmaOnlyQueue : computeSpecificQueue;
 	}
 
 }
 
 Device::~Device()
 {
+	allQueue.reset();
+	dmaOnlyQueue.reset();
+	computeSpecificQueue.reset();
+	renderSpecificQueue.reset();
+
+	dmaEncoderPool.reset();
 	vkDestroyDevice(device, &allocationCallbacks);
 }
 
@@ -327,6 +366,115 @@ auto Device::getDisplay() const -> std::shared_ptr<Render::Display>
 {
 	return std::static_pointer_cast<Render::Display>(display);
 };
+
+auto Device::upload(uint8_t* data_, uint32_t size_, VkImageCreateInfo const& createInfo_,
+					std::shared_ptr<Render::Texture> const& dst_) -> void
+{
+	if(!dmaEncoderPool)
+	{
+		using namespace Render;
+		dmaEncoderPool = std::static_pointer_cast<EncoderPool>(
+				makeEncoderPool(true, CommandQueueFlavour::DMA));
+	}
+	// create CPU side texture
+	VkImageCreateInfo cpuCreateInfo = createInfo_;
+	cpuCreateInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+	cpuCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+	cpuCreateInfo.tiling = VK_IMAGE_TILING_LINEAR;
+	VmaAllocationCreateInfo cpuAllocInfo{};
+	cpuAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+	cpuAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+	VmaAllocationInfo cpuInfo;
+	auto[cpuImage, cpuAlloc] = createImage(cpuCreateInfo, cpuAllocInfo, cpuInfo);
+
+	std::memcpy(cpuInfo.pMappedData, data_, size_);
+
+	upload(cpuImage, dst_);
+
+	destroyImage({cpuImage, cpuAlloc});
+}
+
+auto Device::fill(uint32_t value_, VkImageCreateInfo const& createInfo_,
+				  std::shared_ptr<Render::Texture> const& dst_) -> void
+{
+	if(!dmaEncoderPool)
+	{
+		using namespace Render;
+		dmaEncoderPool = std::static_pointer_cast<EncoderPool>(
+				makeEncoderPool(true, CommandQueueFlavour::DMA));
+	}
+
+	// create CPU side texture
+	VkImageCreateInfo cpuCreateInfo = createInfo_;
+	cpuCreateInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+	cpuCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+	cpuCreateInfo.tiling = VK_IMAGE_TILING_LINEAR;
+	VmaAllocationCreateInfo cpuAllocInfo{};
+	cpuAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+	cpuAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+	VmaAllocationInfo cpuInfo;
+	auto[cpuImage, cpuAlloc] = createImage(cpuCreateInfo, cpuAllocInfo, cpuInfo);
+	for(auto i = 0u; i < createInfo_.extent.width * createInfo_.extent.height; ++i)
+	{
+		((uint32_t*) cpuInfo.pMappedData)[i] = value_;
+	}
+
+	upload(cpuImage, dst_);
+
+	destroyImage({cpuImage, cpuAlloc});
+}
+
+void Device::upload(VkImage cpuImage, std::shared_ptr<Render::Texture> const& dst_)
+{
+	auto encoder = std::static_pointer_cast<Encoder>(dmaEncoderPool->allocateEncoder());
+	Texture* dst = dst_->getStage<Texture>(Texture::s_stage);
+
+	encoder->begin();
+	VkImageMemoryBarrier hostBarrier{};
+	hostBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	hostBarrier.oldLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+	hostBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	hostBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	hostBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	hostBarrier.image = cpuImage;
+	hostBarrier.subresourceRange.aspectMask = dst->entireRange.aspectMask;
+	hostBarrier.subresourceRange.baseMipLevel = dst->entireRange.baseMipLevel;
+	hostBarrier.subresourceRange.levelCount = dst->entireRange.levelCount;
+	hostBarrier.subresourceRange.baseArrayLayer = dst->entireRange.baseArrayLayer;
+	hostBarrier.subresourceRange.layerCount = dst->entireRange.layerCount;
+	hostBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+	hostBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+	encoder->textureBarrier(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, hostBarrier);
+	VkImageSubresourceLayers srcLayers;
+	srcLayers.aspectMask = dst->entireRange.aspectMask;
+	srcLayers.baseArrayLayer = dst->entireRange.baseArrayLayer;
+	srcLayers.layerCount = dst->entireRange.layerCount;
+	srcLayers.mipLevel = dst->entireRange.levelCount;
+	encoder->copy(cpuImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, srcLayers, dst_);
+
+	VkImageMemoryBarrier copyBarrier{};
+	copyBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	copyBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	copyBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	copyBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	copyBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	copyBarrier.image = dst->image;
+	copyBarrier.subresourceRange.aspectMask = dst->entireRange.aspectMask;
+	copyBarrier.subresourceRange.baseMipLevel = dst->entireRange.baseMipLevel;
+	copyBarrier.subresourceRange.levelCount = dst->entireRange.levelCount;
+	copyBarrier.subresourceRange.baseArrayLayer = dst->entireRange.baseArrayLayer;
+	copyBarrier.subresourceRange.layerCount = dst->entireRange.layerCount;
+	copyBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	copyBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+	encoder->textureBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, copyBarrier);
+	dst->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	encoder->end();
+
+	getDMASpecificQueue()->enqueue(encoder);
+	getDMASpecificQueue()->submit();
+	getDMASpecificQueue()->stallTillIdle();
+}
 
 auto Device::destroyQueue(VkQueue const& queue_) -> void
 {
@@ -358,7 +506,6 @@ auto Device::destroyFence(VkFence semaphore_) -> void
 {
 	vkDestroyFence(semaphore_, &allocationCallbacks);
 }
-
 
 
 auto Device::createImage(VkImageCreateInfo const& createInfo_, VmaAllocationCreateInfo const& allocInfo_,
@@ -436,9 +583,18 @@ auto Device::destroyFramebuffer(VkFramebuffer frameBuffer_) -> void
 	vkDestroyFramebuffer(frameBuffer_, &allocationCallbacks);
 }
 
-auto Device::makeEncoderPool(bool frameLifetime_, uint32_t queueFlavour_) -> std::shared_ptr<Render::EncoderPool>
+
+auto Device::houseKeepTick() -> void
 {
-	assert(queueFlavour_ != 0);
+	dmaEncoderPool->reset();
+}
+
+auto Device::makeEncoderPool(bool frameLifetime_,
+							 Render::CommandQueueFlavour flavour_) -> std::shared_ptr<Render::EncoderPool>
+{
+	using namespace Render;
+	using namespace Core::bitmask;
+	assert(renderCapable || bool(flavour_ & CommandQueueFlavour::Render));
 
 	VkCommandPoolCreateInfo createInfo;
 	createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -447,9 +603,19 @@ auto Device::makeEncoderPool(bool frameLifetime_, uint32_t queueFlavour_) -> std
 	createInfo.flags = 0;
 	createInfo.flags |= frameLifetime_ ? VkCommandPoolCreateFlagBits::VK_COMMAND_POOL_CREATE_TRANSIENT_BIT : 0;
 
-	auto queue = queues[queueFlavour_ & 0x7];
-	assert(queue != nullptr);
-	createInfo.queueFamilyIndex = queue->getFamilyIndex();
+	if(test_equal(flavour_, CommandQueueFlavour::Render | CommandQueueFlavour::Compute))
+	{
+		createInfo.queueFamilyIndex = allQueue->getFamilyIndex();
+	} else if(test_any(flavour_, CommandQueueFlavour::Render))
+	{
+		createInfo.queueFamilyIndex = renderSpecificQueue->getFamilyIndex();
+	} else if(test_any(flavour_, CommandQueueFlavour::Compute))
+	{
+		createInfo.queueFamilyIndex = computeSpecificQueue->getFamilyIndex();
+	} else
+	{
+		createInfo.queueFamilyIndex = dmaOnlyQueue->getFamilyIndex();
+	}
 
 	VkCommandPool commandPool = createCommandPool(createInfo);
 
@@ -457,9 +623,9 @@ auto Device::makeEncoderPool(bool frameLifetime_, uint32_t queueFlavour_) -> std
 			this->shared_from_this(),
 			commandPool,
 			&commandPoolVkVTable,
+			&generalCBVkVTable,
 			&graphicsCBVkVTable,
-			&computeCBVkVTable,
-			&transferCBVkVTable);
+			&computeCBVkVTable);
 	return encoderPool;
 }
 
@@ -524,7 +690,7 @@ auto Device::makeRenderPass(
 
 		attach.flags = 0;
 		attach.samples = VK_SAMPLE_COUNT_1_BIT; // TODO
-		if(target.load == Render::RenderPass::Load::Load)
+		if(target.load == Render::LoadOp::Load)
 		{
 			// TODO need to know what the layour was we are loading from?
 			attach.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -626,24 +792,30 @@ auto Device::makeRenderTarget(
 	return std::static_pointer_cast<Render::RenderTarget>(renderTargets);
 
 }
-auto Device::getMainRenderQueue() -> Render::CommandQueue::Ptr
+
+auto Device::getGeneralQueue() -> Render::CommandQueue::Ptr
 {
-	return queues[ToQueueIndex(true, false, false)];
+	return allQueue ? allQueue : computeSpecificQueue;
 }
 
-auto Device::getMainComputeQueue() -> Render::CommandQueue::Ptr
+auto Device::getRenderSpecificQueue() -> Render::CommandQueue::Ptr
 {
-	return queues[ToQueueIndex(false, true, false)];
+	return renderSpecificQueue;
 }
 
-auto Device::getMainBlitQueue() -> Render::CommandQueue::Ptr
+auto Device::getComputeSpecificQueue() -> Render::CommandQueue::Ptr
 {
-	return queues[ToQueueIndex(false, false, true)];
+	return computeSpecificQueue;
 }
 
-auto Device::getMainPresentQueue() -> Render::CommandQueue::Ptr
+auto Device::getDMASpecificQueue() -> Render::CommandQueue::Ptr
 {
-	return mainPresentQueue.lock();
+	return dmaOnlyQueue;
+}
+
+auto Device::getPresentQueue() -> Render::CommandQueue::Ptr
+{
+	return presentQueue.lock();
 }
 
 }

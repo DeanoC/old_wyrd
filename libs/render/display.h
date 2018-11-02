@@ -16,7 +16,7 @@ struct Display
 	auto getWidth() const -> uint32_t { return width; }
 	auto getHeight() const -> uint32_t { return height; }
 
-	virtual auto present(std::shared_ptr<Render::Texture> const& src_) -> bool = 0;
+	virtual auto present(std::shared_ptr<Render::Texture> const& src_) -> void = 0;
 
 	uint32_t width, height;
 };

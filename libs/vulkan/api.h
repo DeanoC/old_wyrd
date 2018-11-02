@@ -2,10 +2,18 @@
 #ifndef WYRD_VULKAN_FUNCTIONS_H
 #define WYRD_VULKAN_FUNCTIONS_H
 
+#if PLATFORM == WINDOWS
+#define VK_USE_PLATFORM_WIN32_KHR 1
+#elif PLATFORM == OSX
+#define VK_USE_PLATFORM_MACOS_MVK 1
+#else
+#endif
+
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
 #include "vulkan/vk_mem_alloc.h"
 #include <string_view>
+
 
 namespace Vulkan {
 #define GLOBAL_VK_FUNC( name ) extern PFN_##name name;
@@ -196,13 +204,6 @@ struct GraphicsCBVkVTable : public GCCBVkVTable
 #define COMPUTE_CB_VK_FUNC(name) PFN_##name name;
 #define COMPUTE_CB_VK_FUNC_EXT(name, extension) COMPUTE_CB_VK_FUNC(name);
 struct ComputeCBVkVTable : public GCCBVkVTable
-{
-#include "functionlist.inl"
-};
-
-#define TRANSFER_CB_VK_FUNC(name) PFN_##name name;
-#define TRANSFER_CB_VK_FUNC_EXT(name, extension) TRANSFER_CB_VK_FUNC(name);
-struct TransferCBVkVTable : public GeneralCBVkVTable
 {
 #include "functionlist.inl"
 };

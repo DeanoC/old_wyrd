@@ -21,7 +21,7 @@ public:
 			QueueVkVTable* vtable_,
 			VkQueue queue_,
 			uint32_t familyIndex_,
-			uint32_t flavour_);
+			Render::CommandQueueFlavour flavour_);
 	~CommandQueue() final;
 
 	friend class System;

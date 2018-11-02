@@ -14,6 +14,7 @@
 namespace Vulkan {
 struct CommandQueue;
 struct Display;
+struct EncoderPool;
 
 struct Device : public Render::Device, std::enable_shared_from_this<Device>
 {
@@ -27,6 +28,7 @@ public:
 	using QueueFamilies = std::vector<VkQueueFamilyProperties>;
 
 	Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
+		   bool renderCapable_,
 		   VkPhysicalDevice physicalDevice_,
 		   VkDeviceCreateInfo createInfo_,
 		   QueueFamilies const& queueFamilies_,
@@ -35,10 +37,17 @@ public:
 
 	auto getVkDevice() -> VkDevice { return device; }
 
+	auto upload(uint8_t* data_, uint32_t size_, VkImageCreateInfo const& createInfo_,
+				std::shared_ptr<Render::Texture> const& dst_) -> void;
+	auto fill(uint32_t value_, VkImageCreateInfo const& createInfo_,
+			  std::shared_ptr<Render::Texture> const& dst_) -> void;
+
 	// Render::Device interface
 	auto getDisplay() const -> std::shared_ptr<Render::Display> final;
+	auto houseKeepTick() -> void final;
 
-	auto makeEncoderPool(bool frameLifetime_, uint32_t queueType_) -> std::shared_ptr<Render::EncoderPool> final;
+	auto makeEncoderPool(bool frameLifetime_,
+						 Render::CommandQueueFlavour flavour_) -> std::shared_ptr<Render::EncoderPool> final;
 	auto makeFence() -> std::shared_ptr<Render::Fence> final;
 	auto makeSemaphore() -> std::shared_ptr<Render::Semaphore> final;
 	auto makeRenderPass(
@@ -46,10 +55,11 @@ public:
 	auto makeRenderTarget(std::shared_ptr<Render::RenderPass> const& pass_,
 						  std::vector<Render::Texture::Ptr> const& targets_) -> std::shared_ptr<Render::RenderTarget> final;
 
-	auto getMainRenderQueue() -> Render::CommandQueue::Ptr final;
-	auto getMainComputeQueue() -> Render::CommandQueue::Ptr final;
-	auto getMainBlitQueue() -> Render::CommandQueue::Ptr final;
-	auto getMainPresentQueue() -> Render::CommandQueue::Ptr final;
+	auto getGeneralQueue() -> Render::CommandQueue::Ptr final;
+	auto getRenderSpecificQueue() -> Render::CommandQueue::Ptr final;
+	auto getComputeSpecificQueue() -> Render::CommandQueue::Ptr final;
+	auto getDMASpecificQueue() -> Render::CommandQueue::Ptr final;
+	auto getPresentQueue() -> Render::CommandQueue::Ptr final;
 
 	// Vulkan specific functions
 	auto getPhysicalDevice() const -> VkPhysicalDevice { return physicalDevice; }
@@ -108,7 +118,7 @@ private:
 
 	GraphicsCBVkVTable graphicsCBVkVTable;
 	ComputeCBVkVTable computeCBVkVTable;
-	TransferCBVkVTable transferCBVkVTable;
+	GeneralCBVkVTable generalCBVkVTable;
 
 #define DEVICE_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return deviceVkVTable. name(device, args...); }
 #define DEVICE_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
@@ -147,13 +157,19 @@ private:
 	// hold a reference to the resource manager we were created with
 	std::shared_ptr<ResourceManager::ResourceMan> resourceMan;
 
+	bool renderCapable;
 	std::shared_ptr<Display> display; // can be null for headless
 
 	VkPhysicalDevice physicalDevice;
 	VkDevice device;
 
-	std::weak_ptr<CommandQueue> mainPresentQueue;
-	std::array<std::shared_ptr<CommandQueue>, 8> queues;
+	std::weak_ptr<CommandQueue> presentQueue;
+	std::shared_ptr<CommandQueue> renderSpecificQueue;
+	std::shared_ptr<CommandQueue> computeSpecificQueue;
+	std::shared_ptr<CommandQueue> dmaOnlyQueue;
+	std::shared_ptr<CommandQueue> allQueue;
+
+	std::shared_ptr<EncoderPool> dmaEncoderPool;
 
 	VmaVulkanFunctions vmaVulkanFunctions;
 	VmaAllocator allocator;
@@ -165,6 +181,7 @@ private:
 
 	VkAllocationCallbacks allocationCallbacks;
 
+	void upload(VkImage cpuImage, std::shared_ptr<Render::Texture> const& dst_);
 };
 
 }

@@ -1,7 +1,7 @@
 #include "../catch.hpp"
 
 #include "core/core.h"
-#include "shell/shell.h"
+#include "shell/interface.h"
 #include "vulkan/system.h"
 
 extern Shell::ShellInterface* globalShell;

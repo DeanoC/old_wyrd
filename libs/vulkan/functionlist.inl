@@ -152,8 +152,8 @@
 #define GRAPHIC_CB_VK_FUNC(function)
 #endif
 
-#ifndef GFX_CB_VK_FUNC_EXT
-#define GFX_CB_VK_FUNC_EXT(function, extension)
+#ifndef GRAPHIC_CB_VK_FUNC_EXT
+#define GRAPHIC_CB_VK_FUNC_EXT(function, extension)
 #endif
 
 #ifndef COMPUTE_CB_VK_FUNC
@@ -162,14 +162,6 @@
 
 #ifndef COMPUTE_CB_VK_FUNC_EXT
 #define COMPUTE_CB_VK_FUNC_EXT(function, extension)
-#endif
-
-#ifndef TRANSFER_CB_VK_FUNC
-#define TRANSFER_CB_VK_FUNC(function)
-#endif
-
-#ifndef TRANSFER_CB_VK_FUNC_EXT
-#define TRANSFER_CB_VK_FUNC_EXT( function, extension )
 #endif
 
 #ifndef GENERAL_CB_VK_FUNC
@@ -189,16 +181,17 @@
 #define GFXCOMP_CB_VK_FUNC_EXT(function, extension)
 #endif
 
+
 GLOBAL_VK_FUNC(vkEnumerateInstanceExtensionProperties)
 GLOBAL_VK_FUNC(vkEnumerateInstanceLayerProperties)
 GLOBAL_VK_FUNC(vkCreateInstance)
-GLOBAL_VK_FUNC(vkDestroyInstance)
 
 INSTANCE_VK_FUNC(vkEnumeratePhysicalDevices)
 INSTANCE_VK_FUNC(vkGetDeviceProcAddr)
 INSTANCE_VK_FUNC(vkCreateDevice)
 INSTANCE_VK_FUNC(vkDestroyDevice)
 INSTANCE_VK_FUNC(vkGetImageMemoryRequirements)
+INSTANCE_VK_FUNC(vkDestroyInstance)
 
 INSTANCE_VK_FUNC(vkEnumerateDeviceExtensionProperties)
 INSTANCE_VK_FUNC(vkGetPhysicalDeviceMemoryProperties)
@@ -214,8 +207,12 @@ INSTANCE_VK_FUNC_EXT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR, VK_KHR_SURFACE_E
 INSTANCE_VK_FUNC_EXT(vkGetPhysicalDeviceSurfaceFormatsKHR, VK_KHR_SURFACE_EXTENSION_NAME)
 INSTANCE_VK_FUNC_EXT(vkGetPhysicalDeviceSurfacePresentModesKHR, VK_KHR_SURFACE_EXTENSION_NAME)
 
+INSTANCE_VK_FUNC_EXT(vkCreateDebugReportCallbackEXT, VK_EXT_DEBUG_REPORT_EXTENSION_NAME)
+INSTANCE_VK_FUNC_EXT(vkDestroyDebugReportCallbackEXT, VK_EXT_DEBUG_REPORT_EXTENSION_NAME)
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 INSTANCE_VK_FUNC_EXT( vkCreateWin32SurfaceKHR, VK_KHR_WIN32_SURFACE_EXTENSION_NAME )
+INSTANCE_VK_FUNC_EXT(vkGetPhysicalDeviceWin32PresentationSupportKHR, VK_KHR_WIN32_SURFACE_EXTENSION_NAME)
 #elif defined VK_USE_PLATFORM_XCB_KHR
 INSTANCE_VK_FUNC_EXT( vkCreateXcbSurfaceKHR, VK_KHR_XLIB_SURFACE_EXTENSION_NAME )
 #elif defined VK_USE_PLATFORM_XLIB_KHR
@@ -347,7 +344,6 @@ GENERAL_CB_VK_FUNC(vkCmdUpdateBuffer)
 GENERAL_CB_VK_FUNC(vkCmdWaitEvents)
 GENERAL_CB_VK_FUNC(vkCmdWriteTimestamp)
 
-// specialised function go here, general must come first - up there ^^^^
 GRAPHIC_CB_VK_FUNC(vkCmdBeginRenderPass)
 GFXCOMP_CB_VK_FUNC(vkCmdBindDescriptorSets)
 GRAPHIC_CB_VK_FUNC(vkCmdBindIndexBuffer)
@@ -416,11 +412,9 @@ GRAPHIC_CB_VK_FUNC(vkCmdSetViewport)
 
 #undef GRAPHIC_CB_VK_FUNC
 #undef COMPUTE_CB_VK_FUNC
-#undef TRANSFER_CB_VK_FUNC
 
-#undef GFX_CB_VK_FUNC_EXT
+#undef GRAPHIC_CB_VK_FUNC_EXT
 #undef COMPUTE_CB_VK_FUNC_EXT
-#undef TRANSFER_CB_VK_FUNC_EXT
 
 #undef GENERAL_CB_VK_FUNC
 #undef GFXCOMP_CB_VK_FUNC

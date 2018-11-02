@@ -2,56 +2,71 @@
 #ifndef WYRD_RENDER_ENCODER_H
 #define WYRD_RENDER_ENCODER_H
 
-#include <math/vector_math_c.h>
 #include "core/core.h"
 #include "core/utils.h"
-
+#include "math/vector_math_c.h"
 #include "render/commandqueue.h"
+#include "render/types.h"
 
 namespace Render {
 
-class Texture;
-
+struct Texture;
 struct IRenderEncoder;
 struct IComputeEncoder;
-struct IBlitEncoder;
 struct Fence;
 struct Semaphore;
 
-class Encoder
+
+// All Encoders are DMA encoders so there is no asDMAEncoder just use the encoder
+// object
+struct Encoder
 {
 public:
-	static constexpr uint32_t FlavourMask =
-			CommandQueue::RenderFlavour |
-			CommandQueue::ComputeFlavour |
-			CommandQueue::BlitFlavour;
-	static constexpr uint32_t CallableFlag = Core::Bit(4);
-	static constexpr uint32_t PooledReset = Core::Bit(5);
+
 	using Ptr = std::shared_ptr<Encoder>;
 	using WeakPtr = std::weak_ptr<Encoder>;
 
-	auto canEncodeRenderCommands() -> bool const { return !!(encoderFlags & CommandQueue::RenderFlavour); }
-	auto canEncodeComputeCommands() -> bool const { return !!(encoderFlags & CommandQueue::ComputeFlavour); }
-	auto canEncodeBlitCommands() -> bool const { return !!(encoderFlags & CommandQueue::BlitFlavour); }
+	auto canEncodeRenderCommands() -> bool const
+	{
+		using namespace Core::bitmask;
+		return bool(encoderFlags & EncoderFlag::RenderEncoder);
+	}
 
-	auto canSubmitToQueue() -> bool const { return !(encoderFlags & CallableFlag); }
+	auto canEncodeComputeCommands() -> bool const
+	{
+		using namespace Core::bitmask;
+		return bool(encoderFlags & EncoderFlag::ComputeEncoder);
+	}
 
-	auto isCallable() -> bool const { return !!(encoderFlags & CallableFlag); }
-	auto hasPooledReset() -> bool const { return !!(encoderFlags & PooledReset); }
-	auto getFlavour() -> uint32_t const { return encoderFlags & FlavourMask; }
-	auto getFlags() -> uint32_t const { return encoderFlags; }
+	auto canSubmitToQueue() -> bool const
+	{
+		using namespace Core::bitmask;
+		return !bool(encoderFlags & EncoderFlag::Callable);
+	}
+
+	auto isCallable() -> bool const
+	{
+		using namespace Core::bitmask;
+		return bool(encoderFlags & EncoderFlag::Callable);
+	}
+
+	auto getFlags() -> EncoderFlag const { return encoderFlags; }
 
 	virtual ~Encoder() = default;
 	virtual auto asRenderEncoder() -> IRenderEncoder* = 0;
 	virtual auto asComputeEncoder() -> IComputeEncoder* = 0;
-	virtual auto asBlitEncoder() -> IBlitEncoder* = 0;
 
 	virtual auto begin(std::shared_ptr<Semaphore> const& semaphore_ = {}) -> void = 0;
 	virtual auto end(std::shared_ptr<Semaphore> const& semaphore_ = {}) -> void = 0;
 	virtual auto reset() -> void = 0;
+	virtual auto copy(std::shared_ptr<Texture> const& src_, std::shared_ptr<Texture> const& dst_) -> void = 0;
+	//	virtual auto memoryBarrier() -> void = 0;
+	//	virtual auto bufferBarrier() -> void = 0;
+	virtual auto textureBarrier(std::shared_ptr<Texture> const& texture_) -> void = 0;
+
 protected:
-	Encoder(uint32_t encoderFlags_) : encoderFlags(encoderFlags_) {};
-	uint32_t encoderFlags;
+	Encoder(EncoderFlag encoderFlags_) : encoderFlags(encoderFlags_) {};
+	EncoderFlag encoderFlags;
 };
 
 struct IRenderEncoder
@@ -65,14 +80,9 @@ struct IRenderEncoder
 
 struct IComputeEncoder
 {
-	virtual auto
-	clearTexture(std::shared_ptr<Texture> const& texture_, std::array<float_t, 4> const& floats_) -> void = 0;
+	virtual auto clearTexture(std::shared_ptr<Texture> const& texture_,
+							  std::array<float_t, 4> const& floats_) -> void = 0;
 };
-
-struct IBlitEncoder
-{
-};
-
 
 struct EncoderPool
 {
@@ -80,7 +90,8 @@ struct EncoderPool
 	using WeakPtr = std::shared_ptr<EncoderPool>;
 
 	virtual ~EncoderPool() = default;
-	virtual auto allocateEncoder(uint32_t encoderFlags_) -> Render::Encoder::Ptr = 0;
+	virtual auto allocateEncoder(
+			EncoderFlag encoderFlags_ = Core::bitmask::zero<EncoderFlag>()) -> Render::Encoder::Ptr = 0;
 	virtual auto reset() -> void = 0;
 };
 

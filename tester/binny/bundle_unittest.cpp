@@ -3,6 +3,7 @@
 #include "binny/bundle.h"
 #include "binny/bundlewriter.h"
 #include <vector>
+#include <string_view>
 
 TEST_CASE( "Bundle chunks write/read", "[Binny]" )
 {

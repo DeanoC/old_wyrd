@@ -4,6 +4,7 @@
 
 #include "core/core.h"
 #include "core/utils.h"
+#include "render/types.h"
 
 namespace Render {
 struct Display;
@@ -12,28 +13,43 @@ struct Fence;
 
 struct CommandQueue
 {
-	static constexpr uint32_t RenderFlavour = Core::Bit(0);
-	static constexpr uint32_t ComputeFlavour = Core::Bit(1);
-	static constexpr uint32_t BlitFlavour = Core::Bit(2);
-	static constexpr uint32_t PresentFlavour = Core::Bit(3);
-
 	using Ptr = std::shared_ptr<CommandQueue>;
 	using WeakPtr = std::weak_ptr<CommandQueue>;
 
-	auto isRenderFlavour() const -> bool { return flavour & RenderFlavour; }
-	auto isComputeFlavour() const -> bool { return flavour & ComputeFlavour; }
-	auto isBlitFlavour() const -> bool { return flavour & BlitFlavour; }
-	auto isPresentFlavour() const -> bool { return flavour &PresentFlavour; }
-	auto getFlavour() const -> uint32_t { return flavour; }
+	auto isRenderFlavour() const -> bool
+	{
+		using namespace Core::bitmask;
+		return bool(flavour & CommandQueueFlavour::Render);
+	}
+
+	auto isComputeFlavour() const -> bool
+	{
+		using namespace Core::bitmask;
+		return bool(flavour & CommandQueueFlavour::Compute);
+	}
+
+	auto isDMAFlavour() const -> bool
+	{
+		using namespace Core::bitmask;
+		return bool(flavour & CommandQueueFlavour::DMA);
+	}
+
+	auto isPresentFlavour() const -> bool
+	{
+		using namespace Core::bitmask;
+		return bool(flavour & CommandQueueFlavour::Present);
+	}
+
+	auto getFlavour() const -> CommandQueueFlavour { return flavour; }
 
 	virtual auto enqueue(std::shared_ptr<Render::Encoder> const& encoder_) -> void = 0;
 	virtual auto submit(std::shared_ptr<Render::Fence> const& fence_ = {}) -> void = 0;
 	virtual auto stallTillIdle() -> void = 0;
 
 protected:
-	CommandQueue(uint32_t flavour_) : flavour(flavour_) {}
+	CommandQueue(CommandQueueFlavour flavour_) : flavour(flavour_) {}
 	virtual ~CommandQueue() = default;
-	uint32_t const flavour = 0;
+	CommandQueueFlavour const flavour = Core::bitmask::zero<CommandQueueFlavour>();
 };
 
 }

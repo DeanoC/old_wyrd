@@ -4,16 +4,15 @@
 #include "vulkan/encoder.h"
 #include "vulkan/semaphore.h"
 #include "vulkan/fence.h"
-#include <vector>
 
 namespace Vulkan {
 
 CommandQueue::CommandQueue(
 		VkDevice device_,
 		QueueVkVTable* vtable_,
-		VkQueue queue_, uint32_t
-		familyIndex_,
-		uint32_t flavour_) :
+		VkQueue queue_,
+		uint32_t familyIndex_,
+		Render::CommandQueueFlavour flavour_) :
 		device(device_),
 		vtable(vtable_),
 		queue(queue_),
@@ -28,7 +27,6 @@ CommandQueue::~CommandQueue()
 
 auto CommandQueue::enqueue(std::shared_ptr<Render::Encoder> const& encoder_) -> void
 {
-	assert(encoder_->getFlavour() & flavour);
 	auto encoder = std::static_pointer_cast<Vulkan::Encoder>(encoder_);
 
 	enqueuedEncoders.push_back(encoder);
@@ -60,19 +58,20 @@ auto CommandQueue::submit(std::shared_ptr<Render::Fence> const& fence_) -> void
 		{
 			cbBeginSemaphores.push_back(encoder->beginSemaphore->vulkanSemaphore);
 			// TODO pipeline flags (this is very conservative but should work in all cases...)
-			cbBeginPipelineFlags.push_back(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+			cbBeginPipelineFlags.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 		}
 		if(encoder->endSemaphore) cbEndSemaphores.push_back(encoder->endSemaphore->vulkanSemaphore);
 	}
 
 	submitInfo.commandBufferCount = commandBuffers.size();
 	submitInfo.pCommandBuffers = commandBuffers.data();
-	submitInfo.signalSemaphoreCount = cbEndSemaphores.size();
-	submitInfo.pSignalSemaphores = cbEndSemaphores.data();
 
 	submitInfo.waitSemaphoreCount = cbBeginSemaphores.size();
 	submitInfo.pWaitSemaphores = cbBeginSemaphores.data();
 	submitInfo.pWaitDstStageMask = cbBeginPipelineFlags.data();
+
+	submitInfo.signalSemaphoreCount = cbEndSemaphores.size();
+	submitInfo.pSignalSemaphores = cbEndSemaphores.data();
 
 	VkFence vulkanFence = VK_NULL_HANDLE;
 	if(fence_)

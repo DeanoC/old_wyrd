@@ -1,14 +1,8 @@
-#define LOGURU_IMPLEMENTATION 1
-#define CX_ERROR_IMPLEMENTATION 1
-
 #include "core/core.h"
-#include "shell/shell.h"
+#include "shell/interface.h"
 #include "render/stable.h"
-#include "render/commandqueue.h"
 #include "render/encoder.h"
 #include "resourcemanager/resourceman.h"
-#include "resourcemanager/memstorage.h"
-#include "render/resourcehandlers.h"
 
 int Main(Shell::ShellInterface& shell_)
 {
@@ -44,12 +38,20 @@ int Main(Shell::ShellInterface& shell_)
 		}
 	}
 	if(pickedGpuIndex == ~0) return 10;
+
+	Shell::PresentableWindowConfig windowConfig;
+	windowConfig.width = 1280;
+	windowConfig.height = 720;
+	windowConfig.windowName = "GfxTest"s;
+	windowConfig.fullscreen = false;
+	auto window = shell_.createPresentableWindow(windowConfig);
 	Render::DeviceConfig config = {
 			true, 	// presentable
 			true, 	// renderer
 			true, 	// compute
 			{},		// no extensions
-			1280, 720, // 720p
+			window,
+			windowConfig.width, windowConfig.height, // 720p
 			false,		// no hdr
 	};
 	auto device = gpuStable->createGpuDevice(pickedGpuIndex, config, resourceManager);
@@ -59,7 +61,7 @@ int Main(Shell::ShellInterface& shell_)
 	Render::Texture blankTexture256x256Def
 			{
 					{},
-					Texture::InitZeroFlag,
+					TextureFlag::InitZero,
 					256, 256, 1, 1,
 					1, 1, GenericTextureFormat::R8G8B8A8_UINT,
 					{}
@@ -76,26 +78,28 @@ int Main(Shell::ShellInterface& shell_)
 
 	auto blankTex = blankTexHandle.acquire<Texture>();
 
-	auto renderQueue = device->getMainRenderQueue();
-	auto rEncoderPool = device->makeEncoderPool(true, CommandQueue::RenderFlavour);
+	auto renderQueue = device->getGeneralQueue();
+	auto rEncoderPool = device->makeEncoderPool(true, CommandQueueFlavour::Render);
 
 	Render::Encoder::Ptr encoder;
 	do
 	{
-		/*		rEncoderPool->reset();
-				encoder = rEncoderPool->allocateEncoder(CommandQueue::RenderFlavour);
+		rEncoderPool->reset();
+		encoder = rEncoderPool->allocateEncoder(EncoderFlag::RenderEncoder);
 
-				encoder->begin();
+		encoder->begin();
 
-				auto renderEncoder = encoder->asRenderEncoder();
-				renderEncoder->beginRenderPass();
-				renderEncoder->endRenderPass();
-				encoder->end();
+		auto renderEncoder = encoder->asRenderEncoder();
+		renderEncoder->beginRenderPass();
+		renderEncoder->endRenderPass();
+		encoder->end();
 
-				renderQueue->enqueue(encoder);
-				renderQueue->submit();
-		//		renderQueue->stallTillIdle();*/
-	} while(display->present(blankTex));
+		renderQueue->enqueue(encoder);
+		renderQueue->submit();
+		//		renderQueue->stallTillIdle();
+		device->houseKeepTick();
+		display->present(blankTex);
+	} while(shell_.update());
 
 	return 0;
 }

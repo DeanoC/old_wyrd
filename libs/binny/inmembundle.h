@@ -42,7 +42,7 @@ public:
 		bool writePrefix = false;
 		bool allocatePrefix = false;
 		uint32_t totalExtraMem = 0;
-		for(int j = 0; j < handlers_.size(); ++j)
+		for(auto j = 0u; j < handlers_.size(); ++j)
 		{
 			ChunkHandler const& handler = handlers_.at(j);
 			if(id == handler.id)

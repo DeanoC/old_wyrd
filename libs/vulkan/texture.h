@@ -8,7 +8,7 @@
 #include "vulkan/device.h"
 
 namespace Vulkan {
-class Device;
+struct Device;
 
 struct Texture
 {

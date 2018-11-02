@@ -1,21 +1,43 @@
-#define GLFW_INCLUDE_VULKAN
-
 #include "core/core.h"
-#include "vulkan/glfw/include/GLFW/glfw3.h"
 #include "vulkan/system.h"
 #include "vulkan/display.h"
 #include <string_view>
 #include <array>
 
-#define CHK_F(x, call) result = (x); if(result != VK_SUCCESS) { LOG_S(ERROR) << "Vulkan Error: " << #call << " " << getVulkanResultString(result); return false; }
+#define CHK_F(x) if(VkResult result = (x); result != VK_SUCCESS) { LOG_S(ERROR) << "Vulkan Error: " << #x << " " << getVulkanResultString(result); return false; }
 
-#define VULKAN_FUNC(name, level) \
-   name = (PFN_##name)glfwGetInstanceProcAddress( nullptr, #name );       \
-   if( name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; \
-     return false;                                                   \
-   }
-#define GLOBAL_VK_FUNC(name) VULKAN_FUNC(name, global)
-#define INSTANCE_VK_FUNC(name) VULKAN_FUNC(name, instance)
+namespace {
+VkDebugReportCallbackEXT debugCallbackHandle;
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
+		VkFlags msgFlags,
+		VkDebugReportObjectTypeEXT objType,
+		uint64_t srcObject,
+		size_t location,
+		int32_t msgCode,
+		const char* pLayerPrefix,
+		const char* pMsg,
+		void* pUserData)
+{
+	if(msgFlags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
+	{
+		LOG_S(ERROR) << pLayerPrefix << ": " << pMsg;
+	} else if(msgFlags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
+	{
+		LOG_S(WARNING) << pLayerPrefix << ": " << pMsg;
+	} else
+	{
+		LOG_S(INFO) << pLayerPrefix << ": " << pMsg;
+	}
+
+	(void) objType;
+	(void) srcObject;
+	(void) location;
+	(void) pUserData;
+	(void) msgCode;
+	return 1;
+}
+}
 
 namespace Vulkan {
 // borrow glfw result to string function
@@ -80,17 +102,20 @@ bool System::Init(std::string const& appName_,
 {
 	//	assert(Global == nullptr);
 	Global = this;
-	glfwInit();
 
-	if(!glfwVulkanSupported())
-	{
-		LOG_S(INFO) << "No Vulkan";
-		return false;
-	}
+	PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = nullptr;
+#if defined(_WIN32)
+	auto library = LoadLibrary("vulkan-1.dll");
+	vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr) GetProcAddress(library, "vkGetInstanceProcAddr");
+#else
+	assert(false);
+#endif
+	assert(vkGetInstanceProcAddr);
+
+#define GLOBAL_VK_FUNC(name) name = (PFN_##name)vkGetInstanceProcAddr( nullptr, #name );       \
+   if( name == nullptr ) { LOG_S(ERROR) << "Could not load global vulkan function named: " << #name; return false; }
 
 #include "functionlist.inl"
-
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 	for(auto const& ext : desiredInstanceExtensions_)
 	{
@@ -98,31 +123,22 @@ bool System::Init(std::string const& appName_,
 	}
 
 	uint32_t instanceExtensionsCount = 0;
-	VkResult result = VK_SUCCESS;
-	result = vkEnumerateInstanceExtensionProperties(nullptr,
-													&instanceExtensionsCount, nullptr);
-	if(result != VK_SUCCESS)
-	{
-		LOG_S(ERROR) << "Vulkan Error: " << getVulkanResultString(result);
-		return false;
-	}
+	CHK_F(vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionsCount, nullptr));
 
-	uint32_t glfwRequiredInstanceExtensionCount;
-	const char** extensions = glfwGetRequiredInstanceExtensions(&glfwRequiredInstanceExtensionCount);
-	if(instanceExtensionsCount < glfwRequiredInstanceExtensionCount)
-	{
-		LOG_S(ERROR) << "Cannot get extensions required by glfw";
-		return false;
-	}
-	for(auto i = 0u; i < glfwRequiredInstanceExtensionCount; ++i)
-	{
-		addDesiredInstanceExtensions(extensions[i]);
-	}
+	addDesiredInstanceExtensions(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+	addDesiredInstanceExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+	addDesiredInstanceExtensions(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+#elif defined VK_USE_PLATFORM_MACOS_MVK
+	addDesiredInstanceExtensions(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+#elif defined VK_USE_PLATFORM_XLIB_KHR
+	addDesiredInstanceExtensions(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+#elif defined VK_USE_PLATFORM_MACOS_MVK
+	addDesiredInstanceExtensions(VK_MVK_MACOS_SURFACE_EXTENSION_NAME);
+#endif
 
 	instanceExtensions.resize(instanceExtensionsCount);
-	result = vkEnumerateInstanceExtensionProperties(
-			nullptr, &instanceExtensionsCount, &instanceExtensions[0]);
-	CHK_F(result, vkEnumerateInstanceExtensionProperties)
+	CHK_F(vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionsCount, instanceExtensions.data()));
 
 	std::vector<char const*> desiredInstanceExt;
 	desiredInstanceExt.reserve(desiredInstanceExtensions.size());
@@ -149,20 +165,9 @@ bool System::Init(std::string const& appName_,
 	}
 
 	uint32_t instanceLayerCount;
-	result = vkEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr);
-	CHK_F(result, vkEnumerateInstanceLayerProperties);
+	CHK_F(vkEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr));
 	instanceLayers.resize(instanceLayerCount);
-	result = vkEnumerateInstanceLayerProperties(&instanceLayerCount, instanceLayers.data());
-	CHK_F(result, vkEnumerateInstanceLayerProperties);
-
-#define INSTANCE_VK_FUNC_EXT(name, extension)            \
-    for( auto const& ext : desiredInstanceExtensions ) { \
-        if( ext == std::string( extension ) ) {\
-            VULKAN_FUNC(name, instance extension) \
-        } \
-    }
-
-#include "functionlist.inl"
+	CHK_F(vkEnumerateInstanceLayerProperties(&instanceLayerCount, instanceLayers.data()));
 
 	VkApplicationInfo application_info = {
 			VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -178,38 +183,54 @@ bool System::Init(std::string const& appName_,
 			nullptr,
 			0,
 			&application_info,
-			0,
-			nullptr,
+			validationLayers.size(),
+			validationLayers.data(),
 			static_cast<uint32_t>(desiredInstanceExt.size()),
 			desiredInstanceExt.size() > 0 ? desiredInstanceExt.data() : nullptr
 	};
 
-	result = vkCreateInstance(&instance_create_info, nullptr, &instance);
-	CHK_F(result, vkCreateInstance);
+	CHK_F(vkCreateInstance(&instance_create_info, nullptr, &instance));
+
+#define INSTANCE_VK_FUNC(name) name = (PFN_##name)vkGetInstanceProcAddr( instance, #name );       \
+   if( name == nullptr ) { LOG_S(ERROR) << "Could not load instance vulkan function named: " << #name; return false; }
+
+#define INSTANCE_VK_FUNC_EXT(name, extension) \
+    if(desiredInstanceExtensions.find(extension) != desiredInstanceExtensions.end()) { \
+        name = (PFN_##name)vkGetInstanceProcAddr(instance, #name); \
+        if( name == nullptr ) { LOG_S(ERROR) << "Could not load instance vulkan function named: " << #name; return false; } \
+    }
+
+#include "functionlist.inl"
+
+	VkDebugReportCallbackCreateInfoEXT debugCreateInfo{};
+	debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+	debugCreateInfo.pfnCallback = debug_callback;
+	debugCreateInfo.flags = VK_DEBUG_REPORT_INFORMATION_BIT_EXT |
+							VK_DEBUG_REPORT_WARNING_BIT_EXT |
+							VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
+							VK_DEBUG_REPORT_ERROR_BIT_EXT |
+							VK_DEBUG_REPORT_DEBUG_BIT_EXT;
+	vkCreateDebugReportCallbackEXT(instance, &debugCreateInfo, nullptr, &debugCallbackHandle);
 
 	uint32_t physDeviceCount;
-	result = vkEnumeratePhysicalDevices(instance, &physDeviceCount, nullptr);
-	CHK_F(result, vkEnumeratePhysicalDevices);
+	CHK_F(vkEnumeratePhysicalDevices(instance, &physDeviceCount, nullptr));
 	physicalDevices.resize(physDeviceCount);
 	deviceExtensions.resize(physDeviceCount);
 	deviceProperties.resize(physDeviceCount);
 	deviceFeatures.resize(physDeviceCount);
 	deviceQueueFamilies.resize(physDeviceCount);
 
-	result = vkEnumeratePhysicalDevices(instance, &physDeviceCount, physicalDevices.data());
-	CHK_F(result, vkEnumeratePhysicalDevices);
+	CHK_F(vkEnumeratePhysicalDevices(instance, &physDeviceCount, physicalDevices.data()));
 
 	for(auto i = 0u; i < physDeviceCount; ++i)
 	{
 		uint32_t deviceExtCount;
-		result = vkEnumerateDeviceExtensionProperties(physicalDevices[i], nullptr, &deviceExtCount, nullptr);
-		CHK_F(result, vkEnumerateDeviceExtensionProperties);
+		CHK_F(vkEnumerateDeviceExtensionProperties(physicalDevices[i], nullptr, &deviceExtCount, nullptr));
 		deviceExtensions[i].resize(deviceExtCount);
-		result = vkEnumerateDeviceExtensionProperties(physicalDevices[i],
-													  nullptr,
-													  &deviceExtCount,
-													  deviceExtensions[i].data());
-		CHK_F(result, vkEnumerateDeviceExtensionProperties);
+		CHK_F(vkEnumerateDeviceExtensionProperties(physicalDevices[i],
+												   nullptr,
+												   &deviceExtCount,
+												   deviceExtensions[i].data()));
 		vkGetPhysicalDeviceProperties(physicalDevices[i], &deviceProperties[i]);
 		vkGetPhysicalDeviceFeatures(physicalDevices[i], &deviceFeatures[i]);
 		uint32_t qFamilyCount;
@@ -218,7 +239,6 @@ bool System::Init(std::string const& appName_,
 		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevices[i], &qFamilyCount, deviceQueueFamilies[i].data());
 
 	}
-
 
 	return true;
 }
@@ -239,8 +259,14 @@ auto System::canGpuPresent(uint32_t index_) const -> bool
 	auto numQFamilies = deviceQueueFamilies[index_].size();
 	for(auto i = 0u; i < numQFamilies; ++i)
 	{
-		bool yes = glfwGetPhysicalDevicePresentationSupport(instance, physicalDevices[index_], i);
-		if(yes) return true;
+		if(deviceQueueFamilies[index_][i].queueCount == 0) continue;
+
+		VkBool32 presentSupport = false;
+#if PLATFORM == WINDOWS
+		presentSupport = vkGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevices[index_], i);
+#else
+#endif
+		if(presentSupport) return true;
 	}
 	return false;
 }
@@ -252,11 +278,13 @@ auto System::isGpuLowPower(uint32_t index_) const -> bool
 	return (deviceProperties[index_].deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
 }
 
-auto System::createGpuDevice(uint32_t index_, Render::DeviceConfig const& config_,
+auto System::createGpuDevice(uint32_t index_,
+							 Render::DeviceConfig const& config_,
 							 std::shared_ptr<ResourceManager::ResourceMan> const& resourceManager_) -> std::shared_ptr<Render::Device>
 {
 	std::vector<char const*> extensions;
 	extensions.reserve(config_.requiredExtensions.size() + 1);
+
 	if(config_.presentable)
 	{
 		extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -268,14 +296,24 @@ auto System::createGpuDevice(uint32_t index_, Render::DeviceConfig const& config
 	}
 
 	VkSurfaceKHR surface = VK_NULL_HANDLE;
-	GLFWwindow* window = nullptr;
 	if(config_.presentable)
 	{
 		// TODO make resizable option
-		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-		window = glfwCreateWindow(config_.width, config_.height, "Vulkan", nullptr, nullptr);
-		if(window == nullptr) return {};
-		CHKED(glfwCreateWindowSurface(instance, window, nullptr, &surface));
+#if PLATFORM == WINDOWS
+		struct Win32PresentationWindow
+		{
+			HINSTANCE hinstance;
+			HWND hwnd;
+		};
+
+		auto presentationWindow = (Win32PresentationWindow*) config_.window;
+		VkWin32SurfaceCreateInfoKHR createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+		createInfo.flags = 0;
+		createInfo.hinstance = presentationWindow->hinstance;
+		createInfo.hwnd = presentationWindow->hwnd;
+		vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface);
+#endif
 	}
 
 	Device::Ptr device = createGpuDevice(index_,
@@ -292,7 +330,7 @@ auto System::createGpuDevice(uint32_t index_, Render::DeviceConfig const& config
 	{
 		auto display = activeDisplays.emplace_back(
 				std::make_shared<Vulkan::Display>(
-						config_.width, config_.height, device, window, surface));
+						config_.width, config_.height, device, config_.window, surface));
 
 		display->createSwapChain();
 		device->display = display;
@@ -357,7 +395,7 @@ auto System::createGpuDevice(uint32_t deviceIndex_,
 	createInfo.queueCreateInfoCount = queueCount;
 	createInfo.pEnabledFeatures = &deviceFeatures;
 
-	createInfo.enabledExtensionCount = requiredExtensions.size();
+	createInfo.enabledExtensionCount = (uint32_t) requiredExtensions.size();
 	createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
 	if constexpr (enableValidationLayers)
@@ -371,6 +409,7 @@ auto System::createGpuDevice(uint32_t deviceIndex_,
 
 	auto device = std::make_shared<Vulkan::Device>(
 			resourceManager_,
+			render_,
 			physicalDevices[deviceIndex_],
 			createInfo,
 			deviceQueueFamilies[deviceIndex_],
@@ -385,6 +424,24 @@ auto System::findQueueFamily(uint32_t deviceIndex_, uint32_t minQueues_) -> std:
 	auto graphicsIndex = ~0;
 	auto computeIndex = ~0;
 	auto transferIndex = ~0;
+
+	// try and get a 'pure' compute and pure transfer queues for async
+	for(auto const& familyQueue : deviceQueueFamilies[deviceIndex_])
+	{
+		if(familyQueue.queueCount < minQueues_) continue;
+
+		// get compute without graphics if possible
+		if(familyQueue.queueFlags & VK_QUEUE_COMPUTE_BIT &&
+		   !(familyQueue.queueFlags & VK_QUEUE_GRAPHICS_BIT))
+		{
+			computeIndex = &familyQueue - deviceQueueFamilies[deviceIndex_].data();
+		}
+		// get a blit/transfer queue with no other capabilities
+		if(familyQueue.queueFlags == (familyQueue.queueFlags & VK_QUEUE_TRANSFER_BIT))
+		{
+			transferIndex = &familyQueue - deviceQueueFamilies[deviceIndex_].data();
+		}
+	}
 
 	for(auto const& familyQueue : deviceQueueFamilies[deviceIndex_])
 	{

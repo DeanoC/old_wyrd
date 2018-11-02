@@ -7,8 +7,9 @@
 #include "render/device.h"
 #include <vector>
 
-namespace Render {
+namespace Shell { struct PresentableWindow; }
 
+namespace Render {
 
 struct DeviceConfig
 {
@@ -18,6 +19,7 @@ struct DeviceConfig
 	std::vector<std::string> requiredExtensions;
 
 	// presentable parameters
+	Shell::PresentableWindow* window;
 	uint32_t width = 1280, height = 720;
 	bool hdr = false;
 

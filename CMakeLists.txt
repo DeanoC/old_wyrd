@@ -20,10 +20,14 @@ endif()
 
 add_subdirectory(libs)
 
-option( BUILD_TESTER   "Build the tester app."								ON )
-option( BUILD_GFXTEST  "Build the gfx test app."							ON )
-option( BUILD_VIZ      "Build the debug visualiser."						OFF )
+option(BUILD_TOOLS "Build tools folder." ON)
+option(BUILD_TESTER "Build the tester app." ON)
+option(BUILD_GFXTEST "Build the gfx test app." ON)
+option(BUILD_VIZ "Build the dvisualiser." OFF)
 
+if (BUILD_TOOLS)
+	add_subdirectory(tools/vulkaninfo)
+endif (BUILD_TOOLS)
 if(BUILD_TESTER)
 	add_subdirectory(tester)
 endif(BUILD_TESTER)

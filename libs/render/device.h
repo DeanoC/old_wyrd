@@ -20,18 +20,20 @@ struct Device
 {
 	virtual ~Device() = default;
 	virtual auto getDisplay() const -> std::shared_ptr<Display> = 0;
+	virtual auto houseKeepTick() -> void = 0;
 
-	virtual auto makeEncoderPool(bool frameLifetime_, uint32_t queueFlavour_) -> std::shared_ptr<EncoderPool> = 0;
+	virtual auto makeEncoderPool(bool frameLifetime_, CommandQueueFlavour flavour_) -> std::shared_ptr<EncoderPool> = 0;
 	virtual auto makeFence() -> std::shared_ptr<Fence> = 0;
 	virtual auto makeSemaphore() -> std::shared_ptr<Semaphore> = 0;
 	virtual auto makeRenderPass(std::vector<RenderPass::Target> const& targets_) -> std::shared_ptr<RenderPass> = 0;
 	virtual auto makeRenderTarget(std::shared_ptr<RenderPass> const& pass_,
 								  std::vector<Texture::Ptr> const& targets_) -> std::shared_ptr<RenderTarget> = 0;
 
-	virtual auto getMainRenderQueue() -> std::shared_ptr<CommandQueue> = 0;
-	virtual auto getMainComputeQueue() -> std::shared_ptr<CommandQueue> = 0;
-	virtual auto getMainBlitQueue() -> std::shared_ptr<CommandQueue> = 0;
-	virtual auto getMainPresentQueue() -> std::shared_ptr<CommandQueue> = 0;
+	virtual auto getGeneralQueue() -> std::shared_ptr<CommandQueue> = 0;
+	virtual auto getRenderSpecificQueue() -> std::shared_ptr<CommandQueue> = 0;
+	virtual auto getComputeSpecificQueue() -> std::shared_ptr<CommandQueue> = 0;
+	virtual auto getDMASpecificQueue() -> std::shared_ptr<CommandQueue> = 0;
+	virtual auto getPresentQueue() -> std::shared_ptr<CommandQueue> = 0;
 };
 
 }

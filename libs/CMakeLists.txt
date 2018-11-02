@@ -13,7 +13,6 @@ option(TBB_BUILD_TESTS "" OFF)
 add_subdirectory(enkiTS)
 add_subdirectory(binify)
 add_subdirectory(tbb)
-add_subdirectory(vulkan/glfw)
 
 set( CRC32C_SRC
 		crc32c/crc32c.cpp
@@ -114,7 +113,7 @@ set( RENDER_SRC
 		render/image_fetch.inl
 		render/image_put.inl
 		render/image.h
-		render/resourcehandlers.cpp render/resourcehandlers.h render/commandqueue.h render/encoder.h render/renderpass.h render/rendertarget.h render/semaphore.h render/fence.h)
+		render/resourcehandlers.cpp render/resourcehandlers.h render/commandqueue.h render/encoder.h render/renderpass.h render/rendertarget.h render/semaphore.h render/fence.h render/types.h)
 
 set( MATH_SRC
 		math/vector_math.cpp
@@ -154,11 +153,14 @@ set( RESOURCEMAN_SRC
 		resourcemanager/textresource.cpp resourcemanager/writer.h)
 
 set( SHELL_SRC
-		shell/shell.h
-		shell/cmdline.cpp
-		shell/cmdline.h
-		shell/shell.cpp
-		)
+		shell/interface.h
+		shell/consoleapp.cpp
+		shell/consoleapp.h
+		shell/interface.cpp
+		shell/posixshell.cpp
+		shell/posixshell.h
+		shell/winshell.cpp
+		shell/winshell.h)
 
 set( VULKAN_SRC
 		vulkan/vkfcracker.h
@@ -167,7 +169,7 @@ set( VULKAN_SRC
 		vulkan/functionlist.inl
 		vulkan/api.cpp
 		vulkan/api.h
-		vulkan/display.h vulkan/device.cpp vulkan/device.h vulkan/vk_mem_alloc.h vulkan/vk_mem_alloc.cpp vulkan/texture.cpp vulkan/texture.h vulkan/display.cpp vulkan/commandqueue.cpp vulkan/commandqueue.h vulkan/encoder.cpp vulkan/encoder.h vulkan/rendertarget.cpp vulkan/rendertarget.h vulkan/fence.cpp vulkan/fence.h vulkan/renderpass.cpp vulkan/renderpass.h)
+		vulkan/display.h vulkan/device.cpp vulkan/device.h vulkan/vk_mem_alloc.h vulkan/vk_mem_alloc.cpp vulkan/texture.cpp vulkan/texture.h vulkan/display.cpp vulkan/commandqueue.cpp vulkan/commandqueue.h vulkan/encoder.cpp vulkan/encoder.h vulkan/rendertarget.cpp vulkan/rendertarget.h vulkan/fence.cpp vulkan/fence.h vulkan/renderpass.cpp vulkan/renderpass.h shell/posixshell.cpp shell/posixshell.h)
 
 #-----------
 set(wryd_srcs
@@ -192,7 +194,6 @@ set( wyrd_LIBRARIES enkiTS
 					binify
 					tbb_static
 					tbbmalloc_static
-					glfw
 					)
 list(APPEND wyrd_LIBRARIES ${glfw_LIBRARIES})
 

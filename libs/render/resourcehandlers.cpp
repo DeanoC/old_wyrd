@@ -4,8 +4,8 @@
 #include "resourcemanager/writer.h"
 #include "render/resourcehandlers.h"
 #include "render/image.h"
+#include "render/texture.h"
 #include "fmt/format.h"
-#include "texture.h"
 
 namespace Render {
 

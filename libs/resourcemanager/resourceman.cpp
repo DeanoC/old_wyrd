@@ -15,7 +15,7 @@ std::string_view const ResourceMan::DeletedString = {"**DELETED**"};
 // intended usage pattern is to store the shared_ptr returned by create for the lifetime of the manager
 // and it should be released last thing after all resource are finished with by reseting the unique_ptr
 std::vector<std::weak_ptr<ResourceMan>> s_resourceManagers;
-int s_curResourceManagerCount = 0; // TODO keep a free list
+uint32_t s_curResourceManagerCount = 0; // TODO keep a free list
 
 ResourceMan::ResourceMan() {}
 

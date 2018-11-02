@@ -1,11 +1,6 @@
 #include "core/core.h"
-#include <string>
-#include <sstream>
-#include <algorithm>
 #include <unordered_map>
 #include <array>
-#include "lz4/lz4.h"
-#include "crc32c/crc32c.h"
 #include "bundle.h"
 
 namespace Binny {
@@ -87,7 +82,7 @@ auto Bundle::read(
 
 	// TODO temp memory allocator for this map
 	std::unordered_map<uint32_t, std::array<int, MaxHandlerStages>> handlerMap(handlers_.size());
-	for(int j = 0; j < handlers_.size(); ++j)
+	for(auto j = 0u; j < handlers_.size(); ++j)
 	{
 		ChunkHandler const& handler = handlers_.at(j);
 		handlerMap[handler.id].at(handler.stage) = j + 1; // 1 indexed so 0 can indicate no handler
@@ -172,7 +167,7 @@ auto Bundle::read(
 		{
 			basePtr = (uint8_t*) permAlloc(memorySize);
 		}
-		uint8_t* dataPtr = dataPtr;
+		uint8_t* dataPtr = basePtr;
 		if(writePrefix)
 		{
 			std::memset(dataPtr, 0xDE, sizeof(uintptr_t) * MaxHandlerStages);

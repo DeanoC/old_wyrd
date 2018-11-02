@@ -63,42 +63,39 @@ struct ComputeEncoder : public Render::IComputeEncoder
 	ComputeCBVkVTable* vtable;
 };
 
-struct BlitEncoder : public Render::IBlitEncoder
-{
-	BlitEncoder(EncoderPool& owner_, VkCommandBuffer commandBuffer_, TransferCBVkVTable* transferCBVkVTable_) : owner(
-			owner_), commandBuffer(commandBuffer_), vtable(transferCBVkVTable_) {}
-
-#define GENERAL_CB_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(commandBuffer, args...); }
-#define GENERAL_CB_VK_FUNC_EXT(name, extension) GENERAL_CB_VK_FUNC(name)
-
-#include "functionlist.inl"
-
-	EncoderPool& owner;
-	VkCommandBuffer commandBuffer;
-	TransferCBVkVTable* vtable;
-};
-
-
 struct Encoder : public Render::Encoder
 {
 	using Ptr = std::shared_ptr<Encoder>;
 	using WeakPtr = std::weak_ptr<Encoder>;
 
-	Encoder(EncoderPool& owner_, uint32_t encodeFlags_, VkCommandBuffer commandBuffer_,
-			GraphicsCBVkVTable* graphicsVTable_, ComputeCBVkVTable* computeVTable_,
-			TransferCBVkVTable* transferVTable_);
+	Encoder(EncoderPool& owner_,
+			Render::EncoderFlag encodeFlags_,
+			VkCommandBuffer commandBuffer_,
+			GeneralCBVkVTable* generalVTable_,
+			GraphicsCBVkVTable* graphicsVTable_,
+			ComputeCBVkVTable* computeVTable_);
 
 	~Encoder() final;
 	auto asRenderEncoder() -> Render::IRenderEncoder* final;
 	auto asComputeEncoder() -> Render::IComputeEncoder* final;
-	auto asBlitEncoder() -> Render::IBlitEncoder* final;
 	auto begin(std::shared_ptr<Render::Semaphore> const& semaphore_ = {}) -> void final;
 	auto end(std::shared_ptr<Render::Semaphore> const& semaphore_ = {}) -> void final;
 	auto reset() -> void final;
+	auto copy(std::shared_ptr<Render::Texture> const& src_, std::shared_ptr<Render::Texture> const& dst_) -> void final;
+
+	auto textureBarrier(std::shared_ptr<Render::Texture> const& texture_) -> void final;
+
+
+	auto copy(VkImage srcImage_,
+			  VkImageLayout srcLayout_,
+			  VkImageSubresourceLayers const& srcExtents_,
+			  std::shared_ptr<Render::Texture> const& dst_) -> void;
+	auto textureBarrier(VkPipelineStageFlagBits srcStage_, VkPipelineStageFlagBits dstStage_,
+						VkImageMemoryBarrier const& barrier_) -> void;
+
 
 #define GENERAL_CB_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(commandBuffer, args...); }
 #define GENERAL_CB_VK_FUNC_EXT(name, extension) GENERAL_CB_VK_FUNC(name)
-
 #include "functionlist.inl"
 
 	EncoderPool& owner;
@@ -107,7 +104,6 @@ struct Encoder : public Render::Encoder
 	GeneralCBVkVTable* vtable;
 	RenderEncoder renderEncoder;
 	ComputeEncoder computeEncoder;
-	BlitEncoder blitEncoder;
 
 	std::shared_ptr<Semaphore> beginSemaphore; // optional
 	std::shared_ptr<Semaphore> endSemaphore; // optional
@@ -115,12 +111,16 @@ struct Encoder : public Render::Encoder
 
 struct EncoderPool : public Render::EncoderPool
 {
-	EncoderPool(Device::Ptr device_, VkCommandPool commandPool_, CommandPoolVkVTable* commandPoolVTable_,
-				GraphicsCBVkVTable* graphicsCBVTable_, ComputeCBVkVTable* computeCBVTable_,
-				TransferCBVkVTable* transferCBVTable_);
+	EncoderPool(Device::Ptr device_,
+				VkCommandPool commandPool_,
+				CommandPoolVkVTable* commandPoolVTable_,
+				GeneralCBVkVTable* generalCBVTable,
+				GraphicsCBVkVTable* graphicsCBVTable_,
+				ComputeCBVkVTable* computeCBVTable_);
 	~EncoderPool() final;
 
-	auto allocateEncoder(uint32_t encoderFlags_) -> Render::Encoder::Ptr final;
+	auto allocateEncoder(
+			Render::EncoderFlag encoderFlags_ = Core::bitmask::zero<Render::EncoderFlag>()) -> Render::Encoder::Ptr final;
 	auto reset() -> void final;
 	auto destroyEncoder(Vulkan::Encoder* encoder_) -> void;
 
@@ -133,9 +133,9 @@ struct EncoderPool : public Render::EncoderPool
 	VkDevice vulkanDevice;
 	VkCommandPool commandPool;
 
+	GeneralCBVkVTable* generalCBVTable;
 	GraphicsCBVkVTable* graphicsCBVTable;
 	ComputeCBVkVTable* computeCBVTable;
-	TransferCBVkVTable* transferCBVTable;
 	CommandPoolVkVTable* vtable;
 
 };

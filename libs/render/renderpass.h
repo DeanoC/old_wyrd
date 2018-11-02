@@ -4,32 +4,20 @@
 
 #include "core/core.h"
 #include "render/generictextureformat.h"
+#include "render/types.h"
 
 namespace Render {
 
 struct RenderPass
 {
-	enum class Load
-	{
-		Load,
-		Clear,
-		DontCare
-	};
-
-	enum class Store
-	{
-		Store,
-		DontCare
-	};
-
 	struct Target
 	{
-		Load load;
-		Store store;
+		LoadOp load;
+		StoreOp store;
 		GenericTextureFormat format;
 
-		Load stencilLoad; // nop except for stencil formats
-		Store stencilStore;
+		LoadOp stencilLoad; // nop except for stencil formats
+		StoreOp stencilStore;
 	};
 
 	using Ptr = std::shared_ptr<RenderPass>;

@@ -4,7 +4,7 @@
 
 #include "core/core.h"
 #include "catch.hpp"
-#include "shell/shell.h"
+#include "shell/interface.h"
 #include "cityhash/city.h"
 
 Shell::ShellInterface* globalShell;

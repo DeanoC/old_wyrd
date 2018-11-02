@@ -3,20 +3,14 @@
 #define WYRD_RENDER_GTFCRACKER_H_
 
 #include "core/core.h"
+#include "render/types.h"
 #include "render/generictextureformat.h"
 #include "math/half.hpp"
 #include <array>
+#include <string_view>
 
 
 namespace Render {
-
-// GtfCracker function take a channel in, where the index refers to the
-// physical placement in that format. If you want order agonistic use
-// swizzle and the channel enum
-enum class Channel
-{
-	R = 0, G = 1, B = 2, A = 3,
-};
 
 class GtfCracker
 {

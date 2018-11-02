@@ -32,7 +32,7 @@ namespace Core {
 /// \brief	return the bit of the number.
 /// \param	num	returns the bit representing this index.
 template<typename T>
-constexpr auto Bit( T num ) -> T
+constexpr auto Bit(T num) -> T
 {
 	static_assert(std::is_integral<T>::value, "Integral required.");
 	return (T(1) << (num));
@@ -41,7 +41,7 @@ constexpr auto Bit( T num ) -> T
 /// \brief	Query if 'iNum' is power of two. 
 /// \param	iNum	Number to test. 
 /// \return	true if pow 2, false if not. 
-CALL inline bool isPow2( unsigned int iNum ) 
+CALL inline bool isPow2(unsigned int iNum)
 {
 	return ((iNum & (iNum - 1)) == 0);
 }
@@ -50,7 +50,7 @@ CALL inline bool isPow2( unsigned int iNum )
 /// \brief	Gets the next pow 2. 
 /// \param	iNum	Number to get next pow 2 off. 
 /// \return	The next pow 2 of iNum. 
-CALL inline unsigned int nextPow2( unsigned int iNum ) 
+CALL inline unsigned int nextPow2(unsigned int iNum)
 {
 	iNum -= 1;
 	iNum |= iNum >> 16;
@@ -67,29 +67,157 @@ CALL inline unsigned int nextPow2( unsigned int iNum )
 /// \param	k		The value to align. 
 /// \param	align	The alignment boundary. 
 /// \return	k aligned to align. 
-template< typename T, typename T2 >
+template<typename T, typename T2>
 CALL inline T alignTo(T k, T2 align)
 {
-	return ((k+align-1) & ~(align-1));
+	return ((k + align - 1) & ~(align - 1));
 }
 
-namespace detail
-{
+namespace detail {
 
-template <typename T, std::size_t...Is>
+template<typename T, std::size_t...Is>
 std::array<T, sizeof...(Is)> make_array(const T& value, std::index_sequence<Is...>)
 {
 	return {{(static_cast<void>(Is), value)...}};
 }
 }
 
-template <std::size_t N, typename T>
+template<std::size_t N, typename T>
 std::array<T, N> make_array(const T& value)
 {
 	return detail::make_array(value, std::make_index_sequence<N>());
 }
 
-}	//namespace Core
+namespace bitmask {
+template<typename E>
+constexpr auto is_bitmask_enum(E) -> bool { return false; }
 
+template<typename E, typename = typename std::enable_if<std::is_enum<E>{}>::type>
+constexpr auto operator|(E lhs, E rhs)
+{
+	if constexpr (is_bitmask_enum(E{}))
+	{
+		using basetype = typename std::underlying_type<E>::type;
+		return static_cast<E>(
+				static_cast<basetype>(lhs) | static_cast<basetype>(rhs));
+	}
+}
+
+template<typename E, typename = typename std::enable_if<std::is_enum<E>{}>::type>
+constexpr auto operator&(E lhs, E rhs)
+{
+	if constexpr (is_bitmask_enum(E{}))
+	{
+		using basetype = typename std::underlying_type<E>::type;
+		return static_cast<E>(
+				static_cast<basetype>(lhs) & static_cast<basetype>(rhs));
+	}
+}
+
+template<typename E, typename = typename std::enable_if<std::is_enum<E>{}>::type>
+constexpr auto operator^(E lhs, E rhs)
+{
+	if constexpr (is_bitmask_enum(E{}))
+	{
+		using basetype = typename std::underlying_type<E>::type;
+		return static_cast<E>(
+				static_cast<basetype>(lhs) ^ static_cast<basetype>(rhs));
+	}
+}
+
+template<typename E, typename = typename std::enable_if<std::is_enum<E>{}>::type>
+constexpr auto operator~(E lhs)
+{
+	if constexpr (is_bitmask_enum(E{}))
+	{
+		using basetype = typename std::underlying_type<E>::type;
+		return static_cast<E>(~static_cast<basetype>(lhs));
+	}
+}
+
+
+template<typename E, typename = typename std::enable_if<std::is_enum<E>{}>::type>
+constexpr auto operator|=(E& lhs, E rhs)
+{
+	if constexpr (is_bitmask_enum(E{}))
+	{
+		using basetype = typename std::underlying_type<E>::type;
+		lhs = static_cast<E>(
+				static_cast<basetype>(lhs) | static_cast<basetype>(rhs));
+		return lhs;
+	}
+}
+
+template<typename E, typename = typename std::enable_if<std::is_enum<E>{}>::type>
+constexpr auto operator&=(E& lhs, E rhs)
+{
+	if constexpr (is_bitmask_enum(E{}))
+	{
+		using basetype = typename std::underlying_type<E>::type;
+		lhs = static_cast<E>(
+				static_cast<basetype>(lhs) & static_cast<basetype>(rhs));
+		return lhs;
+	}
+}
+
+template<typename E, typename = typename std::enable_if<std::is_enum<E>{}>::type>
+constexpr auto operator^=(E& lhs, E rhs)
+{
+	if constexpr (is_bitmask_enum(E{}))
+	{
+		using basetype = typename std::underlying_type<E>::type;
+		lhs = static_cast<E>(
+				static_cast<basetype>(lhs) ^ static_cast<basetype>(rhs));
+		return lhs;
+	}
+}
+
+template<typename E, typename = typename std::enable_if<std::is_enum<E>{}>::type>
+constexpr auto test_equal(E lhs, E rhs)
+{
+	if constexpr (is_bitmask_enum(E{}))
+	{
+		return (lhs & rhs) == rhs;
+	}
+}
+
+template<typename E, typename = typename std::enable_if<std::is_enum<E>{}>::type>
+constexpr auto test_any(E lhs, E rhs)
+{
+	if constexpr (is_bitmask_enum(E{}))
+	{
+		return bool(lhs & rhs);
+	}
+}
+
+
+template<typename E, typename = typename std::enable_if<std::is_enum<E>{}>::type>
+constexpr auto zero()
+{
+	return static_cast<E>(0);
+}
+
+template<typename E, typename = typename std::enable_if<std::is_enum<E>{}>::type>
+constexpr auto from_uint(typename std::underlying_type<E>::type v)
+{
+	if constexpr (is_bitmask_enum(E{}))
+	{
+		return static_cast<E>(v);
+	}
+}
+
+template<typename E, typename = typename std::enable_if<std::is_enum<E>{}>::type>
+constexpr auto to_uint(E e)
+{
+	if constexpr (is_bitmask_enum(E{}))
+	{
+		using basetype = typename std::underlying_type<E>::type;
+		return static_cast<basetype>(e);
+	}
+}
+
+} // namespace Core::bitmask
+
+}	//namespace Core
 
 #endif
