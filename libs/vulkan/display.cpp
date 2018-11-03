@@ -122,21 +122,22 @@ auto Display::present(std::shared_ptr<Render::Texture> const& src_) -> void
 
 	enc->begin(imageAvailable);
 	auto* renc = (RenderEncoder*) enc->asRenderEncoder();
-	VkClearColorValue clear;
-	clear.float32[0] = 0.0f;
-	clear.float32[1] = 255.0f;
-	clear.float32[2] = 0.0f;
-	clear.float32[3] = 255.0f;
-	VkImageSubresourceRange range;
-	range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	range.layerCount = 1;
-	range.levelCount = 1;
-	range.baseMipLevel = 0;
-	range.baseArrayLayer = 0;
+	/*	VkClearColorValue clear;
+		clear.float32[0] = 0.0f;
+		clear.float32[1] = 255.0f;
+		clear.float32[2] = 0.0f;
+		clear.float32[3] = 255.0f;
+		VkImageSubresourceRange range;
+		range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		range.layerCount = 1;
+		range.levelCount = 1;
+		range.baseMipLevel = 0;
+		range.baseArrayLayer = 0;
 
-	renc->vkCmdClearColorImage(images[imageIndex],
-							   VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, &clear, 1, &range);
-	//	renc->blitDisplay(src_, images[imageIndex]);
+		renc->vkCmdClearColorImage(images[imageIndex],
+								   VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, &clear, 1, &range);
+	*/
+	renc->resolveForDisplay(src_, width, height, images[imageIndex]);
 
 	enc->end(presentComplete);
 	q->enqueue(enc);
@@ -152,8 +153,7 @@ auto Display::present(std::shared_ptr<Render::Texture> const& src_) -> void
 	presentInfo.pWaitSemaphores = &presentComplete->vulkanSemaphore;
 	presentInfo.pResults = nullptr;
 
-	//	auto pq = std::static_pointer_cast<Vulkan::Com90mandQueue>(device->getPresentQueue());
-	auto pq = std::static_pointer_cast<Vulkan::CommandQueue>(q);
+	auto pq = std::static_pointer_cast<Vulkan::CommandQueue>(device->getPresentQueue());
 	CHKED(pq->vkQueuePresentKHR(&presentInfo));
 }
 

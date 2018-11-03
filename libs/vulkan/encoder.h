@@ -34,7 +34,9 @@ struct RenderEncoder : public Render::IRenderEncoder
 #include "functionlist.inl"
 
 	// special case for the vulkan swap chain
-	auto blitDisplay(std::shared_ptr<Render::Texture> const& src_, VkImage display_) -> void;
+	auto resolveForDisplay(std::shared_ptr<Render::Texture> const& src_,
+						   uint32_t width_, uint32_t height_,
+						   VkImage display_) -> void;
 
 	EncoderPool& owner;
 	VkCommandBuffer commandBuffer;

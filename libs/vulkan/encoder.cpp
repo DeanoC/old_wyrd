@@ -259,41 +259,54 @@ auto ComputeEncoder::clearTexture(std::shared_ptr<Render::Texture> const& textur
 }
 
 
-auto RenderEncoder::blitDisplay(std::shared_ptr<Render::Texture> const& src_, VkImage display_) -> void
+auto RenderEncoder::resolveForDisplay(
+		std::shared_ptr<Render::Texture> const& src_,
+		uint32_t width_, uint32_t height_,
+		VkImage display_) -> void
 {
 	auto src = src_->getStage<Texture>(Texture::s_stage);
 
-	VkImageBlit blitter = {
-			{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-			{{0, 0, 0},                 {(int32_t) src_->width, (int32_t) src_->height, 1}},
-			{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-			{{0, 0, 0},                 {(int32_t) src_->width, (int32_t) src_->height, 1}},
-	};
+	if(src_->samples == 1)
+	{
+		VkImageBlit blitter = {
+				{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+				{{0, 0, 0},                 {(int32_t) src_->width, (int32_t) src_->height, 1}},
+				{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+				{{0, 0, 0},                 {(int32_t) width_,      (int32_t) height_,      1}},
+		};
 
-	vkCmdBlitImage(src->image, src->imageLayout, display_, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-				   1, &blitter, VK_FILTER_NEAREST);
+		vkCmdBlitImage(src->image,
+					   src->imageLayout,
+					   display_,
+					   VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+					   1, &blitter, VK_FILTER_LINEAR);
 
-	VkImageMemoryBarrier barrier{};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = display_;
-	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.levelCount = 1;
-	barrier.subresourceRange.layerCount = 1;
-	barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-	barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	vkCmdPipelineBarrier(
-			VK_PIPELINE_STAGE_TRANSFER_BIT,
-			VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-			0,
-			0, nullptr,
-			0, nullptr,
-			1, &barrier);
+		VkImageMemoryBarrier barrier{};
+		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.image = display_;
+		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		barrier.subresourceRange.baseMipLevel = 0;
+		barrier.subresourceRange.baseArrayLayer = 0;
+		barrier.subresourceRange.levelCount = 1;
+		barrier.subresourceRange.layerCount = 1;
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		vkCmdPipelineBarrier(
+				VK_PIPELINE_STAGE_TRANSFER_BIT,
+				VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+				0,
+				0, nullptr,
+				0, nullptr,
+				1, &barrier);
+	} else
+	{
+		// TODO MSAA resolve
+		assert(false);
+	}
 }
 
 }

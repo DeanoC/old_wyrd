@@ -118,7 +118,7 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 		{
 			if(bool(texture->flags & Render::TextureFlag::InitZero))
 			{
-				device->fill(0xFF0000FF, createInfo, texture);
+				device->fill(0xFF8000FF, createInfo, texture);
 			}
 			else
 			{

@@ -65,7 +65,7 @@ int Main(Shell::ShellInterface& shell_)
 					{},
 					TextureFlag::InitZero,
 					256, 256, 1, 1,
-					1, 1, GenericTextureFormat::R8G8B8A8_UINT,
+					1, 1, GenericTextureFormat::R8G8B8A8_UNORM,
 					{}
 			};
 	memstorage->addMemory("BlankTexture_256x256"s,
