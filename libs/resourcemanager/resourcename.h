@@ -200,7 +200,6 @@ protected:
 	std::string resourceName;
 };
 
-
 } // end namespace
 
 namespace std

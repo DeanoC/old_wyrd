@@ -18,6 +18,11 @@ struct RenderTarget;
 
 struct Device
 {
+	using Ptr = std::shared_ptr<Device>;
+	using ConstPtr = std::shared_ptr<Device const>;
+	using WeakPtr = std::weak_ptr<Device>;
+	using ConstWeakPtr = std::weak_ptr<Device const>;
+
 	virtual ~Device() = default;
 	virtual auto getDisplay() const -> std::shared_ptr<Display> = 0;
 	virtual auto houseKeepTick() -> void = 0;

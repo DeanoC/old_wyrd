@@ -14,10 +14,17 @@ namespace Core
 	{
 		return ((count ? QuickHash(s, count - 1) : 2166136261ull) ^ s[count]) * 16777619ull;
 	}
-	inline uint32_t QuickHash(std::string s)
+
+inline uint32_t QuickHash(std::string const& s)
 	{
 		return QuickHash(s.c_str(), s.size());
 	}
+
+constexpr uint32_t QuickHash(std::string_view s)
+{
+	return QuickHash(s.data(), s.size() - 1);
+}
+
 }
 
 constexpr uint32_t operator"" _hash(char const* s, size_t count)

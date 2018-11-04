@@ -52,6 +52,13 @@ void ResourceMan::registerStorageHandler(IStorage::Ptr storage_)
 	prefixToStorage[storage_->getPrefix()] = storage_;
 }
 
+auto ResourceMan::getStorageForPrefix(std::string_view prefix_) -> IStorage::Ptr
+{
+	auto storage = prefixToStorage.find(prefix_);
+	if(storage == prefixToStorage.end()) return {};
+	else return storage->second;
+}
+
 void ResourceMan::registerResourceHandler(uint32_t type_, ResourceHandler handler_, HasResourceChangedFunc changed_,
 										  SaveResourceFunc save_)
 {

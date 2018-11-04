@@ -5,14 +5,14 @@
 #include "core/core.h"
 #include "core/utils.h"
 #include "resourcemanager/base.h"
+#include "resourcemanager/resourcename.h"
 #include "render/generictextureformat.h"
 #include "render/image.h"
 
 namespace ResourceManager {
 class ResourceMan;
-
-struct MemStorage;
 }
+
 namespace Render {
 struct Encoder;
 
@@ -33,9 +33,9 @@ public:
 	using ConstWeakPtr = std::weak_ptr<Texture const>;
 
 	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void;
-	static auto RegisterToMemoryStorage(std::string const& name_,
-										Texture const& texture_,
-										std::shared_ptr<ResourceManager::MemStorage> const& memStorage_) -> bool;
+	static auto PlaceInStorage(ResourceManager::ResourceNameView name_,
+							   Texture const& texture_,
+							   std::shared_ptr<ResourceManager::ResourceMan> const& rm_) -> bool;
 
 	static constexpr uint16_t MajorVersion = 1;
 	static constexpr uint16_t MinorVersion = 0;

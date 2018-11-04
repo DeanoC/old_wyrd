@@ -28,6 +28,7 @@
 #include "tinygltf/tiny_gltf.h"
 #include "gltf.h"
 #include <stack>
+#include <string_view>
 
 namespace MeshOps
 {
@@ -500,9 +501,10 @@ void Gltf::SaveInternal(MeshMod::SceneNodePtr node_, tinygltf::Model& model_)
 {
 	using namespace tinygltf;
 	using namespace MeshMod;
+	using namespace std::string_view_literals;
 
 	tinygltf::Scene gltfScene;
-	static const uint32_t meshTypeHash = Core::QuickHash("Mesh");
+	static const uint32_t meshTypeHash = Core::QuickHash("Mesh"sv);
 
 	std::vector<uint8_t> dataBuffer;
 	std::stack<MeshMod::SceneNodePtr> nodeStack;

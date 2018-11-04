@@ -45,6 +45,9 @@ using ResourceHandler = std::tuple<int, HandlerInit, HandlerDestroy>;
 class ResourceMan
 {
 public:
+	using Ptr = std::shared_ptr<ResourceMan>;
+	using WeakPtr = std::weak_ptr<ResourceMan>;
+
 	friend struct ResourceHandleBase;
 
 	constexpr static unsigned int MaxHandlerStages = Binny::IBundle::MaxHandlerStages;
@@ -58,6 +61,7 @@ public:
 	~ResourceMan();
 
 	auto registerStorageHandler( IStorage::Ptr storage_ ) -> void;
+	auto getStorageForPrefix(std::string_view prefix_) -> IStorage::Ptr;
 
 	auto registerResourceHandler( 	uint32_t type_,
 									ResourceHandler funcs_,
