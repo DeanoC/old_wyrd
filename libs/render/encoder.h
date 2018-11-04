@@ -60,8 +60,18 @@ public:
 	virtual auto end(std::shared_ptr<Semaphore> const& semaphore_ = {}) -> void = 0;
 	virtual auto reset() -> void = 0;
 	virtual auto copy(std::shared_ptr<Texture> const& src_, std::shared_ptr<Texture> const& dst_) -> void = 0;
+
+	//	virtual auto pipelineBarrier(
+	//			Render::DMAPipelineStages waitStages_,
+	//			Render::DMAPipelineStages stallStages_ ) -> void = 0;
+
 	//	virtual auto memoryBarrier() -> void = 0;
 	//	virtual auto bufferBarrier() -> void = 0;
+	virtual auto textureBarrier(
+			Render::MemoryAccess waitAccess_,
+			Render::MemoryAccess stallAccess_,
+			std::shared_ptr<Render::Texture> const& texture_) -> void = 0;
+
 	virtual auto textureBarrier(std::shared_ptr<Texture> const& texture_) -> void = 0;
 
 protected:

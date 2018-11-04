@@ -30,12 +30,17 @@ struct ResourceBase
 	using WeakPtr = std::weak_ptr<ResourceBase>;
 	using ConstWeakPtr = std::weak_ptr<ResourceBase>;
 
+	static constexpr uint32_t MaxStages = Binny::IBundle::MaxHandlerStages;
+
+	uint8_t getStageCount() const { return stageCount; }
+
 	// note: this memory only exist if the resource handler asked for it
 	// so only use this if you know what the resource handler did
 	template<typename T>
 	T* getStage(uint32_t stage_) const
 	{
-		uintptr_t ptr = stages[stage_];
+		assert(stage_ != 0);
+		uintptr_t ptr = stages[stage_ - 1];
 		if constexpr (sizeof(uintptr_t) == 4)
 		{
 			assert(ptr != 0xDEDEDEDE);
@@ -55,7 +60,17 @@ struct ResourceBase
 		return (T*) ptr;
 	}
 
-	uintptr_t stages[Binny::IBundle::MaxHandlerStages];
+	union
+	{
+		struct
+		{
+			uint8_t stageCount : 2;
+		};
+		// this is a misnomer, stage0 can't have extramem so use reuse its
+		// pointer space
+		uintptr_t stage0;
+	};
+	uintptr_t stages[MaxStages - 1];
 };
 
 // resources and handles have a type along with there name to determine how they

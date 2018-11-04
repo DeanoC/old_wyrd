@@ -10,14 +10,13 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void
 				   uint16_t minorVersion_,
 				   std::shared_ptr<void> ptr_) -> bool
 	{
-		using namespace Core::bitmask;
 		assert(stage == 0);
 		if(majorVersion_ != MajorVersion) return false;
 		auto texture = std::static_pointer_cast<Texture>(ptr_);
 		auto[getRMFunc, resolverFunc] = resolver_;
 		resolverFunc(texture->imageHandle.base);
 
-		if(bool(texture->flags & TextureFlag::InitZero))
+		if(Core::bitmask::test_equal(texture->flags, TextureFlag::InitZero))
 		{
 			if(texture->imageHandle.isValid()) return false;
 		} else
@@ -35,7 +34,7 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void
 		if(texture->mipLevels == 0)
 		{
 			// computing with 0 mipLevels means all of the them
-			if(bool(texture->flags & TextureFlag::ComputeMipMaps))
+			if(Core::bitmask::test_equal(texture->flags, TextureFlag::ComputeMipMaps))
 			{
 				texture->mipLevels = Math::log2(std::max(texture->depth,
 														 std::max(texture->width,
@@ -71,13 +70,15 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void
 
 constexpr auto Texture::computeSize(bool withComputedMipMaps_) const -> size_t
 {
-	using namespace Core::bitmask;
 	size_t texelCount = width * height * depth * slices * samples;
 	size_t size = texelCount * GtfCracker::bitWidth(format) / 8;
 
 	// don't add mipmaps size if not wanted and computed at upload time
-	if(bool(flags &TextureFlag::ComputeMipMaps) && withComputedMipMaps_ == false)
-	return size;
+	if(Core::bitmask::test_equal(flags, TextureFlag::ComputeMipMaps) &&
+	   withComputedMipMaps_ == false)
+	{
+		return size;
+	}
 
 	// compute the mip map levels
 

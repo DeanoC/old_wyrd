@@ -2,6 +2,7 @@
 #include "vulkan/device.h"
 #include "vulkan/display.h"
 #include "vulkan/commandqueue.h"
+#include "vulkan/renderencoder.h"
 #include <algorithm>
 
 namespace Vulkan {

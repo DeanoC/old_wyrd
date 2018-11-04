@@ -7,10 +7,14 @@
 #include "vulkan/api.h"
 #include "vulkan/device.h"
 
+namespace Render {
+struct Encoder;
+}
+
 namespace Vulkan {
 struct Device;
 
-struct Texture
+struct Texture : public Render::IGpuTexture
 {
 	using Ptr = std::shared_ptr<Texture>;
 	using ConstPtr = std::shared_ptr<Texture const>;
@@ -21,7 +25,10 @@ struct Texture
 	inline static int s_stage = -1;
 
 	Texture() = delete;
-	~Texture();
+	~Texture() final;
+
+	auto transitionToRenderTarget(std::shared_ptr<Render::Encoder> const& encoder_) -> void final;
+	auto transitionFromRenderTarget(std::shared_ptr<Render::Encoder> const& encoder_) -> void final;
 
 	constexpr static uint32_t Id = Render::Texture::Id;
 

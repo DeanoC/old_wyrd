@@ -88,13 +88,9 @@ public:
 protected:
 	ResourceMan();
 
-
 	auto openBaseResourceByTypeAndName( uint32_t type_, ResourceNameView const name_ ) -> ResourceHandleBase&;
-
 	auto acquire( ResourceHandleBase const& base_ ) -> ResourceBase::Ptr;
-
 	auto tryAcquire( ResourceHandleBase const& base_ ) -> ResourceBase::Ptr;
-
 	auto resolveLink(ResourceHandleBase& link_, ResourceNameView const& current_) -> void;
 
 	using PrefixToStorage = std::unordered_map<std::string_view, IStorage::Ptr>;

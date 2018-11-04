@@ -169,7 +169,7 @@ set( VULKAN_SRC
 		vulkan/functionlist.inl
 		vulkan/api.cpp
 		vulkan/api.h
-		vulkan/display.h vulkan/device.cpp vulkan/device.h vulkan/vk_mem_alloc.h vulkan/vk_mem_alloc.cpp vulkan/texture.cpp vulkan/texture.h vulkan/display.cpp vulkan/commandqueue.cpp vulkan/commandqueue.h vulkan/encoder.cpp vulkan/encoder.h vulkan/rendertarget.cpp vulkan/rendertarget.h vulkan/fence.cpp vulkan/fence.h vulkan/renderpass.cpp vulkan/renderpass.h shell/posixshell.cpp shell/posixshell.h)
+		vulkan/display.h vulkan/device.cpp vulkan/device.h vulkan/vk_mem_alloc.h vulkan/vk_mem_alloc.cpp vulkan/texture.cpp vulkan/texture.h vulkan/display.cpp vulkan/commandqueue.cpp vulkan/commandqueue.h vulkan/encoder.cpp vulkan/encoder.h vulkan/rendertarget.cpp vulkan/rendertarget.h vulkan/fence.cpp vulkan/fence.h vulkan/renderpass.cpp vulkan/renderpass.h shell/posixshell.cpp shell/posixshell.h vulkan/encoderpool.cpp vulkan/encoderpool.h vulkan/renderencoder.cpp vulkan/renderencoder.h vulkan/computeencoder.cpp vulkan/computeencoder.h vulkan/types.h)
 
 #-----------
 set(wryd_srcs

@@ -7,7 +7,7 @@
 #include "vulkan/api.h"
 #include "vulkan/device.h"
 #include "vulkan/semaphore.h"
-#include "encoder.h"
+#include "vulkan/encoderpool.h"
 #include <vector>
 
 namespace Shell { struct PresentableWindow; }

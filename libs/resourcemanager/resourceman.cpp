@@ -59,6 +59,8 @@ void ResourceMan::registerResourceHandler(uint32_t type_, ResourceHandler handle
 	{
 		assert(std::get<1>(typeToHandler[type_][0]) == nullptr);
 	}
+	// stage 0 must have no extramem wanted
+	assert(std::get<0>(handler_) == 0);
 
 	typeToHandler[type_][0] = handler_;
 	typeToSavers[type_] = {changed_, save_};
@@ -208,16 +210,18 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 					 uint16_t majorVersion_, uint16_t minorVersion_,
 					 std::shared_ptr<void> ptr_) -> bool
 			{
-				uint64_t id;
-				ResourceName newName(prefix, name, subObject_);
-				id = getIndexFromName(lambdaType, newName.getResourceName());
-
 				auto ptr = std::static_pointer_cast<ResourceBase>(ptr_);
-
 				bool okay = init(stage_, resolver, majorVersion_, minorVersion_, ptr);
 				if(okay)
 				{
-					resourceCache.insert(id, ptr);
+					if(stage_ == 0)
+					{
+						ptr->stageCount = std::max(ptr->stageCount, (uint8_t) stage_);
+						uint64_t id;
+						ResourceName newName(prefix, name, subObject_);
+						id = getIndexFromName(lambdaType, newName.getResourceName());
+						resourceCache.insert(id, ptr);
+					}
 					return true;
 				} else
 					return false;

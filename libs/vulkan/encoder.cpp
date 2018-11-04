@@ -1,68 +1,12 @@
 #include "core/core.h"
 #include "render/commandqueue.h"
 #include "vulkan/texture.h"
-#include "vulkan/encoder.h"
 #include "vulkan/semaphore.h"
+#include "vulkan/encoderpool.h"
+#include "vulkan/encoder.h"
+#include "types.h"
 
 namespace Vulkan {
-
-EncoderPool::EncoderPool(Device::Ptr device_,
-						 VkCommandPool commandPool_,
-						 CommandPoolVkVTable* commandPoolVkVTable_,
-						 GeneralCBVkVTable* generalCBVTable_,
-						 GraphicsCBVkVTable* graphicsCBVTable_,
-						 ComputeCBVkVTable* computeCBVTable_) :
-		weakDevice(device_),
-		vulkanDevice(device_->getVkDevice()),
-		commandPool(commandPool_),
-		vtable(commandPoolVkVTable_),
-		generalCBVTable(generalCBVTable_),
-		graphicsCBVTable(graphicsCBVTable_),
-		computeCBVTable(computeCBVTable_)
-{
-}
-
-EncoderPool::~EncoderPool()
-{
-	auto device = weakDevice.lock();
-	if(device)
-	{
-		device->destroyCommandPool(commandPool);
-	}
-}
-
-auto EncoderPool::allocateEncoder(Render::EncoderFlag encoderFlags_) -> Render::Encoder::Ptr
-{
-	using namespace Core::bitmask;
-
-	VkCommandBufferAllocateInfo allocateInfo;
-	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocateInfo.pNext = nullptr;
-	allocateInfo.commandPool = commandPool;
-	allocateInfo.commandBufferCount = 1;
-	allocateInfo.level = bool(encoderFlags_ & Render::EncoderFlag::Callable) ?
-						 VK_COMMAND_BUFFER_LEVEL_SECONDARY : VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-	VkCommandBuffer cb = VK_NULL_HANDLE;
-	vtable->vkAllocateCommandBuffers(vulkanDevice, &allocateInfo, &cb);
-
-	GraphicsCBVkVTable* gvt = bool(encoderFlags_ & Render::EncoderFlag::RenderEncoder) ? graphicsCBVTable : nullptr;
-	ComputeCBVkVTable* cvt = bool(encoderFlags_ & Render::EncoderFlag::ComputeEncoder) ? computeCBVTable : nullptr;
-
-	auto encoder = std::make_shared<Vulkan::Encoder>(*this, encoderFlags_, cb, generalCBVTable, gvt, cvt);
-	return std::static_pointer_cast<Render::Encoder>(encoder);
-}
-
-auto EncoderPool::destroyEncoder(Vulkan::Encoder* encoder_) -> void
-{
-	if(encoder_ == nullptr) return;
-	vkFreeCommandBuffers(1, &encoder_->commandBuffer);
-}
-
-void EncoderPool::reset()
-{
-	vkResetCommandPool(VkCommandPoolResetFlagBits::VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
-}
 
 Encoder::Encoder(EncoderPool& owner_,
 				 Render::EncoderFlag encodeFlags_,
@@ -174,8 +118,41 @@ auto Encoder::copy(VkImage srcImage_,
 
 }
 
+auto Encoder::textureBarrier(
+		Render::MemoryAccess waitAccess_,
+		Render::MemoryAccess stallAccess_,
+		std::shared_ptr<Render::Texture> const& texture_) -> void
+{
+	Texture* texture = texture_->getStage<Texture>(Texture::s_stage);
+
+	uint32_t srcMask = fromMemoryAccess(waitAccess_);
+	uint32_t dstMask = fromMemoryAccess(stallAccess_);
+
+	VkImageMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = texture->imageLayout;
+	barrier.newLayout = texture->imageLayout;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = texture->image;
+	barrier.subresourceRange = texture->entireRange;
+	barrier.srcAccessMask = srcMask;
+	barrier.dstAccessMask = dstMask;
+
+	vkCmdPipelineBarrier(
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+			0,
+			0, nullptr,
+			0, nullptr,
+			1, &barrier);
+
+}
+
 auto Encoder::textureBarrier(std::shared_ptr<Render::Texture> const& texture_) -> void
 {
+	using namespace Render;
+	textureBarrier(MemoryAccess::GeneralWrite, MemoryAccess::GeneralRead, texture_);
 }
 
 auto Encoder::textureBarrier(VkPipelineStageFlagBits srcStage_, VkPipelineStageFlagBits dstStage_,
@@ -188,125 +165,6 @@ auto Encoder::textureBarrier(VkPipelineStageFlagBits srcStage_, VkPipelineStageF
 			0, nullptr,
 			0, nullptr,
 			1, &barrier_);
-}
-
-auto RenderEncoder::clearTexture(std::shared_ptr<Render::Texture> const& texture_,
-								 std::array<float_t, 4> const& floats_) -> void
-{
-	Texture* texture = texture_->getStage<Texture>(Texture::s_stage);
-
-	if(texture->entireRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT)
-	{
-		VkClearColorValue colour;
-		std::memcpy(&colour.float32, floats_.data(), floats_.size() * sizeof(float));
-		vkCmdClearColorImage(texture->image, VK_IMAGE_LAYOUT_GENERAL, &colour, 1, &texture->entireRange);
-	} else
-	{
-		VkClearDepthStencilValue ds;
-		ds.depth = floats_[0];
-		ds.stencil = (uint32_t) floats_[1]; // this only works upto 23 integer bits but stencil cap at 8 so..
-		vkCmdClearDepthStencilImage(texture->image, VK_IMAGE_LAYOUT_GENERAL, &ds, 1, &texture->entireRange);
-	}
-}
-
-auto RenderEncoder::blit(std::shared_ptr<Render::Texture> const& src_,
-						 std::shared_ptr<Render::Texture> const& dst_) -> void
-{
-	auto src = src_->getStage<Texture>(Texture::s_stage);
-	auto dst = src_->getStage<Texture>(Texture::s_stage);
-
-	VkImageBlit blitter = {
-			{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-			{{0, 0, 0},                 {(int32_t) src_->width, (int32_t) src_->height, 1}},
-			{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-			{{0, 0, 0},                 {(int32_t) dst_->width, (int32_t) dst_->height, 1}},
-	};
-
-	vkCmdBlitImage(src->image,
-				   src->imageLayout,
-				   dst->image,
-				   dst->imageLayout,
-				   1,
-				   &blitter,
-				   VK_FILTER_LINEAR);
-}
-
-auto RenderEncoder::beginRenderPass() -> void
-{
-	VkRenderPassBeginInfo beginInfo;
-	beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	beginInfo.pNext = nullptr;
-	beginInfo.clearValueCount = 0;
-	beginInfo.pClearValues = nullptr;
-	//		beginInfo.framebuffer
-}
-
-auto RenderEncoder::endRenderPass() -> void
-{
-
-}
-
-auto ComputeEncoder::clearTexture(std::shared_ptr<Render::Texture> const& texture_,
-								  std::array<float_t, 4> const& floats_) -> void
-{
-	Texture::Ptr texture = std::static_pointer_cast<Texture>(texture);
-
-	// compute encoders can't clear depth/stencil images
-	assert(texture->entireRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT);
-	VkClearColorValue colour;
-	std::memcpy(&colour.float32, floats_.data(), floats_.size() * sizeof(float));
-	vkCmdClearColorImage(texture->image, VK_IMAGE_LAYOUT_GENERAL, &colour, 1, &texture->entireRange);
-}
-
-
-auto RenderEncoder::resolveForDisplay(
-		std::shared_ptr<Render::Texture> const& src_,
-		uint32_t width_, uint32_t height_,
-		VkImage display_) -> void
-{
-	auto src = src_->getStage<Texture>(Texture::s_stage);
-
-	if(src_->samples == 1)
-	{
-		VkImageBlit blitter = {
-				{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-				{{0, 0, 0},                 {(int32_t) src_->width, (int32_t) src_->height, 1}},
-				{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-				{{0, 0, 0},                 {(int32_t) width_,      (int32_t) height_,      1}},
-		};
-
-		vkCmdBlitImage(src->image,
-					   src->imageLayout,
-					   display_,
-					   VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-					   1, &blitter, VK_FILTER_LINEAR);
-
-		VkImageMemoryBarrier barrier{};
-		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-		barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.image = display_;
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		barrier.subresourceRange.baseMipLevel = 0;
-		barrier.subresourceRange.baseArrayLayer = 0;
-		barrier.subresourceRange.levelCount = 1;
-		barrier.subresourceRange.layerCount = 1;
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		vkCmdPipelineBarrier(
-				VK_PIPELINE_STAGE_TRANSFER_BIT,
-				VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-				0,
-				0, nullptr,
-				0, nullptr,
-				1, &barrier);
-	} else
-	{
-		// TODO MSAA resolve
-		assert(false);
-	}
 }
 
 }

@@ -10,6 +10,15 @@
 
 namespace ResourceManager{ class ResourceMan; }
 namespace Render {
+struct Encoder;
+
+// resource stages of Texture have to implement IGpuTexture
+struct IGpuTexture
+{
+	virtual ~IGpuTexture() = default;
+	virtual auto transitionToRenderTarget(std::shared_ptr<Encoder> const& encoder_) -> void = 0;
+	virtual auto transitionFromRenderTarget(std::shared_ptr<Encoder> const& encoder_) -> void = 0;
+};
 
 struct Texture : public ResourceManager::Resource<"TXTR"_resource_id>
 {
@@ -28,52 +37,43 @@ public:
 	constexpr auto is2D() const { return depth == 1; }
 	constexpr auto is3D() const { return depth != 1; }
 
-	constexpr auto isCubeMap() -> bool const
-	{
-		using namespace Core::bitmask;
-		return bool(flags & TextureFlag::CubeMap);
-	};
+	constexpr auto isCubeMap() -> bool const { return Core::bitmask::test_equal(flags, TextureFlag::CubeMap); };
 
-	constexpr auto canBeDMASrc() const -> bool
-	{
-		using namespace Core::bitmask;
-		return (bool) (extractUsage(flags) & Usage::DMASrc);
-	}
+	constexpr auto canBeDMASrc() const -> bool { return Core::bitmask::test_equal(extractUsage(flags), Usage::DMASrc); }
 
-	constexpr auto canBeDMADst() const
-	{
-		using namespace Core::bitmask;
-		return (bool) (extractUsage(flags) & Usage::DMADst);
-	}
+	constexpr auto canBeDMADst() const { return Core::bitmask::test_equal(extractUsage(flags), Usage::DMADst); }
 
-	constexpr auto canBeShaderRead() const
-	{
-		using namespace Core::bitmask;
-		return (bool) (extractUsage(flags) & Usage::ShaderRead);
-	}
+	constexpr auto canBeShaderRead() const { return Core::bitmask::test_equal(extractUsage(flags), Usage::ShaderRead); }
 
 	constexpr auto canBeShaderWrite() const
 	{
-		using namespace Core::bitmask;
-		return (bool) (extractUsage(flags) & Usage::ShaderWrite);
+		return Core::bitmask::test_equal(extractUsage(flags),
+										 Usage::ShaderWrite);
 	}
 
-	constexpr auto canBeRopRead() const
-	{
-		using namespace Core::bitmask;
-		return (bool) (extractUsage(flags) & Usage::RopRead);
-	}
+	constexpr auto canBeRopRead() const { return Core::bitmask::test_equal(extractUsage(flags), Usage::RopRead); }
 
-	constexpr auto canBeRopWrite() const
-	{
-		using namespace Core::bitmask;
-		return (bool) (extractUsage(flags) & Usage::RopWrite);
-	}
+	constexpr auto canBeRopWrite() const { return Core::bitmask::test_equal(extractUsage(flags), Usage::RopWrite); }
 
 	// if the ComputeMipMapsFlag flag is set, the mips aren't actually stored here
 	// the withComputedMipMaps param will return the size as if the were
 	// and false for the real size stored in this texture
 	constexpr auto computeSize(bool withComputedMipMaps_) const -> size_t;
+
+#define INTERFACE_THUNK(name) \
+    template<typename... Args> auto name(Args... args) { \
+        for(auto i = 0u; i < getStageCount(); ++i) \
+        { \
+            assert(getStage<IGpuTexture>(i) != nullptr); \
+            return getStage<IGpuTexture>(i)->name(args...); \
+        } \
+    }
+
+	INTERFACE_THUNK(transitionToRenderTarget);
+
+	INTERFACE_THUNK(transitionFromRenderTarget);
+
+#undef INTERFACE_THUNK
 
 	TextureFlag flags;                    //!< flags for this texture
 	uint32_t 				width;					//!< width of this texture
@@ -86,8 +86,8 @@ public:
 	GenericTextureFormat	format;					//!< format of this texture
 
 	GenericImage::Handle	imageHandle;
-
 };
+
 }
 
 #endif //WYRD_GPU_TEXTURE_H

@@ -4,6 +4,7 @@
 #include "vulkan/system.h"
 #include "vulkan/vkfcracker.h"
 #include "resourcemanager/resourceman.h"
+#include "encoder.h"
 
 namespace Vulkan {
 
@@ -148,6 +149,50 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 	};
 
 	s_stage = rm_.registerNextResourceHandler(Id, {sizeof(Vulkan::Texture), registerFunc, deleteFunc});
+}
+
+auto Texture::transitionToRenderTarget(std::shared_ptr<Render::Encoder> const& encoder_) -> void
+{
+	Encoder::Ptr encoder = std::static_pointer_cast<Encoder>(encoder_);
+	VkImageMemoryBarrier barrier{};
+
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = imageLayout;
+	barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image;
+	barrier.subresourceRange = entireRange;
+	barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	encoder->textureBarrier(
+			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+			VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+			barrier);
+	imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+}
+
+auto Texture::transitionFromRenderTarget(std::shared_ptr<Render::Encoder> const& encoder_) -> void
+{
+	Encoder::Ptr encoder = std::static_pointer_cast<Encoder>(encoder_);
+	VkImageMemoryBarrier barrier{};
+
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = imageLayout;
+	barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image;
+	barrier.subresourceRange = entireRange;
+	barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+	encoder->textureBarrier(
+			VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+			barrier);
+	imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }
 
 } // end namespace

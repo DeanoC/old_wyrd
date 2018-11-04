@@ -79,6 +79,78 @@ constexpr auto extractUsage(TextureFlag flags_) -> Usage
 	return from_uint<Usage>(to_uint(flags_ & TextureFlag::Usage) >> 5);
 }
 
+enum class MemoryAccess : uint32_t
+{
+	IndirectCommandRead = Core::Bit(0),
+	IndexRead = Core::Bit(1),
+	VertexRead = Core::Bit(2),
+	ConstantRead = Core::Bit(3),
+	InputAttachmentRead = Core::Bit(4),
+	ShaderRead = Core::Bit(5),
+	ShaderWrite = Core::Bit(6),
+	ColourRopRead = Core::Bit(7),
+	ColourRopWrite = Core::Bit(8),
+	DepthStencilRopRead = Core::Bit(9),
+	DepthStencilRopWrite = Core::Bit(10),
+	DMARead = Core::Bit(11),
+	DMAWrite = Core::Bit(12),
+	CpuRead = Core::Bit(13),
+	CpuWrite = Core::Bit(14),
+	GeneralRead = Core::Bit(15),
+	GeneralWrite = Core::Bit(16),
+};
+
+constexpr auto is_bitmask_enum(Render::MemoryAccess) -> bool { return true; }
+
+enum class RenderPipelineStages : uint32_t
+{
+	Begin = Core::Bit(0), // pseudo stage for syncing at the beginning
+	DrawIndirect = Core::Bit(1),
+	VertexInput = Core::Bit(2),
+	VertexShader = Core::Bit(3),
+	TessellationControlShader = Core::Bit(4),
+	TesselationEvalShader = Core::Bit(5),
+	GeometryShader = Core::Bit(6),
+	EarlyFragmentTests = Core::Bit(7),
+	FragmentShader = Core::Bit(8),
+	LateFragmentTests = Core::Bit(9),
+	ROPWrite = Core::Bit(10),
+	End = Core::Bit(11), // pseudo stage for syncing at the end
+	AllGfx = ~1u, // all graphics stage
+	All = ~0u, // all commands in the queue
+};
+
+enum class ComputePipelineStages : uint32_t
+{
+	Begin = Core::Bit(0), // pseudo stage for syncing at the beginning
+	DrawIndirect = Core::Bit(1),
+	ComputeShader = Core::Bit(2),
+	End = Core::Bit(3), // pseudo stage for syncing at the end
+	All = ~0u, // all commands in the queue
+};
+
+enum class HostPipelineStages : uint32_t
+{
+	Host = Core::Bit(0),
+	All = ~0u, // all commands in the queue
+};
+
+enum class DMAPipelineStages : uint32_t
+{
+	Begin = Core::Bit(0), // pseudo stage for syncing at the beginning
+	DMA = Core::Bit(1),
+	End = Core::Bit(2), // pseudo stage for syncing at the end
+	All = ~0u, // all commands in the queue
+};
+
+constexpr auto is_bitmask_enum(Render::RenderPipelineStages) -> bool { return true; }
+
+constexpr auto is_bitmask_enum(Render::ComputePipelineStages) -> bool { return true; }
+
+constexpr auto is_bitmask_enum(Render::DMAPipelineStages) -> bool { return true; }
+
+constexpr auto is_bitmask_enum(Render::HostPipelineStages) -> bool { return true; }
+
 }
 
 #endif //WYRD_RENDER_TYPES_H
