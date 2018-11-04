@@ -33,9 +33,9 @@ auto RenderEncoder::blit(std::shared_ptr<Render::Texture> const& src_,
 
 	VkImageBlit blitter = {
 			{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-			{{0, 0, 0},                 {(int32_t) src_->width, (int32_t) src_->height, 1}},
+			{{0, 0, 0},                 {(int32_t) src_->width - 1, (int32_t) src_->height - 1, 1}},
 			{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-			{{0, 0, 0},                 {(int32_t) dst_->width, (int32_t) dst_->height, 1}},
+			{{0, 0, 0},                 {(int32_t) dst_->width - 1, (int32_t) dst_->height - 1, 1}},
 	};
 
 	vkCmdBlitImage(src->image,
@@ -73,9 +73,9 @@ auto RenderEncoder::resolveForDisplay(
 	{
 		VkImageBlit blitter = {
 				{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-				{{0, 0, 0},                 {(int32_t) src_->width, (int32_t) src_->height, 1}},
+				{{0, 0, 0},                 {(int32_t) src_->width - 1, (int32_t) src_->height - 1, 1}},
 				{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-				{{0, 0, 0},                 {(int32_t) width_,      (int32_t) height_,      1}},
+				{{0, 0, 0},                 {(int32_t) width_ - 1,      (int32_t) height_ - 1,      1}},
 		};
 
 		vkCmdBlitImage(src->image,

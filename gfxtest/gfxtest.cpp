@@ -33,7 +33,7 @@ int Main(Shell::ShellInterface& shell_)
 		if(gpuStable->canGpuPresent(gpuIndex))
 		{
 			pickedGpuIndex = gpuIndex;
-			if(gpuStable->isGpuLowPower( gpuIndex ) == false)
+			if(gpuStable->isGpuLowPower(gpuIndex) == false)
 			{
 				break;
 			}
@@ -48,36 +48,29 @@ int Main(Shell::ShellInterface& shell_)
 	windowConfig.fullscreen = false;
 	auto window = shell_.createPresentableWindow(windowConfig);
 	Render::DeviceConfig config = {
-			true, 	// presentable
-			true, 	// renderer
-			true, 	// compute
-			{},		// no extensions
+			true,    // presentable
+			true,    // renderer
+			true,    // compute
+			{},        // no extensions
 			window,
 			windowConfig.width, windowConfig.height, // 720p
-			false,		// no hdr
+			false,        // no hdr
 	};
 	auto device = gpuStable->createGpuDevice(pickedGpuIndex, config, resourceManager);
 	if(!device) return 10;
 
 	auto display = device->getDisplay();
-	Render::Texture blankTexture256x256Def
-			{
-					{},
-					TextureFlag::InitZero,
-					256, 256, 1, 1,
-					1, 1, GenericTextureFormat::R8G8B8A8_UNORM,
-					{}
-			};
-	memstorage->addMemory("BlankTexture_256x256"s,
-						  Texture::Id,
-						  Texture::MajorVersion,
-						  Texture::MinorVersion,
-						  &blankTexture256x256Def, sizeof(Render::Texture));
+	Render::Texture blankTexture256x256Def{
+			{},
+			TextureFlag::InitZero,
+			4, 4, 1, 1,
+			1, 1, GenericTextureFormat::R8G8B8A8_UNORM,
+			{}
+	};
+	Render::Texture::RegisterToMemoryStorage("BlankTexture_256x256"s, blankTexture256x256Def, memstorage);
 
 	ResourceManager::ResourceName blankTexName(memstorage->getPrefix(), "BlankTexture_256x256"sv);
-
 	auto blankTexHandle = resourceManager->openResourceByName<Texture::Id>(blankTexName.getView());
-
 	auto blankTex = blankTexHandle.acquire<Texture>();
 
 	auto renderQueue = device->getGeneralQueue();

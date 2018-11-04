@@ -8,7 +8,11 @@
 #include "render/generictextureformat.h"
 #include "render/image.h"
 
-namespace ResourceManager{ class ResourceMan; }
+namespace ResourceManager {
+class ResourceMan;
+
+struct MemStorage;
+}
 namespace Render {
 struct Encoder;
 
@@ -28,13 +32,18 @@ public:
 	using WeakPtr = std::weak_ptr<Texture>;
 	using ConstWeakPtr = std::weak_ptr<Texture const>;
 
-	static auto RegisterResourceHandler( ResourceManager::ResourceMan& rm_) -> void;
+	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void;
+	static auto RegisterToMemoryStorage(std::string const& name_,
+										Texture const& texture_,
+										std::shared_ptr<ResourceManager::MemStorage> const& memStorage_) -> bool;
 
 	static constexpr uint16_t MajorVersion = 1;
 	static constexpr uint16_t MinorVersion = 0;
 
 	constexpr auto is1D() const { return height == 1 && depth == 1; }
+
 	constexpr auto is2D() const { return depth == 1; }
+
 	constexpr auto is3D() const { return depth != 1; }
 
 	constexpr auto isCubeMap() -> bool const { return Core::bitmask::test_equal(flags, TextureFlag::CubeMap); };
@@ -76,16 +85,16 @@ public:
 #undef INTERFACE_THUNK
 
 	TextureFlag flags;                    //!< flags for this texture
-	uint32_t 				width;					//!< width of this texture
-	uint32_t 				height;					//!< height of this texture
-	uint32_t 				depth;					//!< 3D depth
+	uint32_t width;                    //!< width of this texture
+	uint32_t height;                    //!< height of this texture
+	uint32_t depth;                    //!< 3D depth
 
-	uint32_t 				slices;					//!< slice count of this texture
-	uint32_t 				mipLevels;				//!< number of mip levels
-	uint32_t 				samples;				//!< sample count (usually 1)
-	GenericTextureFormat	format;					//!< format of this texture
+	uint32_t slices;                    //!< slice count of this texture
+	uint32_t mipLevels;                //!< number of mip levels
+	uint32_t samples;                //!< sample count (usually 1)
+	GenericTextureFormat format;                    //!< format of this texture
 
-	GenericImage::Handle	imageHandle;
+	GenericImage::Handle imageHandle;
 };
 
 }

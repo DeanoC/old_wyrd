@@ -1,7 +1,8 @@
 #include "core/core.h"
-#include "render/texture.h"
 #include "resourcemanager/resourceman.h"
+#include "resourcemanager/memstorage.h"
 #include "binny/writehelper.h"
+#include "render/texture.h"
 
 namespace Render {
 auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void
@@ -66,6 +67,18 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void
 
 	rm_.registerResourceHandler(Id, {0, load, destroy}, changed, save);
 
+}
+
+auto Texture::RegisterToMemoryStorage(
+		std::string const& name_,
+		Texture const& texture_,
+		std::shared_ptr<ResourceManager::MemStorage> const& memStorage_) -> bool
+{
+	return memStorage_->addMemory(name_,
+								  Texture::Id,
+								  Texture::MajorVersion,
+								  Texture::MinorVersion,
+								  &texture_, sizeof(Render::Texture));
 }
 
 constexpr auto Texture::computeSize(bool withComputedMipMaps_) const -> size_t

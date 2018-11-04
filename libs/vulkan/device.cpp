@@ -414,13 +414,13 @@ auto Device::fill(uint32_t value_, VkImageCreateInfo const& createInfo_,
 	cpuAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 	VmaAllocationInfo cpuInfo;
 	auto[cpuImage, cpuAlloc] = createImage(cpuCreateInfo, cpuAllocInfo, cpuInfo);
-	for(auto i = 0u; i < createInfo_.extent.width * createInfo_.extent.height; ++i)
+
+	for(auto i = 0u; i < cpuInfo.size / sizeof(uint32_t); ++i)
 	{
 		((uint32_t*) cpuInfo.pMappedData)[i] = value_;
 	}
 
 	upload(cpuImage, dst_);
-
 	destroyImage({cpuImage, cpuAlloc});
 }
 
@@ -430,8 +430,7 @@ void Device::upload(VkImage cpuImage, std::shared_ptr<Render::Texture> const& ds
 	Texture* dst = dst_->getStage<Texture>(Texture::s_stage);
 
 	encoder->begin();
-	VkImageMemoryBarrier hostBarrier{};
-	hostBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	VkImageMemoryBarrier hostBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
 	hostBarrier.oldLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
 	hostBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 	hostBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -453,8 +452,7 @@ void Device::upload(VkImage cpuImage, std::shared_ptr<Render::Texture> const& ds
 	srcLayers.mipLevel = dst->entireRange.levelCount;
 	encoder->copy(cpuImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, srcLayers, dst_);
 
-	VkImageMemoryBarrier copyBarrier{};
-	copyBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	VkImageMemoryBarrier copyBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
 	copyBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	copyBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	copyBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -594,22 +592,19 @@ auto Device::makeEncoderPool(bool frameLifetime_,
 {
 	using namespace Render;
 	using namespace Core::bitmask;
-	assert(renderCapable || bool(flavour_ & CommandQueueFlavour::Render));
+	assert(renderCapable || Core::bitmask::test_equal(flavour_, CommandQueueFlavour::Render));
 
-	VkCommandPoolCreateInfo createInfo;
-	createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	createInfo.pNext = nullptr;
-
+	VkCommandPoolCreateInfo createInfo{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
 	createInfo.flags = 0;
 	createInfo.flags |= frameLifetime_ ? VkCommandPoolCreateFlagBits::VK_COMMAND_POOL_CREATE_TRANSIENT_BIT : 0;
 
-	if(test_equal(flavour_, CommandQueueFlavour::Render | CommandQueueFlavour::Compute))
+	if(Core::bitmask::test_equal(flavour_, CommandQueueFlavour::Render | CommandQueueFlavour::Compute))
 	{
 		createInfo.queueFamilyIndex = allQueue->getFamilyIndex();
-	} else if(test_any(flavour_, CommandQueueFlavour::Render))
+	} else if(Core::bitmask::test_any(flavour_, CommandQueueFlavour::Render))
 	{
 		createInfo.queueFamilyIndex = renderSpecificQueue->getFamilyIndex();
-	} else if(test_any(flavour_, CommandQueueFlavour::Compute))
+	} else if(Core::bitmask::test_any(flavour_, CommandQueueFlavour::Compute))
 	{
 		createInfo.queueFamilyIndex = computeSpecificQueue->getFamilyIndex();
 	} else
@@ -631,9 +626,7 @@ auto Device::makeEncoderPool(bool frameLifetime_,
 
 auto Device::makeFence() -> std::shared_ptr<Render::Fence>
 {
-	VkFenceCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	createInfo.pNext = nullptr;
+	VkFenceCreateInfo createInfo{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
 	VkFence vulkanFence = createFence(createInfo);
 
 	Fence::Ptr fence = std::make_shared<Fence>(
@@ -646,9 +639,7 @@ auto Device::makeFence() -> std::shared_ptr<Render::Fence>
 
 auto Device::makeSemaphore() -> std::shared_ptr<Render::Semaphore>
 {
-	VkSemaphoreCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	createInfo.pNext = nullptr;
+	VkSemaphoreCreateInfo createInfo{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
 	VkSemaphore vulkanSemaphore = createSemaphore(createInfo);
 
 	Semaphore::Ptr semaphore = std::make_shared<Semaphore>(
@@ -674,9 +665,7 @@ auto Device::makeRenderPass(
 					VK_ATTACHMENT_STORE_OP_DONT_CARE
 			};
 
-	VkRenderPassCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	createInfo.pNext = nullptr;
+	VkRenderPassCreateInfo createInfo{VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
 
 	std::vector<VkAttachmentDescription> attachments(targets_.size());
 	std::vector<VkAttachmentReference> cReferences;
@@ -774,9 +763,7 @@ auto Device::makeRenderTarget(
 	}
 	auto renderPass = std::static_pointer_cast<Vulkan::RenderPass>(pass_);
 
-	VkFramebufferCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	createInfo.pNext = nullptr;
+	VkFramebufferCreateInfo createInfo{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
 	createInfo.flags = 0;
 	createInfo.renderPass = renderPass->renderpass;
 	createInfo.width = width;

@@ -3,8 +3,8 @@
 #include "vulkan/texture.h"
 #include "vulkan/system.h"
 #include "vulkan/vkfcracker.h"
+#include "vulkan/encoder.h"
 #include "resourcemanager/resourceman.h"
-#include "encoder.h"
 
 namespace Vulkan {
 
