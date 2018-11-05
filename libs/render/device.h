@@ -30,9 +30,6 @@ struct Device
 	virtual auto makeEncoderPool(bool frameLifetime_, CommandQueueFlavour flavour_) -> std::shared_ptr<EncoderPool> = 0;
 	virtual auto makeFence() -> std::shared_ptr<Fence> = 0;
 	virtual auto makeSemaphore() -> std::shared_ptr<Semaphore> = 0;
-	virtual auto makeRenderPass(std::vector<RenderPass::Target> const& targets_) -> std::shared_ptr<RenderPass> = 0;
-	virtual auto makeRenderTarget(std::shared_ptr<RenderPass> const& pass_,
-								  std::vector<Texture::Ptr> const& targets_) -> std::shared_ptr<RenderTarget> = 0;
 
 	virtual auto getGeneralQueue() -> std::shared_ptr<CommandQueue> = 0;
 	virtual auto getRenderSpecificQueue() -> std::shared_ptr<CommandQueue> = 0;

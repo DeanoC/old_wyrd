@@ -4,7 +4,7 @@
 
 #include "core/core.h"
 #include "binny/writehelper.h"
-#include "resourcemanager/base.h"
+#include "resourcemanager/resource.h"
 #include "resourcemanager/resourceman.h"
 
 namespace ResourceManager {

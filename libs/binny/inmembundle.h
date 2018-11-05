@@ -113,6 +113,7 @@ public:
 						}
 						extraPtr += handler.extraMem;
 						okay |= handler.createFunc(name_, handler.stage, majorVersion, minorVersion, ptr);
+						if(okay == false) break;
 					}
 				}
 				if(okay) return { ErrorCode::Okay, 0 };

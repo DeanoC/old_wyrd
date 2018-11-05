@@ -1,6 +1,7 @@
 #include "core/core.h"
 #include "vulkan/system.h"
 #include "vulkan/display.h"
+#include "vulkan/resources.h"
 #include <string_view>
 #include <array>
 
@@ -325,7 +326,7 @@ auto System::createGpuDevice(uint32_t index_,
 										 resourceManager_);
 	if(!device) return {};
 
-	Texture::RegisterResourceHandler(*resourceManager_, device);
+	RegisterResourceHandlers(*resourceManager_.get(), device);
 
 	if(surface != VK_NULL_HANDLE)
 	{

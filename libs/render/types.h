@@ -68,15 +68,21 @@ enum class TextureFlag : uint32_t
 	InitZero = Core::Bit(2),
 	CubeMap = Core::Bit(3),
 	ComputeMipMaps = Core::Bit(4),
-	Usage = Core::bitmask::to_uint(Usage::MASK) << 5
+	UsageMask = Core::bitmask::to_uint(Usage::MASK) << 5
 };
 
 constexpr auto is_bitmask_enum(Render::TextureFlag) -> bool { return true; }
 
-constexpr auto extractUsage(TextureFlag flags_) -> Usage
+constexpr auto TextureFlagsToUsage(TextureFlag flags_) -> Usage
 {
 	using namespace Core::bitmask;
-	return from_uint<Usage>(to_uint(flags_ & TextureFlag::Usage) >> 5);
+	return from_uint<Usage>(to_uint(flags_ & TextureFlag::UsageMask) >> 5);
+}
+
+constexpr auto TextureFlagFromUsage(Usage usage) -> TextureFlag
+{
+	using namespace Core::bitmask;
+	return from_uint<TextureFlag>(to_uint(usage) << 5);
 }
 
 enum class MemoryAccess : uint32_t

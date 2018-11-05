@@ -7,7 +7,8 @@
 #include "math/colourspace.h"
 #include "render/generictextureformat.h"
 #include "render/gtfcracker.h"
-#include "resourcemanager/base.h"
+#include "render/resources.h"
+#include "resourcemanager/resource.h"
 #include <cstddef>
 #include <array>
 
@@ -24,18 +25,15 @@ struct ImageBase
 // Support image arrays/slices
 // the default is the generic texture format image (GIMG) but can be subclassed
 // to handle specific a
-template<uint32_t id_ = "GIMG"_resource_id>
+template<uint32_t id_ = GenericImageId>
 class Image : public ResourceManager::Resource<id_>, public ImageBase
 {
 public:
-	friend auto RegisterResourceHandlers(ResourceManager::ResourceMan& rm_) -> void;
-
 	using Ptr = std::shared_ptr<Image>;
 	using ConstPtr = std::shared_ptr<Image const>;
 	using WeakPtr = std::weak_ptr<Image>;
 	using ConstWeakPtr = std::weak_ptr<Image const>;
 	static constexpr uint32_t Id = id_;
-	using Handle = ResourceManager::ResourceHandle<Id>;
 
 	// note, Image always requires to the first channel as R etc.
 	// this means that you ask for R and it will retrieve it from wherever
@@ -44,7 +42,8 @@ public:
 	// R and D as G.. but that matches shaders generally anyway.
 
 	static auto
-	Create(uint32_t width_, uint32_t height_, uint32_t depth_, uint32_t slices_, GenericTextureFormat fmt_) -> Ptr;
+	CreateZeroed(uint32_t width_, uint32_t height_, uint32_t depth_, uint32_t slices_,
+				 GenericTextureFormat fmt_) -> Ptr;
 
 	using Pixel = struct
 	{
@@ -83,7 +82,6 @@ public:
 	}
 
 	uint64_t dataSize;
-	uint64_t subClassData; // not used by generic but allows subclasses to store something
 
 	uint32_t width;
 	uint32_t height;
@@ -91,7 +89,9 @@ public:
 	uint32_t slices;
 
 	GenericTextureFormat format;
-	uint32_t padd;
+	uint32_t subClassData; // not used by generic but allows subclasses to store something
+
+	uint8_t* dataStore;
 
 	auto data() { return dataStore; }
 
@@ -108,9 +108,8 @@ public:
 	auto setChannelAt(double value_, Channel channel_, unsigned int x_, unsigned int y_ = 0, unsigned int z_ = 0,
 					  unsigned int slice_ = 0) -> void;
 
-protected:
-	uint8_t *dataStore;
 
+protected:
 	Image(uint64_t dataSize_, uint32_t width_, uint32_t height_, uint32_t depth_, uint32_t slices_,
 		  GenericTextureFormat fmt_, uint8_t *data_)
 			: dataSize(dataSize_), width(width_), height(height_), depth(depth_), slices(slices_), format(fmt_),
@@ -118,7 +117,7 @@ protected:
 
 	~Image() = default;
 
-	static constexpr uint16_t MajorVersion = 1;
+	static constexpr uint16_t MajorVersion = 2;
 	static constexpr uint16_t MinorVersion = 0;
 
 	constexpr auto
@@ -221,7 +220,10 @@ protected:
 #include "render/image_put.inl"
 #include "render/image.inl"
 
-using GenericImage = Image<>;
+struct GenericImage : public Image<>
+{
+	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void;
+};
 
 }
 

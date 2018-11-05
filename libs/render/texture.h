@@ -4,10 +4,11 @@
 
 #include "core/core.h"
 #include "core/utils.h"
-#include "resourcemanager/base.h"
-#include "resourcemanager/resourcename.h"
+#include "render/resources.h"
 #include "render/generictextureformat.h"
 #include "render/image.h"
+#include "resourcemanager/resourcehandle.h"
+#include "resourcemanager/resourcename.h"
 
 namespace ResourceManager {
 class ResourceMan;
@@ -33,9 +34,6 @@ public:
 	using ConstWeakPtr = std::weak_ptr<Texture const>;
 
 	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void;
-	static auto PlaceInStorage(ResourceManager::ResourceNameView name_,
-							   Texture const& texture_,
-							   std::shared_ptr<ResourceManager::ResourceMan> const& rm_) -> bool;
 
 	static constexpr uint16_t MajorVersion = 1;
 	static constexpr uint16_t MinorVersion = 0;
@@ -48,21 +46,37 @@ public:
 
 	constexpr auto isCubeMap() -> bool const { return Core::bitmask::test_equal(flags, TextureFlag::CubeMap); };
 
-	constexpr auto canBeDMASrc() const -> bool { return Core::bitmask::test_equal(extractUsage(flags), Usage::DMASrc); }
+	constexpr auto canBeDMASrc() const -> bool
+	{
+		return Core::bitmask::test_equal(TextureFlagsToUsage(flags),
+										 Usage::DMASrc);
+	}
 
-	constexpr auto canBeDMADst() const { return Core::bitmask::test_equal(extractUsage(flags), Usage::DMADst); }
+	constexpr auto canBeDMADst() const { return Core::bitmask::test_equal(TextureFlagsToUsage(flags), Usage::DMADst); }
 
-	constexpr auto canBeShaderRead() const { return Core::bitmask::test_equal(extractUsage(flags), Usage::ShaderRead); }
+	constexpr auto canBeShaderRead() const
+	{
+		return Core::bitmask::test_equal(TextureFlagsToUsage(flags),
+										 Usage::ShaderRead);
+	}
 
 	constexpr auto canBeShaderWrite() const
 	{
-		return Core::bitmask::test_equal(extractUsage(flags),
+		return Core::bitmask::test_equal(TextureFlagsToUsage(flags),
 										 Usage::ShaderWrite);
 	}
 
-	constexpr auto canBeRopRead() const { return Core::bitmask::test_equal(extractUsage(flags), Usage::RopRead); }
+	constexpr auto canBeRopRead() const
+	{
+		return Core::bitmask::test_equal(TextureFlagsToUsage(flags),
+										 Usage::RopRead);
+	}
 
-	constexpr auto canBeRopWrite() const { return Core::bitmask::test_equal(extractUsage(flags), Usage::RopWrite); }
+	constexpr auto canBeRopWrite() const
+	{
+		return Core::bitmask::test_equal(TextureFlagsToUsage(flags),
+										 Usage::RopWrite);
+	}
 
 	// if the ComputeMipMapsFlag flag is set, the mips aren't actually stored here
 	// the withComputedMipMaps param will return the size as if the were
@@ -94,7 +108,7 @@ public:
 	uint32_t samples;                //!< sample count (usually 1)
 	GenericTextureFormat format;                    //!< format of this texture
 
-	GenericImage::Handle imageHandle;
+	GenericImageHandle imageHandle;
 };
 
 }

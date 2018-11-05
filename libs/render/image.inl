@@ -1,8 +1,8 @@
 
 
 template<uint32_t id_>
-auto Image<id_>::Create(uint32_t width_, uint32_t height_, uint32_t depth_, uint32_t slices_,
-						Render::GenericTextureFormat fmt_) -> Ptr
+auto Image<id_>::CreateZeroed(uint32_t width_, uint32_t height_, uint32_t depth_, uint32_t slices_,
+							  Render::GenericTextureFormat fmt_) -> Ptr
 {
 	uint64_t const dataSize = computeDataSize(width_, height_, depth_, slices_, fmt_);
 	void *ptr = malloc(sizeof(Image) + dataSize);

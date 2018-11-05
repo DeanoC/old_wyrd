@@ -113,7 +113,7 @@ set( RENDER_SRC
 		render/image_fetch.inl
 		render/image_put.inl
 		render/image.h
-		render/resourcehandlers.cpp render/resourcehandlers.h render/commandqueue.h render/encoder.h render/renderpass.h render/rendertarget.h render/semaphore.h render/fence.h render/types.h)
+		render/resources.cpp render/resources.h render/commandqueue.h render/encoder.h render/renderpass.h render/rendertarget.h render/semaphore.h render/fence.h render/types.h render/renderpass.cpp render/image.cpp render/rendertarget.cpp)
 
 set( MATH_SRC
 		math/vector_math.cpp
@@ -140,7 +140,7 @@ file( GLOB MESHOPS_SRC  meshops/*.cpp
 		meshops/VHACD_Lib/src/*.cpp )
 
 set( RESOURCEMAN_SRC
-		resourcemanager/base.h
+		resourcemanager/resource.h
 		resourcemanager/diskstorage.h
 		resourcemanager/istorage.h
 		resourcemanager/memstorage.h
@@ -150,7 +150,7 @@ set( RESOURCEMAN_SRC
 		resourcemanager/resourceman.h
 		resourcemanager/resourcename.h
 		resourcemanager/textresource.h
-		resourcemanager/textresource.cpp resourcemanager/writer.h)
+		resourcemanager/textresource.cpp resourcemanager/writer.h resourcemanager/resourcehandle.h resourcemanager/resourceid.h)
 
 set( SHELL_SRC
 		shell/interface.h
@@ -169,7 +169,7 @@ set( VULKAN_SRC
 		vulkan/functionlist.inl
 		vulkan/api.cpp
 		vulkan/api.h
-		vulkan/display.h vulkan/device.cpp vulkan/device.h vulkan/vk_mem_alloc.h vulkan/vk_mem_alloc.cpp vulkan/texture.cpp vulkan/texture.h vulkan/display.cpp vulkan/commandqueue.cpp vulkan/commandqueue.h vulkan/encoder.cpp vulkan/encoder.h vulkan/rendertarget.cpp vulkan/rendertarget.h vulkan/fence.cpp vulkan/fence.h vulkan/renderpass.cpp vulkan/renderpass.h shell/posixshell.cpp shell/posixshell.h vulkan/encoderpool.cpp vulkan/encoderpool.h vulkan/renderencoder.cpp vulkan/renderencoder.h vulkan/computeencoder.cpp vulkan/computeencoder.h vulkan/types.h)
+		vulkan/display.h vulkan/device.cpp vulkan/device.h vulkan/vk_mem_alloc.h vulkan/vk_mem_alloc.cpp vulkan/texture.cpp vulkan/texture.h vulkan/display.cpp vulkan/commandqueue.cpp vulkan/commandqueue.h vulkan/encoder.cpp vulkan/encoder.h vulkan/rendertarget.cpp vulkan/rendertarget.h vulkan/fence.cpp vulkan/fence.h vulkan/renderpass.cpp vulkan/renderpass.h shell/posixshell.cpp shell/posixshell.h vulkan/encoderpool.cpp vulkan/encoderpool.h vulkan/renderencoder.cpp vulkan/renderencoder.h vulkan/computeencoder.cpp vulkan/computeencoder.h vulkan/types.h vulkan/resources.cpp vulkan/resources.h)
 
 #-----------
 set(wryd_srcs

@@ -18,14 +18,17 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void
 		auto[getRMFunc, resolverFunc] = resolver_;
 		resolverFunc(texture->imageHandle.base);
 
-		if(Core::bitmask::test_equal(texture->flags, TextureFlag::InitZero))
+		if(Core::bitmask::test_equal(texture->flags, TextureFlag::NoInit) == false)
 		{
-			if(texture->imageHandle.isValid()) return false;
-		} else
-		{
-			if(!texture->imageHandle.isValid() ||
+			if(Core::bitmask::test_equal(texture->flags, TextureFlag::InitZero))
+			{
+				if(texture->imageHandle.isValid()) return false;
+			} else
+			{
+				if(!texture->imageHandle.isValid() ||
 					texture->imageHandle.acquire() == nullptr)
-				return false;
+					return false;
+			}
 		}
 
 		if(texture->width == 0) return false;
@@ -68,34 +71,6 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void
 
 	rm_.registerResourceHandler(Id, {0, load, destroy}, changed, save);
 
-}
-
-auto Texture::PlaceInStorage(
-		ResourceManager::ResourceNameView name_,
-		Texture const& texture_,
-		std::shared_ptr<ResourceManager::ResourceMan> const& rm_) -> bool
-{
-	using namespace std::string_view_literals;
-
-	auto storage = rm_->getStorageForPrefix(name_.getStorage());
-	assert(storage);
-	switch(Core::QuickHash(name_.getStorage()))
-	{
-		case Core::QuickHash("mem"sv):
-		{
-			auto memstorage = std::static_pointer_cast<ResourceManager::MemStorage>(storage);
-			return memstorage->addMemory(
-					std::string(name_.getName()),
-					Texture::Id,
-					Texture::MajorVersion,
-					Texture::MinorVersion,
-					&texture_, sizeof(Render::Texture));
-			break;
-		}
-		default:
-			LOG_S(ERROR) << "Unknown storage type for PlaceInStore";
-			return {};
-	}
 }
 
 constexpr auto Texture::computeSize(bool withComputedMipMaps_) const -> size_t

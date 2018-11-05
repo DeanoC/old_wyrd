@@ -4,7 +4,7 @@
 
 #include "core/core.h"
 #include "core/freelist.h"
-#include "resourcemanager/base.h"
+#include "resourcemanager/resource.h"
 #include "tbb/concurrent_unordered_map.h"
 #include <string_view>
 #include <functional>

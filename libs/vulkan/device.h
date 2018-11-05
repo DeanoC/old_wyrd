@@ -50,10 +50,6 @@ public:
 						 Render::CommandQueueFlavour flavour_) -> std::shared_ptr<Render::EncoderPool> final;
 	auto makeFence() -> std::shared_ptr<Render::Fence> final;
 	auto makeSemaphore() -> std::shared_ptr<Render::Semaphore> final;
-	auto makeRenderPass(
-			std::vector<Render::RenderPass::Target> const& targets_) -> std::shared_ptr<Render::RenderPass> final;
-	auto makeRenderTarget(std::shared_ptr<Render::RenderPass> const& pass_,
-						  std::vector<Render::Texture::Ptr> const& targets_) -> std::shared_ptr<Render::RenderTarget> final;
 
 	auto getGeneralQueue() -> Render::CommandQueue::Ptr final;
 	auto getRenderSpecificQueue() -> Render::CommandQueue::Ptr final;
@@ -91,10 +87,6 @@ public:
 	auto createFramebuffer(VkFramebufferCreateInfo const& createInfo_) -> VkFramebuffer;
 	auto destroyFramebuffer(VkFramebuffer frameBuffer_) -> void;
 
-private:
-
-	DeviceVkVTable deviceVkVTable;
-
 	//--
 	// functions also in device table
 	FenceVkVTable fenceVkVTable;
@@ -119,6 +111,10 @@ private:
 	GraphicsCBVkVTable graphicsCBVkVTable;
 	ComputeCBVkVTable computeCBVkVTable;
 	GeneralCBVkVTable generalCBVkVTable;
+
+private:
+
+	DeviceVkVTable deviceVkVTable;
 
 #define DEVICE_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return deviceVkVTable. name(device, args...); }
 #define DEVICE_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)

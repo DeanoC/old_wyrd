@@ -3,7 +3,8 @@
 #define WYRD_TEXTRESOURCE_H
 
 #include "core/core.h"
-#include "resourcemanager/base.h"
+#include "resourcemanager/resourceid.h"
+#include "resourcemanager/resource.h"
 
 namespace ResourceManager
 {

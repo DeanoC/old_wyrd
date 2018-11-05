@@ -3,6 +3,7 @@
 #define WYRD_RESOURCEMANANAGER_MEMSTORAGE_H
 
 #include "core/core.h"
+#include "core/quick_hash.h"
 #include <string_view>
 #include <iostream>
 #include <fstream>

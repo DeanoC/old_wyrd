@@ -1,5 +1,5 @@
 #include <resourcemanager/memstorage.h>
-#include <render/resourcehandlers.h>
+#include <render/resources.h>
 #include "core/core.h"
 #include "shell/interface.h"
 #include "render/stable.h"
@@ -11,11 +11,10 @@ struct App
 	App(Shell::ShellInterface& shell_) :
 			shell(shell_) {}
 
-	static constexpr std::string_view blankTex4x4Name = "mem$blankTex4x4";
-
 	auto init() -> bool
 	{
 		using namespace std::string_literals;
+		using namespace Core::bitmask;
 		using namespace Render;
 
 		Shell::ShellConfig shellConfig{};
@@ -66,16 +65,63 @@ struct App
 
 		display = device->getDisplay();
 
-		Texture blankTex4x4Def{
-				{},
-				TextureFlag::InitZero,
-				4, 4, 1, 1,
-				1, 1, Render::GenericTextureFormat::R8G8B8A8_UNORM,
-				{}
-		};
-		Texture::PlaceInStorage(blankTex4x4Name, blankTex4x4Def, resourceManager);
+		createResources();
 
 		return okay;
+	}
+
+	auto finish() -> void
+	{
+		display.reset();
+		device.reset();
+		resourceManager.reset();
+	}
+
+	static constexpr std::string_view blankTex4x4Name = "mem$blankTex4x4";
+	static constexpr std::string_view colourRT0Name = "mem$colourRT0";
+	static constexpr std::string_view defaultRenderPassName = "mem$defaultRenderPass";
+
+	auto createResources() -> void
+	{
+		using namespace std::string_literals;
+		using namespace Core::bitmask;
+		using namespace Render;
+
+		Texture blankTex4x4Def{
+				{},
+				TextureFlag::InitZero |
+				TextureFlagFromUsage(Usage::ShaderRead),
+				4, 4, 1, 1,
+				1, 1,
+				GenericTextureFormat::R8G8B8A8_UNORM,
+				{}
+		};
+		resourceManager->placeInStorage(blankTex4x4Name, blankTex4x4Def);
+
+		Texture colourRT0Def{
+				{},
+				TextureFlag::NoInit |
+				TextureFlagFromUsage(Usage::RopRead | Usage::RopWrite),
+				display->getWidth(), display->getHeight(), 1, 1,
+				1, 1,
+				GenericTextureFormat::R8G8B8A8_UNORM,
+				{}
+		};
+		resourceManager->placeInStorage(colourRT0Name, colourRT0Def);
+
+		RenderPass defaultRenderPassDef{
+				{},
+				{
+						{
+								LoadOp::Clear,
+								StoreOp::Store,
+								GenericTextureFormat::R8G8B8A8_UNORM,
+						}
+				},
+				1,
+				{}
+		};
+		resourceManager->placeInStorage(defaultRenderPassName, defaultRenderPassDef);
 	}
 
 	auto body() -> bool
@@ -83,8 +129,16 @@ struct App
 		using namespace Render;
 		using namespace std::string_view_literals;
 
+		// grab handles
 		auto blankTexHandle = resourceManager->openResourceByName<Texture::Id>(blankTex4x4Name);
+		auto colourRT0Handle = resourceManager->openResourceByName<Texture::Id>(colourRT0Name);
+		auto defaultRenderPassHandle = resourceManager->openResourceByName<RenderPass::Id>(defaultRenderPassName);
+
+		// acquire the resources
 		auto blankTex = blankTexHandle.acquire<Texture>();
+		auto colourRT0 = colourRT0Handle.acquire<Texture>();
+		auto defaultRenderPass = defaultRenderPassHandle.acquire<RenderPass>();
+
 
 		auto renderQueue = device->getGeneralQueue();
 		auto rEncoderPool = device->makeEncoderPool(true, CommandQueueFlavour::Render);
@@ -96,6 +150,7 @@ struct App
 			encoder = rEncoderPool->allocateEncoder(EncoderFlag::RenderEncoder);
 
 			encoder->begin();
+
 
 			auto renderEncoder = encoder->asRenderEncoder();
 			renderEncoder->beginRenderPass();
@@ -110,13 +165,6 @@ struct App
 		} while(shell.update());
 
 		return true;
-	}
-
-	auto finish() -> void
-	{
-		display.reset();
-		device.reset();
-		resourceManager.reset();
 	}
 
 	ResourceManager::ResourceMan::Ptr resourceManager;

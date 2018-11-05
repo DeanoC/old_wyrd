@@ -9,16 +9,22 @@
 namespace Vulkan {
 struct Device;
 
-struct RenderTarget : public Render::RenderTarget
+struct RenderTarget
 {
 	using Ptr = std::shared_ptr<RenderTarget>;
-	using WeakPtr = std::shared_ptr<RenderTarget>;
+	using ConstPtr = std::shared_ptr<RenderTarget const>;
+	using WeakPtr = std::weak_ptr<RenderTarget>;
+	using ConstWeakPtr = std::weak_ptr<RenderTarget const>;
 
-	RenderTarget(std::shared_ptr<Device> const& device_);
-	~RenderTarget();
+	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_, std::weak_ptr<Device> device_) -> void;
+	inline static int s_stage = -1;
 
-	std::weak_ptr<Device> weakDevice;
+#define FRAMEBUFFER_VK_FUNC_EXT(name) template<typename... Args> auto name(Args... args) { return vtable-> name(renderpass, args...); }
+
+#include "functionlist.inl"
+
 	VkFramebuffer framebuffer;
+	FramebufferVkVTable* vtable;
 };
 
 }

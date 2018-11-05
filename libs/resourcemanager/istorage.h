@@ -5,7 +5,7 @@
 #include <string_view>
 #include <iostream>
 #include "binny/ibundle.h"
-#include "resourcemanager/base.h"
+#include "resourcemanager/resource.h"
 #include "resourcemanager/resourcename.h"
 
 namespace ResourceManager {

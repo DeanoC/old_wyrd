@@ -7,14 +7,24 @@
 #include "vulkan/api.h"
 
 namespace Vulkan {
-struct RenderPass : public Render::RenderPass
+struct Device;
+
+struct RenderPass
 {
 	using Ptr = std::shared_ptr<RenderPass>;
-	using WeakPtr = std::shared_ptr<RenderPass>;
+	using ConstPtr = std::shared_ptr<RenderPass const>;
+	using WeakPtr = std::weak_ptr<RenderPass>;
+	using ConstWeakPtr = std::weak_ptr<RenderPass const>;
 
-	~RenderPass() final;
+	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_, std::weak_ptr<Device> device_) -> void;
+	inline static int s_stage = -1;
+
+#define RENDERPASS_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(renderpass, args...); }
+
+#include "functionlist.inl"
 
 	VkRenderPass renderpass;
+	RenderPassVkVTable* vtable;
 };
 
 }

@@ -165,6 +165,10 @@ auto ResourceMan::acquire(ResourceHandleBase const& base_) -> ResourceBase::Ptr
 	while(!ptr)
 	{
 		ptr = tryAcquire(base_);
+		if(!ptr)
+		{
+			LOG_S(INFO) << "tryAcquire failed during acquire";
+		}
 	}
 	return ptr;
 }

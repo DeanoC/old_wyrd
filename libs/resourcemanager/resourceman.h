@@ -5,9 +5,11 @@
 #include "core/core.h"
 #include "binny/bundle.h"
 #include "core/freelist.h"
-#include "resourcemanager/base.h"
+#include "resourcemanager/resourcehandle.h"
+#include "resourcemanager/resource.h"
 #include "resourcemanager/resourcename.h"
 #include "resourcemanager/resourcecache.h"
+#include "resourcemanager/memstorage.h"
 #include "tbb/concurrent_unordered_map.h"
 #include "istorage.h"
 #include <iostream>
@@ -62,6 +64,8 @@ public:
 
 	auto registerStorageHandler( IStorage::Ptr storage_ ) -> void;
 	auto getStorageForPrefix(std::string_view prefix_) -> IStorage::Ptr;
+	template<typename T>
+	auto placeInStorage(ResourceManager::ResourceNameView name_, T const& renderPass_) -> bool;
 
 	auto registerResourceHandler( 	uint32_t type_,
 									ResourceHandler funcs_,
@@ -88,7 +92,6 @@ public:
 
 	auto getIndexFromName(uint32_t type_, ResourceNameView const name_) -> uint64_t;
 
-
 protected:
 	ResourceMan();
 
@@ -96,6 +99,7 @@ protected:
 	auto acquire( ResourceHandleBase const& base_ ) -> ResourceBase::Ptr;
 	auto tryAcquire( ResourceHandleBase const& base_ ) -> ResourceBase::Ptr;
 	auto resolveLink(ResourceHandleBase& link_, ResourceNameView const& current_) -> void;
+
 
 	using PrefixToStorage = std::unordered_map<std::string_view, IStorage::Ptr>;
 	using ResourceNameToIndex = tbb::concurrent_unordered_map<ResourceNameView, uint64_t>;
@@ -120,6 +124,29 @@ protected:
 
 	static std::string_view const DeletedString;
 };
+
+template<typename T>
+auto ResourceMan::placeInStorage(ResourceManager::ResourceNameView name_, T const& resource_) -> bool
+{
+	using namespace std::string_view_literals;
+
+	auto storage = getStorageForPrefix(name_.getStorage());
+	assert(storage);
+	switch(Core::QuickHash(name_.getStorage()))
+	{
+		case Core::QuickHash("mem"sv):
+		{
+			auto memstorage = std::static_pointer_cast<ResourceManager::MemStorage>(storage);
+			return memstorage->addMemory(
+					std::string(name_.getName()),
+					T::Id, T::MajorVersion, T::MinorVersion, &resource_, sizeof(T));
+			break;
+		}
+		default:
+			LOG_S(ERROR) << "Unknown storage type for PlaceInStore";
+			return false;
+	}
+}
 
 } // end namespace
 
