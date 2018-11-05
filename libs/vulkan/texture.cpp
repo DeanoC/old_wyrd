@@ -115,11 +115,11 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 
 		// now the gpu texture has been created, we may need to schedule 
 		// a cpu -> gpu transfer to initalise it if required.
-		if(!bool(texture->flags & Render::TextureFlag::NoInit))
+		if(!test_equal(texture->flags, Render::TextureFlag::NoInit))
 		{
-			if(bool(texture->flags & Render::TextureFlag::InitZero))
+			if(test_equal(texture->flags, Render::TextureFlag::InitZero))
 			{
-				device->fill(0xFF8000FF, createInfo, texture);
+				device->fill(0x0, createInfo, texture);
 			}
 			else
 			{
@@ -163,7 +163,7 @@ auto Texture::transitionToRenderTarget(std::shared_ptr<Render::Encoder> const& e
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.image = image;
 	barrier.subresourceRange = entireRange;
-	barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
 	barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
 	encoder->textureBarrier(
@@ -186,7 +186,7 @@ auto Texture::transitionFromRenderTarget(std::shared_ptr<Render::Encoder> const&
 	barrier.image = image;
 	barrier.subresourceRange = entireRange;
 	barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
 
 	encoder->textureBarrier(
 			VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,

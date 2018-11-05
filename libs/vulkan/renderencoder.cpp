@@ -3,6 +3,8 @@
 #include "vulkan/texture.h"
 #include "vulkan/semaphore.h"
 #include "vulkan/renderencoder.h"
+#include "vulkan/renderpass.h"
+#include "vulkan/rendertarget.h"
 
 namespace Vulkan {
 
@@ -33,9 +35,9 @@ auto RenderEncoder::blit(std::shared_ptr<Render::Texture> const& src_,
 
 	VkImageBlit blitter = {
 			{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-			{{0, 0, 0},                 {(int32_t) src_->width - 1, (int32_t) src_->height - 1, 1}},
+			{{0, 0, 0},                 {(int32_t) src_->width, (int32_t) src_->height, 1}},
 			{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-			{{0, 0, 0},                 {(int32_t) dst_->width - 1, (int32_t) dst_->height - 1, 1}},
+			{{0, 0, 0},                 {(int32_t) dst_->width, (int32_t) dst_->height, 1}},
 	};
 
 	vkCmdBlitImage(src->image,
@@ -47,19 +49,48 @@ auto RenderEncoder::blit(std::shared_ptr<Render::Texture> const& src_,
 				   VK_FILTER_LINEAR);
 }
 
-auto RenderEncoder::beginRenderPass() -> void
+auto RenderEncoder::beginRenderPass(
+		Render::RenderPassPtr const& renderPass_,
+		Render::RenderTargetPtr const& renderTarget_
+) -> void
 {
-	VkRenderPassBeginInfo beginInfo;
-	beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	beginInfo.pNext = nullptr;
-	beginInfo.clearValueCount = 0;
-	beginInfo.pClearValues = nullptr;
-	//		beginInfo.framebuffer
+	auto vulkanRenderPass = renderPass_->getStage<RenderPass>(Vulkan::RenderPass::s_stage);
+	auto vulkanRenderTarget = renderTarget_->getStage<RenderTarget>(Vulkan::RenderTarget::s_stage);
+
+	VkRenderPassBeginInfo beginInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
+	beginInfo.renderPass = vulkanRenderPass->renderpass;
+
+	// TODO pick correct clear type based on target format
+	VkClearValue clearValue;
+	clearValue.color.float32[0] = renderPass_->byteClearValues[0] * (1.f / 255.f);
+	clearValue.color.float32[1] = renderPass_->byteClearValues[1] * (1.f / 255.f);
+	clearValue.color.float32[2] = renderPass_->byteClearValues[2] * (1.f / 255.f);
+	clearValue.color.float32[3] = renderPass_->byteClearValues[3] * (1.f / 255.f);
+	beginInfo.clearValueCount = 1;
+	beginInfo.pClearValues = &clearValue;
+
+	beginInfo.framebuffer = vulkanRenderTarget->framebuffer;
+	beginInfo.renderArea.offset = {renderTarget_->renderOffset[0], renderTarget_->renderOffset[1]};
+	beginInfo.renderArea.extent = {renderTarget_->renderExtent[0], renderTarget_->renderExtent[1]};
+	vkCmdBeginRenderPass(&beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	/*
+	VkClearAttachment clearAttachment;
+	clearAttachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	clearAttachment.clearValue = {1.0, 1.0f, 0.0f,1.0f};
+	clearAttachment.colorAttachment = 0;
+
+	VkClearRect clearRect;
+	clearRect.baseArrayLayer = 0;
+	clearRect.layerCount = 1;
+	clearRect.rect = {0,0,640,160};
+	vkCmdClearAttachments(1, &clearAttachment, 1, &clearRect );
+	 */
 }
 
 auto RenderEncoder::endRenderPass() -> void
 {
-
+	vkCmdEndRenderPass();
 }
 
 auto RenderEncoder::resolveForDisplay(
@@ -73,9 +104,9 @@ auto RenderEncoder::resolveForDisplay(
 	{
 		VkImageBlit blitter = {
 				{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-				{{0, 0, 0},                 {(int32_t) src_->width - 1, (int32_t) src_->height - 1, 1}},
+				{{0, 0, 0},                 {(int32_t) src_->width, (int32_t) src_->height, 1}},
 				{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-				{{0, 0, 0},                 {(int32_t) width_ - 1,      (int32_t) height_ - 1,      1}},
+				{{0, 0, 0},                 {(int32_t) width_,      (int32_t) height_,      1}},
 		};
 
 		vkCmdBlitImage(src->image,

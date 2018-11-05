@@ -21,8 +21,9 @@ struct RenderTarget : public ResourceManager::Resource<RenderTargetId>
 	static constexpr uint16_t MinorVersion = 0;
 
 	RenderPass::Handle renderPassHandle;
-
 	TextureHandle targetHandles[RenderPass::MaxTargets];
+	int32_t renderOffset[2];
+	uint32_t renderExtent[2];
 
 };
 

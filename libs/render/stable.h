@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace Shell { struct PresentableWindow; }
-
+namespace ResourceManager { class ResourceMan; }
 namespace Render {
 
 struct DeviceConfig

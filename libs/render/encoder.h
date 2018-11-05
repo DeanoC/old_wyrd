@@ -7,10 +7,10 @@
 #include "math/vector_math_c.h"
 #include "render/commandqueue.h"
 #include "render/types.h"
+#include "render/resources.h"
 
 namespace Render {
 
-struct Texture;
 struct IRenderEncoder;
 struct IComputeEncoder;
 struct Fence;
@@ -28,27 +28,17 @@ public:
 
 	auto canEncodeRenderCommands() -> bool const
 	{
-		using namespace Core::bitmask;
-		return bool(encoderFlags & EncoderFlag::RenderEncoder);
+		return Core::bitmask::test_equal(encoderFlags, EncoderFlag::RenderEncoder);
 	}
 
 	auto canEncodeComputeCommands() -> bool const
 	{
-		using namespace Core::bitmask;
-		return bool(encoderFlags & EncoderFlag::ComputeEncoder);
+		return Core::bitmask::test_equal(encoderFlags, EncoderFlag::ComputeEncoder);
 	}
 
-	auto canSubmitToQueue() -> bool const
-	{
-		using namespace Core::bitmask;
-		return !bool(encoderFlags & EncoderFlag::Callable);
-	}
+	auto canSubmitToQueue() -> bool const { return !Core::bitmask::test_equal(encoderFlags, EncoderFlag::Callable); }
 
-	auto isCallable() -> bool const
-	{
-		using namespace Core::bitmask;
-		return bool(encoderFlags & EncoderFlag::Callable);
-	}
+	auto isCallable() -> bool const { return Core::bitmask::test_equal(encoderFlags, EncoderFlag::Callable); }
 
 	auto getFlags() -> EncoderFlag const { return encoderFlags; }
 
@@ -59,7 +49,7 @@ public:
 	virtual auto begin(std::shared_ptr<Semaphore> const& semaphore_ = {}) -> void = 0;
 	virtual auto end(std::shared_ptr<Semaphore> const& semaphore_ = {}) -> void = 0;
 	virtual auto reset() -> void = 0;
-	virtual auto copy(std::shared_ptr<Texture> const& src_, std::shared_ptr<Texture> const& dst_) -> void = 0;
+	virtual auto copy(TexturePtr const& src_, TexturePtr const& dst_) -> void = 0;
 
 	//	virtual auto pipelineBarrier(
 	//			Render::DMAPipelineStages waitStages_,
@@ -67,12 +57,10 @@ public:
 
 	//	virtual auto memoryBarrier() -> void = 0;
 	//	virtual auto bufferBarrier() -> void = 0;
-	virtual auto textureBarrier(
-			Render::MemoryAccess waitAccess_,
-			Render::MemoryAccess stallAccess_,
-			std::shared_ptr<Render::Texture> const& texture_) -> void = 0;
+	virtual auto textureBarrier(MemoryAccess waitAccess_, MemoryAccess stallAccess_,
+								TexturePtr const& texture_) -> void = 0;
 
-	virtual auto textureBarrier(std::shared_ptr<Texture> const& texture_) -> void = 0;
+	virtual auto textureBarrier(TexturePtr const& texture_) -> void = 0;
 
 protected:
 	Encoder(EncoderFlag encoderFlags_) : encoderFlags(encoderFlags_) {};
@@ -82,10 +70,10 @@ protected:
 struct IRenderEncoder
 {
 	virtual auto
-	clearTexture(std::shared_ptr<Texture> const& texture_, std::array<float_t, 4> const& floats_) -> void = 0;
-	virtual auto beginRenderPass() -> void = 0;
+	clearTexture(TexturePtr const& texture_, std::array<float_t, 4> const& floats_) -> void = 0;
+	virtual auto beginRenderPass(RenderPassPtr const& renderPass_, RenderTargetPtr const& renderTarget_) -> void = 0;
 	virtual auto endRenderPass() -> void = 0;
-	virtual auto blit(std::shared_ptr<Texture> const& src_, std::shared_ptr<Texture> const& dst_) -> void = 0;
+	virtual auto blit(TexturePtr const& src_, TexturePtr const& dst_) -> void = 0;
 };
 
 struct IComputeEncoder

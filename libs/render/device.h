@@ -4,9 +4,7 @@
 
 #include "core/core.h"
 #include "render/display.h"
-#include "render/renderpass.h"
-#include "texture.h"
-#include <vector>
+#include "render/types.h"
 
 namespace Render
 {

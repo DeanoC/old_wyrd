@@ -52,7 +52,7 @@ auto RenderPass::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Devi
 				// we don't care, but we can't load from undefined
 				attach.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 			}
-			attach.finalLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			attach.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 			attach.loadOp = LoadConvertor[(int) target.load];
 			attach.storeOp = StoreConvertor[(int) target.store];

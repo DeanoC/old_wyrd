@@ -257,11 +257,8 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 
 auto ResourceMan::resolveLink(ResourceHandleBase& link_, ResourceNameView const& current_) -> void
 {
-	if(!link_.isValid())
+	if(link_.isValid())
 	{
-		link_.index = ResourceHandleBase::InvalidIndex;
-		link_.managerIndex = 0;
-		link_.generation = 0;
 		return;
 	}
 

@@ -24,7 +24,7 @@ struct RenderPass : public ResourceManager::Resource<RenderPassId>
 
 	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void;
 	static constexpr uint16_t MajorVersion = 1;
-	static constexpr uint16_t MinorVersion = 0;
+	static constexpr uint16_t MinorVersion = 1;
 
 	static constexpr uint8_t MaxTargets = 16;
 	struct Target
@@ -37,11 +37,15 @@ struct RenderPass : public ResourceManager::Resource<RenderPassId>
 		StoreOp stencilStore;
 	};
 
+	uint8_t numTargets;
+	uint8_t padd[3];
+	// if load op is clear these will be used for all targets
+	// TODO better clear support
+	uint8_t byteClearValues[4];
 
 	Target targets[MaxTargets];
 
-	uint8_t numTargets;
-	uint8_t padd[7];
+
 };
 
 }

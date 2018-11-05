@@ -16,6 +16,10 @@ auto RenderTarget::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) ->
 		auto renderTarget = std::static_pointer_cast<RenderTarget>(ptr_);
 		auto[getRMFunc, resolverFunc] = resolver_;
 
+		if(renderTarget->renderExtent[0] == 0) return false;
+		if(renderTarget->renderExtent[1] == 0) return false;
+
+
 		resolverFunc(renderTarget->renderPassHandle.base);
 		for(auto i = 0u; i < RenderPass::MaxTargets; ++i)
 		{

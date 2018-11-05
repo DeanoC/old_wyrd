@@ -1,5 +1,6 @@
 #include <resourcemanager/memstorage.h>
 #include <render/resources.h>
+#include <render/rendertarget.h>
 #include "core/core.h"
 #include "shell/interface.h"
 #include "render/stable.h"
@@ -80,6 +81,7 @@ struct App
 	static constexpr std::string_view blankTex4x4Name = "mem$blankTex4x4";
 	static constexpr std::string_view colourRT0Name = "mem$colourRT0";
 	static constexpr std::string_view defaultRenderPassName = "mem$defaultRenderPass";
+	static constexpr std::string_view defaultRenderTargetName = "mem$defaultRenderTarget";
 
 	auto createResources() -> void
 	{
@@ -102,7 +104,7 @@ struct App
 				{},
 				TextureFlag::NoInit |
 				TextureFlagFromUsage(Usage::RopRead | Usage::RopWrite),
-				display->getWidth(), display->getHeight(), 1, 1,
+				display->getWidth() / 2, display->getHeight() / 2, 1, 1,
 				1, 1,
 				GenericTextureFormat::R8G8B8A8_UNORM,
 				{}
@@ -111,17 +113,30 @@ struct App
 
 		RenderPass defaultRenderPassDef{
 				{},
+				1, // num targets
+				{0, 0, 0}, // padds
+				{0, 0, 0xFF, 0xFF}, // byte clear colour
 				{
 						{
 								LoadOp::Clear,
 								StoreOp::Store,
 								GenericTextureFormat::R8G8B8A8_UNORM,
 						}
-				},
-				1,
-				{}
+				}
 		};
 		resourceManager->placeInStorage(defaultRenderPassName, defaultRenderPassDef);
+
+		auto defaultRenderPassHandle = resourceManager->openResourceByName<RenderPass::Id>(defaultRenderPassName);
+		auto colourRT0Handle = resourceManager->openResourceByName<Texture::Id>(colourRT0Name);
+
+		RenderTarget defaultRenderTargetDef{
+				{},
+				defaultRenderPassHandle,
+				{colourRT0Handle},
+				{0, 0},
+				{colourRT0Def.width, colourRT0Def.height}
+		};
+		resourceManager->placeInStorage(defaultRenderTargetName, defaultRenderTargetDef);
 	}
 
 	auto body() -> bool
@@ -133,12 +148,13 @@ struct App
 		auto blankTexHandle = resourceManager->openResourceByName<Texture::Id>(blankTex4x4Name);
 		auto colourRT0Handle = resourceManager->openResourceByName<Texture::Id>(colourRT0Name);
 		auto defaultRenderPassHandle = resourceManager->openResourceByName<RenderPass::Id>(defaultRenderPassName);
+		auto defaultRenderTargetHandle = resourceManager->openResourceByName<RenderTarget::Id>(defaultRenderTargetName);
 
 		// acquire the resources
 		auto blankTex = blankTexHandle.acquire<Texture>();
 		auto colourRT0 = colourRT0Handle.acquire<Texture>();
 		auto defaultRenderPass = defaultRenderPassHandle.acquire<RenderPass>();
-
+		auto defaultRenderTarget = defaultRenderTargetHandle.acquire<RenderTarget>();
 
 		auto renderQueue = device->getGeneralQueue();
 		auto rEncoderPool = device->makeEncoderPool(true, CommandQueueFlavour::Render);
@@ -148,20 +164,23 @@ struct App
 		{
 			rEncoderPool->reset();
 			encoder = rEncoderPool->allocateEncoder(EncoderFlag::RenderEncoder);
+			auto renderEncoder = encoder->asRenderEncoder();
 
 			encoder->begin();
+			renderEncoder->clearTexture(colourRT0, {1.0f, 0.0f, 0.0f, 1.0f});
 
-
-			auto renderEncoder = encoder->asRenderEncoder();
-			renderEncoder->beginRenderPass();
+			colourRT0->transitionToRenderTarget(encoder);
+			renderEncoder->beginRenderPass(defaultRenderPass, defaultRenderTarget);
 			renderEncoder->endRenderPass();
+			colourRT0->transitionFromRenderTarget(encoder);
+
 			encoder->end();
 
 			renderQueue->enqueue(encoder);
 			renderQueue->submit();
-			//		renderQueue->stallTillIdle();
+			renderQueue->stallTillIdle();
 			device->houseKeepTick();
-			display->present(blankTex);
+			display->present(colourRT0);
 		} while(shell.update());
 
 		return true;

@@ -16,11 +16,13 @@ struct RenderEncoder : public Render::IRenderEncoder
 	RenderEncoder(EncoderPool& owner_, VkCommandBuffer commandBuffer_, GraphicsCBVkVTable* graphicsCBVkVTable_) : owner(
 			owner_), commandBuffer(commandBuffer_), vtable(graphicsCBVkVTable_) {}
 
-	auto clearTexture(std::shared_ptr<Render::Texture> const& texture_,
-					  std::array<float_t, 4> const& floats_) -> void final;
-	auto beginRenderPass() -> void final;
+	auto clearTexture(Render::TexturePtr const& texture_, std::array<float_t, 4> const& floats_) -> void final;
+	auto beginRenderPass(
+			Render::RenderPassPtr const& renderPass_,
+			Render::RenderTargetPtr const& renderTarget_
+	) -> void final;
 	auto endRenderPass() -> void final;
-	auto blit(std::shared_ptr<Render::Texture> const& src_, std::shared_ptr<Render::Texture> const& dst_) -> void final;
+	auto blit(Render::TexturePtr const& src_, Render::TexturePtr const& dst_) -> void final;
 
 #define GENERAL_CB_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(commandBuffer, args...); }
 #define GENERAL_CB_VK_FUNC_EXT(name, extension) GENERAL_CB_VK_FUNC(name)
