@@ -30,7 +30,7 @@ struct Texture : public Render::IGpuTexture
 	auto transitionToRenderTarget(std::shared_ptr<Render::Encoder> const& encoder_) -> void final;
 	auto transitionFromRenderTarget(std::shared_ptr<Render::Encoder> const& encoder_) -> void final;
 
-	constexpr static uint32_t Id = Render::Texture::Id;
+	constexpr static ResourceManager::ResourceId Id = Render::Texture::Id;
 
 	Render::Texture* cpuTexture; // safe raw pointer its we are really a single memory block
 	VkImage image;

@@ -1,6 +1,7 @@
 #include "core/core.h"
 #include "fmt/format.h"
 #include "resourcemanager/resourceman.h"
+#include "resourcemanager/resourcename.h"
 #include "resourcemanager/writer.h"
 #include "binny/writehelper.h"
 #include "render/image.h"
@@ -61,6 +62,36 @@ auto GenericImage::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) ->
 
 	rm_.registerResourceHandler(Id, {0, load, destroy}, changed, save);
 
+}
+
+auto GenericImage::Create(
+		ResourceManager::ResourceMan::Ptr rm_,
+		ResourceManager::ResourceNameView const& name_,
+		uint32_t width_,
+		uint32_t height_,
+		uint32_t depth_,
+		uint32_t slices_,
+		GenericTextureFormat fmt_) -> GenericImageHandle
+{
+	size_t const dataSize = computeDataSize(width_, height_, depth_, slices_, fmt_);
+	size_t const totalSize = Core::alignTo(sizeof(Image) + dataSize, 8);
+	GenericImage* img = (GenericImage*) malloc(totalSize);
+
+	uint8_t* dataPtr = ((uint8_t*) img) + sizeof(Image);
+	std::memset(dataPtr, 0, dataSize);
+
+	img->dataSize = dataSize;
+	img->width = width_;
+	img->height = height_;
+	img->depth = depth_;
+	img->slices = slices_;
+	img->format = fmt_;
+	img->dataStore = dataPtr;
+	img->stage0 = totalSize;
+	rm_->placeInStorage(name_, *img);
+	free(img);
+
+	return rm_->openResourceByName<Id>(name_);
 }
 
 } // end namespace

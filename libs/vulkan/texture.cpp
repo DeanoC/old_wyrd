@@ -11,7 +11,6 @@ namespace Vulkan {
 auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device::WeakPtr device_) -> void
 {
 	using namespace Core::bitmask;
-	Vulkan::System* system = Vulkan::System::Global;
 
 	auto registerFunc = [device_](int stage_, ResourceManager::ResolverInterface, uint16_t, uint16_t,
 								  ResourceManager::ResourceBase::Ptr ptr_) -> bool

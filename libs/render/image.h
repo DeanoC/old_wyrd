@@ -12,7 +12,11 @@
 #include <cstddef>
 #include <array>
 
-namespace ResourceManager { class ResourceMan; }
+namespace ResourceManager {
+class ResourceMan;
+
+struct ResourceNameView;
+}
 
 namespace Render {
 
@@ -24,26 +28,15 @@ struct ImageBase
 // upto 4 channels per pixel always RGBA (R = channel 0, A = channel 3)
 // Support image arrays/slices
 // the default is the generic texture format image (GIMG) but can be subclassed
-// to handle specific a
-template<uint32_t id_ = GenericImageId>
+// Image always requires to the first channel as R etc.
+// this means that you ask for R and it will retrieve it from wherever
+// it really is in the format (i.e. you don't worry about how its encoded)
+// however this does leave a few formats a bit weird, i.e. X8D24 has X as
+// R and D as G.. but that matches shaders generally anyway.
+template<ResourceManager::ResourceId id_ = GenericImageId>
 class Image : public ResourceManager::Resource<id_>, public ImageBase
 {
 public:
-	using Ptr = std::shared_ptr<Image>;
-	using ConstPtr = std::shared_ptr<Image const>;
-	using WeakPtr = std::weak_ptr<Image>;
-	using ConstWeakPtr = std::weak_ptr<Image const>;
-	static constexpr uint32_t Id = id_;
-
-	// note, Image always requires to the first channel as R etc.
-	// this means that you ask for R and it will retrieve it from wherever
-	// it really is in the format (i.e. you don't worry about how its encoded)
-	// however this does leave a few formats a bit weird, i.e. X8D24 has X as
-	// R and D as G.. but that matches shaders generally anyway.
-
-	static auto
-	CreateZeroed(uint32_t width_, uint32_t height_, uint32_t depth_, uint32_t slices_,
-				 GenericTextureFormat fmt_) -> Ptr;
 
 	using Pixel = struct
 	{
@@ -110,16 +103,7 @@ public:
 
 
 protected:
-	Image(uint64_t dataSize_, uint32_t width_, uint32_t height_, uint32_t depth_, uint32_t slices_,
-		  GenericTextureFormat fmt_, uint8_t *data_)
-			: dataSize(dataSize_), width(width_), height(height_), depth(depth_), slices(slices_), format(fmt_),
-			  dataStore(data_) {}
-
 	~Image() = default;
-
-	static constexpr uint16_t MajorVersion = 2;
-	static constexpr uint16_t MinorVersion = 0;
-
 	constexpr auto
 	calculateIndex(unsigned int x_, unsigned int y_, unsigned int z_, unsigned int slice_) const -> size_t;
 
@@ -220,9 +204,21 @@ protected:
 #include "render/image_put.inl"
 #include "render/image.inl"
 
-struct GenericImage : public Image<>
+struct alignas(8) GenericImage : public Image<>
 {
 	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void;
+	static constexpr uint16_t MajorVersion = 1;
+	static constexpr uint16_t MinorVersion = 0;
+
+	static auto Create(
+			std::shared_ptr<ResourceManager::ResourceMan> rm_,
+			ResourceManager::ResourceNameView const& name_,
+			uint32_t width_,
+			uint32_t height_,
+			uint32_t depth_,
+			uint32_t slices_,
+			GenericTextureFormat fmt_) -> GenericImageHandle;
+
 };
 
 }

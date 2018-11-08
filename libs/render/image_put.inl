@@ -1,11 +1,11 @@
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 template<typename type_>
 auto Image<id_>::putHomoChannel(uint8_t channel_, uint8_t *ptr_, double const value_) -> void
 {
 	putRaw<type_>(ptr_ + (sizeof(type_) * channel_), (type_) value_);
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 template<typename type_>
 auto Image<id_>::putRaw(uint8_t *ptr_, type_ const value_) -> void
 {
@@ -14,21 +14,21 @@ auto Image<id_>::putRaw(uint8_t *ptr_, type_ const value_) -> void
 	*((type_ *) ptr_) = v;
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 template<typename type_>
 auto Image<id_>::putHomoChannel_NORM(uint8_t channel_, uint8_t *ptr_, double const value_) -> void
 {
 	putHomoChannel<type_>(channel_, ptr_, value_ * (double) std::numeric_limits<type_>::max());
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 template<typename type_>
 auto Image<id_>::putHomoChannel_sRGB(uint8_t channel_, uint8_t *ptr_, double const value_) -> void
 {
 	putHomoChannel<type_>(channel_, ptr_, Math::LinearRGB2sRGB_channel((float) value_));
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::putHomoChannel_nibble(uint8_t channel_, uint8_t *ptr_, double const value_) -> void
 {
 	// fetch the byte to merge the nibble into
@@ -41,13 +41,13 @@ auto Image<id_>::putHomoChannel_nibble(uint8_t channel_, uint8_t *ptr_, double c
 
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::putHomoChannel_nibble_UNORM(uint8_t channel_, uint8_t *ptr_, double const value_) -> void
 {
 	putHomoChannel_nibble(channel_, ptr_, value_ * 15.0);
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::putChannel_R5G6B5_UNORM(uint8_t channel_, uint8_t *ptr_, double const value_) -> void
 {
 	uint16_t pixel = fetchRaw<uint16_t>(ptr_);
@@ -70,7 +70,7 @@ auto Image<id_>::putChannel_R5G6B5_UNORM(uint8_t channel_, uint8_t *ptr_, double
 	putRaw(ptr_, pixel);
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::putChannel_R5G5B5A1_UNORM(uint8_t channel_, uint8_t *ptr_, double const value_) -> void
 {
 	uint16_t pixel = fetchRaw<uint16_t>(ptr_);
@@ -97,7 +97,7 @@ auto Image<id_>::putChannel_R5G5B5A1_UNORM(uint8_t channel_, uint8_t *ptr_, doub
 	putRaw(ptr_, pixel);
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::putChannel_A1R5G5B5_UNORM(uint8_t channel_, uint8_t *ptr_, double const value_) -> void
 {
 	uint16_t pixel = fetchRaw<uint16_t>(ptr_);
@@ -124,7 +124,7 @@ auto Image<id_>::putChannel_A1R5G5B5_UNORM(uint8_t channel_, uint8_t *ptr_, doub
 	putRaw(ptr_, pixel);
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::putHomoChannel_FP16(uint8_t channel_, uint8_t *ptr_, double const value_) -> void
 {
 	// clamp half?
@@ -132,7 +132,7 @@ auto Image<id_>::putHomoChannel_FP16(uint8_t channel_, uint8_t *ptr_, double con
 	putRaw(ptr_ + (sizeof(uint16_t) * channel_), h);
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::putChannel_A2R10G10B10(uint8_t channel_, uint8_t *ptr_, double const value_) -> void
 {
 	uint32_t pixel = fetchRaw<uint32_t>(ptr_);
@@ -160,14 +160,14 @@ auto Image<id_>::putChannel_A2R10G10B10(uint8_t channel_, uint8_t *ptr_, double 
 
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::putChannel_A2R10G10B10_UNORM(uint8_t channel_, uint8_t *ptr_, double const value_) -> void
 {
 	if(channel_ == 0) putChannel_A2R10G10B10(channel_, ptr_, value_ * 3.0);
 	else putChannel_A2R10G10B10(channel_, ptr_, value_ * 1023.0);
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::putChannel_X8D24_UNORM(uint8_t channel_, uint8_t *ptr_, double const value_) -> void
 {
 	uint32_t pixel = fetchRaw<uint32_t>(ptr_);
@@ -187,7 +187,7 @@ auto Image<id_>::putChannel_X8D24_UNORM(uint8_t channel_, uint8_t *ptr_, double 
 	putRaw(ptr_, pixel);
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::putChannel_D24X8_UNORM(uint8_t channel_, uint8_t *ptr_, double const value_) -> void
 {
 	uint32_t pixel = fetchRaw<uint32_t>(ptr_);
@@ -207,7 +207,7 @@ auto Image<id_>::putChannel_D24X8_UNORM(uint8_t channel_, uint8_t *ptr_, double 
 	putRaw(ptr_, pixel);
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::putChannel_D16S8_UNORM_UINT(uint8_t channel_, uint8_t *ptr_, double const value_) -> void
 {
 	if(channel_ == 0)
@@ -225,7 +225,7 @@ auto Image<id_>::putChannel_D16S8_UNORM_UINT(uint8_t channel_, uint8_t *ptr_, do
 
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::bitWidth256SetChannelAt(Channel channel_, GenericTextureFormat fmt_, uint8_t *ptr_,
 										 double const value_) -> void
 {
@@ -245,7 +245,7 @@ auto Image<id_>::bitWidth256SetChannelAt(Channel channel_, GenericTextureFormat 
 	}
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::bitWidth192SetChannelAt(Channel channel_, GenericTextureFormat fmt_, uint8_t *ptr_,
 										 double const value_) -> void
 {
@@ -265,7 +265,7 @@ auto Image<id_>::bitWidth192SetChannelAt(Channel channel_, GenericTextureFormat 
 	}
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::bitWidth128SetChannelAt(Channel channel_, GenericTextureFormat fmt_, uint8_t *ptr_,
 										 double const value_) -> void
 {
@@ -295,7 +295,7 @@ auto Image<id_>::bitWidth128SetChannelAt(Channel channel_, GenericTextureFormat 
 	}
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::bitWidth96SetChannelAt(Channel channel_, GenericTextureFormat fmt_, uint8_t *ptr_,
 										double const value_) -> void
 {
@@ -316,7 +316,7 @@ auto Image<id_>::bitWidth96SetChannelAt(Channel channel_, GenericTextureFormat f
 
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::bitWidth64SetChannelAt(Channel channel_, GenericTextureFormat fmt_, uint8_t *ptr_,
 										double const value_) -> void
 {
@@ -369,7 +369,7 @@ auto Image<id_>::bitWidth64SetChannelAt(Channel channel_, GenericTextureFormat f
 
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::bitWidth48SetChannelAt(Channel channel_, GenericTextureFormat fmt_, uint8_t *ptr_,
 										double const value_) -> void
 {
@@ -397,7 +397,7 @@ auto Image<id_>::bitWidth48SetChannelAt(Channel channel_, GenericTextureFormat f
 	}
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::bitWidth32SetChannelAt(Channel channel_, GenericTextureFormat fmt_, uint8_t *ptr_,
 										double const value_) -> void
 {
@@ -519,7 +519,7 @@ auto Image<id_>::bitWidth32SetChannelAt(Channel channel_, GenericTextureFormat f
 	}
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::bitWidth24SetChannelAt(Channel channel_, GenericTextureFormat fmt_, uint8_t *ptr_,
 										double const value_) -> void
 {
@@ -571,7 +571,7 @@ auto Image<id_>::bitWidth24SetChannelAt(Channel channel_, GenericTextureFormat f
 
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::bitWidth16SetChannelAt(Channel channel_, GenericTextureFormat fmt_, uint8_t *ptr_,
 										double const value_) -> void
 {
@@ -640,7 +640,7 @@ auto Image<id_>::bitWidth16SetChannelAt(Channel channel_, GenericTextureFormat f
 
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::bitWidth8SetChannelAt(Channel channel_, GenericTextureFormat fmt_, uint8_t *ptr_,
 									   double const value_) -> void
 {

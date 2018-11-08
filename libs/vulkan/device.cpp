@@ -581,6 +581,38 @@ auto Device::destroyFramebuffer(VkFramebuffer frameBuffer_) -> void
 	vkDestroyFramebuffer(frameBuffer_, &allocationCallbacks);
 }
 
+auto Device::createGraphicsPipeline(VkGraphicsPipelineCreateInfo const& createInfo_) -> VkPipeline
+{
+	VkPipeline pipeline;
+	VkPipelineCache cache = VK_NULL_HANDLE;
+	CHKED(vkCreateGraphicsPipelines(cache, 1, &createInfo_, &allocationCallbacks, &pipeline));
+	return pipeline;
+}
+
+auto Device::createComputePipeline(VkComputePipelineCreateInfo const& createInfo_) -> VkPipeline
+{
+	VkPipeline pipeline;
+	VkPipelineCache cache = VK_NULL_HANDLE;
+	CHKED(vkCreateComputePipelines(cache, 1, &createInfo_, &allocationCallbacks, &pipeline));
+	return pipeline;
+}
+
+auto Device::destroyPipeline(VkPipeline pipeline_) -> void
+{
+	vkDestroyPipeline(pipeline_, &allocationCallbacks);
+}
+
+auto Device::createShaderModule(VkShaderModuleCreateInfo const& createInfo_) -> VkShaderModule
+{
+	VkShaderModule shaderModule;
+	CHKED(vkCreateShaderModule(&createInfo_, &allocationCallbacks, &shaderModule));
+	return shaderModule;
+}
+
+auto Device::destroyShaderModule(VkShaderModule shaderModule_) -> void
+{
+	vkDestroyShaderModule(shaderModule_, &allocationCallbacks);
+}
 
 auto Device::houseKeepTick() -> void
 {

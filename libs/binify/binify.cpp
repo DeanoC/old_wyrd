@@ -191,7 +191,7 @@ void Binify::Blank( int64_t count )
 void Binify::String( std::string sstr )
 {
 	const char* p;
-	int i;
+	size_t i;
 
 	char const* str = sstr.c_str();
 

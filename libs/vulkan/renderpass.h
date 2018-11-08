@@ -20,7 +20,6 @@ struct RenderPass
 	inline static int s_stage = -1;
 
 #define RENDERPASS_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(renderpass, args...); }
-
 #include "functionlist.inl"
 
 	VkRenderPass renderpass;

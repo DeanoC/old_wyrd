@@ -60,7 +60,8 @@ public:
 		// allocate and copy to account
 		size_t const prefixBlockSize = sizeof(uintptr_t) * MaxHandlerStages;
 		size_t const prefix = (allocatePrefix) ? prefixBlockSize : 0;
-		size_t const totalSize = prefix + size + totalExtraMem;
+		size_t const totalSize = Core::alignTo(prefix + size + totalExtraMem, 8);
+
 		uint8_t* const basePtr = (uint8_t*) allocFunc(totalSize);
 
 		std::memcpy(basePtr + prefix, data, size);
@@ -112,7 +113,7 @@ public:
 							((uintptr_t*) basePtr)[j] = (uintptr_t) extraPtr;
 						}
 						extraPtr += handler.extraMem;
-						okay |= handler.createFunc(name_, handler.stage, majorVersion, minorVersion, ptr);
+						okay |= handler.createFunc(name_, handler.stage, majorVersion, minorVersion, totalSize, ptr);
 						if(okay == false) break;
 					}
 				}

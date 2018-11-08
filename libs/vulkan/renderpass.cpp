@@ -39,7 +39,7 @@ auto RenderPass::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Devi
 		for(auto i = 0u; i < renderPass->numTargets; ++i)
 		{
 			auto& attach = attachments[i];
-			auto const& target = renderPass->targets[i];
+			auto const& target = renderPass->getTargets()[i];
 
 			attach.flags = 0;
 			attach.samples = VK_SAMPLE_COUNT_1_BIT; // TODO

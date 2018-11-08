@@ -159,6 +159,7 @@ auto Bundle::read(
 			memorySize += sizeof(uintptr_t) * MaxHandlerStages;
 		}
 		memorySize += totalExtraMem;
+		memorySize = Core::alignTo(memorySize, 8);
 
 		// callee owns this memory!
 		uint8_t* basePtr = nullptr;
@@ -254,7 +255,12 @@ auto Bundle::read(
 				{
 					// call the callee back with memory, version etc for this chunk
 					// we've already skipped any ids we don't handle
-					handler.createFunc(dir.getName(), cheader->majorVersion, cheader->minorVersion, handler.stage, ptr);
+					handler.createFunc(dir.getName(),
+									   handler.stage,
+									   cheader->majorVersion,
+									   cheader->minorVersion,
+									   memorySize,
+									   ptr);
 				}
 			}
 		}

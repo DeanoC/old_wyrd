@@ -9,6 +9,8 @@ namespace ResourceManager
 {
 class ResourceMan;
 
+enum class ResourceId : uint32_t;
+
 struct ResourceBase
 {
 	using Ptr = std::shared_ptr<ResourceBase>;
@@ -18,7 +20,9 @@ struct ResourceBase
 
 	static constexpr uint32_t MaxStages = Binny::IBundle::MaxHandlerStages;
 
-	uint8_t getStageCount() const { return stageCount; }
+	uint8_t getStageCount() const { return stage0 & 0x3; }
+
+	uintptr_t getSize() const { return stage0 & ~0x3; }
 
 	// note: this memory only exist if the resource handler asked for it
 	// so only use this if you know what the resource handler did
@@ -46,16 +50,10 @@ struct ResourceBase
 		return (T*) ptr;
 	}
 
-	union
-	{
-		struct
-		{
-			uint8_t stageCount : 2;
-		};
-		// this is a misnomer, stage0 can't have extramem so use reuse its
-		// pointer space
-		uintptr_t stage0;
-	};
+
+	// this is a misnomer, stage0 can't have extramem so use reuse its
+	// pointer space for size and stageCount
+	uintptr_t stage0;
 	uintptr_t stages[MaxStages - 1];
 };
 
@@ -65,7 +63,7 @@ struct ResourceBase
 // a resource is the actual memory associated with a particular named resource
 // this relys on the 0 size class optimization, as its just a helper for
 // ResourceBase and must not have any storage
-template<uint32_t id_>
+template<ResourceId id_>
 struct Resource : public ResourceBase
 {
 public:
@@ -73,7 +71,8 @@ public:
 	using ConstPtr = std::shared_ptr<Resource<id_> const>;
 	using WeakPtr = std::weak_ptr<Resource<id_>>;
 	using ConstWeakPtr = std::weak_ptr<Resource<id_> const>;
-	static constexpr uint32_t Id = id_;
+	static constexpr ResourceId Id = id_;
+
 protected:
 	Resource() = default;
 	~Resource() = default;

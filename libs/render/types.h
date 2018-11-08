@@ -15,16 +15,13 @@ enum class CommandQueueFlavour : uint8_t
 	Present = Core::Bit(3),
 };
 
-constexpr auto is_bitmask_enum(Render::CommandQueueFlavour) -> bool { return true; }
-
 enum class EncoderFlag : uint32_t
 {
-	RenderEncoder = Core::bitmask::to_uint(CommandQueueFlavour::Render),
-	ComputeEncoder = Core::bitmask::to_uint(CommandQueueFlavour::Compute),
+	RenderEncoder = (uint32_t) CommandQueueFlavour::Render,
+	ComputeEncoder = (uint32_t) CommandQueueFlavour::Compute,
 	Callable = Core::Bit(4),
 };
 
-constexpr auto is_bitmask_enum(Render::EncoderFlag) -> bool { return true; }
 
 // GtfCracker function take a channel in, where the index refers to the
 // physical placement in that format. If you want order agonistic use
@@ -58,8 +55,6 @@ enum class Usage : uint32_t
 	MASK = DMASrc | DMADst | ShaderRead | RopRead | RopWrite,
 };
 
-constexpr auto is_bitmask_enum(Usage) -> bool { return true; }
-
 enum class TextureFlag : uint32_t
 {
 	// should we keep a copy of the texture data after init?
@@ -68,22 +63,8 @@ enum class TextureFlag : uint32_t
 	InitZero = Core::Bit(2),
 	CubeMap = Core::Bit(3),
 	ComputeMipMaps = Core::Bit(4),
-	UsageMask = Core::bitmask::to_uint(Usage::MASK) << 5
+	UsageMask = (uint32_t) (Usage::MASK) << 5
 };
-
-constexpr auto is_bitmask_enum(Render::TextureFlag) -> bool { return true; }
-
-constexpr auto TextureFlagsToUsage(TextureFlag flags_) -> Usage
-{
-	using namespace Core::bitmask;
-	return from_uint<Usage>(to_uint(flags_ & TextureFlag::UsageMask) >> 5);
-}
-
-constexpr auto TextureFlagFromUsage(Usage usage) -> TextureFlag
-{
-	using namespace Core::bitmask;
-	return from_uint<TextureFlag>(to_uint(usage) << 5);
-}
 
 enum class MemoryAccess : uint32_t
 {
@@ -105,8 +86,6 @@ enum class MemoryAccess : uint32_t
 	GeneralRead = Core::Bit(15),
 	GeneralWrite = Core::Bit(16),
 };
-
-constexpr auto is_bitmask_enum(Render::MemoryAccess) -> bool { return true; }
 
 enum class RenderPipelineStages : uint32_t
 {
@@ -149,13 +128,82 @@ enum class DMAPipelineStages : uint32_t
 	All = ~0u, // all commands in the queue
 };
 
-constexpr auto is_bitmask_enum(Render::RenderPipelineStages) -> bool { return true; }
+enum class Topology : uint8_t
+{
+	Points,
+	Lines,
+	Triangles,
+	Patches,
+	LinesWithAdjacecy,
+	TrianglesWithAdjacency,
+	LineStrips,
+	TriangleStrips,
+	LineStripsWithAdjacency,
+	TriangleStripsWithAdjacency,
+	TriangleFans,
+};
 
-constexpr auto is_bitmask_enum(Render::ComputePipelineStages) -> bool { return true; }
+enum class ShaderSourceLanguage : uint8_t
+{
+	GLSL,
+	HLSL,
+};
 
-constexpr auto is_bitmask_enum(Render::DMAPipelineStages) -> bool { return true; }
+enum class ShaderType : uint8_t
+{
+	Vertex = Core::Bit(0),
+	TesselationControl = Core::Bit(1),
+	TesselationEval = Core::Bit(2),
+	Geometry = Core::Bit(3),
+	Fragment = Core::Bit(4),
+	Compute = Core::Bit(5)
+};
 
-constexpr auto is_bitmask_enum(Render::HostPipelineStages) -> bool { return true; }
+enum class BindingTableType : uint8_t
+{
+	Texture,
+	RWTexture,
+	Buffer,
+	RWBuffer,
+	TextureBuffer,
+	RWTextureBuffer,
+	DynamicBuffer,
+	DynamicRWBuffer,
+	Sampler,
+};
+
+constexpr auto is_bitmask_enum(RenderPipelineStages) -> bool { return true; }
+
+constexpr auto is_bitmask_enum(ComputePipelineStages) -> bool { return true; }
+
+constexpr auto is_bitmask_enum(HostPipelineStages) -> bool { return true; }
+
+constexpr auto is_bitmask_enum(DMAPipelineStages) -> bool { return true; }
+
+constexpr auto is_bitmask_enum(ShaderType) -> bool { return true; }
+
+constexpr auto is_bitmask_enum(TextureFlag) -> bool { return true; }
+
+constexpr auto is_bitmask_enum(EncoderFlag) -> bool { return true; }
+
+constexpr auto is_bitmask_enum(CommandQueueFlavour) -> bool { return true; }
+
+constexpr auto is_bitmask_enum(Usage) -> bool { return true; }
+
+constexpr auto is_bitmask_enum(Render::MemoryAccess) -> bool { return true; }
+
+
+constexpr auto TextureFlagsToUsage(TextureFlag flags_) -> Usage
+{
+	using namespace Core::bitmask;
+	return from_uint<Usage>(to_uint(flags_ & TextureFlag::UsageMask) >> 5);
+}
+
+constexpr auto TextureFlagFromUsage(Usage usage) -> TextureFlag
+{
+	using namespace Core::bitmask;
+	return from_uint<TextureFlag>(to_uint(usage) << 5);
+}
 
 }
 

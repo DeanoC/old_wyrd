@@ -40,7 +40,8 @@ TEST_CASE( "Bundle chunks write/read", "[Binny]" )
 
 	std::vector<Bundle::ChunkHandler> handlers = {
 		{{	"TEST"_bundle_id, 0, 0,
-			[]( std::string_view subObject_, int stage_, uint16_t majorVersion_, uint16_t minorVersion_, std::shared_ptr<void> ptr_ ) -> bool
+				 [](std::string_view subObject_, int stage_, uint16_t majorVersion_, uint16_t minorVersion_,
+					size_t size_, std::shared_ptr<void> ptr_) -> bool
 			{
 				if(stage_ != 0) return false;
 				if(majorVersion_ != 0) return false;

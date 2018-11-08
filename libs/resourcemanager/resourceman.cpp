@@ -59,54 +59,54 @@ auto ResourceMan::getStorageForPrefix(std::string_view prefix_) -> IStorage::Ptr
 	else return storage->second;
 }
 
-void ResourceMan::registerResourceHandler(uint32_t type_, ResourceHandler handler_, HasResourceChangedFunc changed_,
+void ResourceMan::registerResourceHandler(ResourceId id_, ResourceHandler handler_, HasResourceChangedFunc changed_,
 										  SaveResourceFunc save_)
 {
-	if(typeToHandler.find(type_) != typeToHandler.end())
+	if(typeToHandler.find(id_) != typeToHandler.end())
 	{
-		assert(std::get<1>(typeToHandler[type_][0]) == nullptr);
+		assert(std::get<1>(typeToHandler[id_][0]) == nullptr);
 	}
 	// stage 0 must have no extramem wanted
 	assert(std::get<0>(handler_) == 0);
 
-	typeToHandler[type_][0] = handler_;
-	typeToSavers[type_] = {changed_, save_};
+	typeToHandler[id_][0] = handler_;
+	typeToSavers[id_] = {changed_, save_};
 }
 
-auto ResourceMan::registerNextResourceHandler(uint32_t type_, ResourceHandler handler_) -> int
+auto ResourceMan::registerNextResourceHandler(ResourceId id_, ResourceHandler handler_) -> int
 {
-	assert(typeToHandler.find(type_) != typeToHandler.end());
-	assert(std::get<1>(typeToHandler[type_][0]) != nullptr);
+	assert(typeToHandler.find(id_) != typeToHandler.end());
+	assert(std::get<1>(typeToHandler[id_][0]) != nullptr);
 
-	auto handlers = typeToHandler[type_];
+	auto handlers = typeToHandler[id_];
 	for(int i = 1; i < MaxHandlerStages; ++i)
 	{
 		int extramem = 0;
 		HandlerInit init;
 		std::tie(std::ignore, init, std::ignore) = handlers[i];
 		if(init != nullptr) continue;
-		typeToHandler[type_][i] = handler_;
+		typeToHandler[id_][i] = handler_;
 		return i;
 	}
 	return -1;
 }
 
-auto ResourceMan::removeResourceHandler(uint32_t type_, int stage_) -> void
+auto ResourceMan::removeResourceHandler(ResourceId id_, int stage_) -> void
 {
-	assert(typeToHandler.find(type_) != typeToHandler.end());
+	assert(typeToHandler.find(id_) != typeToHandler.end());
 	if(stage_ == 0)
 	{
 		for(int i = 0; i < MaxHandlerStages; ++i)
 		{
-			typeToHandler[type_][i] = {0, nullptr, nullptr};
+			typeToHandler[id_][i] = {0, nullptr, nullptr};
 		}
 	} else
 	{
-		typeToHandler[type_][stage_] = {0, nullptr, nullptr};
+		typeToHandler[id_][stage_] = {0, nullptr, nullptr};
 	}
 }
 
-auto ResourceMan::getIndexFromName(uint32_t type_, ResourceNameView const name_) -> uint64_t
+auto ResourceMan::getIndexFromName(ResourceId id_, ResourceNameView const name_) -> uint64_t
 {
 	auto it = nameToResourceIndex.find(name_);
 	if(it == nameToResourceIndex.end())
@@ -122,7 +122,7 @@ auto ResourceMan::getIndexFromName(uint32_t type_, ResourceNameView const name_)
 			indexToResourceName[id] = name;
 			nameToResourceIndex[name_] = id;
 
-			indexToBase[id] = ResourceHandleBase{id, type_, managerIndex, (uint16_t) 0};
+			indexToBase[id] = ResourceHandleBase{id, id_, managerIndex, (uint16_t) 0};
 			it = nameToResourceIndex.find(name_);
 		}
 	}
@@ -138,9 +138,9 @@ auto ResourceMan::GetNameFromHandleBase(ResourceHandleBase const& base_) -> Reso
 	return rm->indexToResourceName[base_.index].getName();
 }
 
-auto ResourceMan::openBaseResourceByTypeAndName(uint32_t type_, ResourceNameView const name_) -> ResourceHandleBase&
+auto ResourceMan::openBaseResourceByIdAndName(ResourceId id_, ResourceNameView const name_) -> ResourceHandleBase&
 {
-	uint64_t id = getIndexFromName(type_, name_);
+	uint64_t id = getIndexFromName(id_, name_);
 	return indexToBase[id];
 }
 
@@ -195,11 +195,16 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 
 	IStorage::Ptr storage = prefixToStorage[prefix];
 
-	ResolverInterface resolver = {[this]() -> ResourceMan*
-								  { return this; }, [this, resourceName](ResourceHandleBase& base_) -> void
-								  {
-									  this->resolveLink(base_, resourceName);
-								  }};
+	ResolverInterface resolver{
+			[this]() -> ResourceMan*
+			{ return this; },
+			[this, resourceName](ResourceHandleBase& base_) -> void
+			{
+				this->resolveLink(base_, resourceName);
+			},
+			[&resourceName]()
+			{ return resourceName; }
+	};
 
 	ChunkHandlers chunks;
 	chunks.reserve(typeToHandler.size());
@@ -219,15 +224,19 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 			auto createFun = [this, lambdaType, resolver, prefix, name, init]
 					(std::string_view subObject_, int stage_,
 					 uint16_t majorVersion_, uint16_t minorVersion_,
-					 std::shared_ptr<void> ptr_) -> bool
+					 size_t size_, std::shared_ptr<void> ptr_) -> bool
 			{
 				auto ptr = std::static_pointer_cast<ResourceBase>(ptr_);
 				bool okay = init(stage_, resolver, majorVersion_, minorVersion_, ptr);
 				if(okay)
 				{
+					ptr->stage0 = (ptr->stage0 & ~0x3) |
+								  std::max(ptr->getStageCount(), (uint8_t) stage_);
 					if(stage_ == 0)
 					{
-						ptr->stageCount = std::max(ptr->stageCount, (uint8_t) stage_);
+						assert((size_ & 0x3) == 0);
+						ptr->stage0 = size_;
+
 						uint64_t id;
 						ResourceName newName(prefix, name, subObject_);
 						id = getIndexFromName(lambdaType, newName.getResourceName());
@@ -239,7 +248,7 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 			};
 
 			chunks.emplace_back(
-					Binny::IBundle::ChunkHandler{type, stage, extramem, createFun, destroy, true, false}
+					Binny::IBundle::ChunkHandler{(uint32_t) type, stage, extramem, createFun, destroy, true, false}
 			);
 
 		}

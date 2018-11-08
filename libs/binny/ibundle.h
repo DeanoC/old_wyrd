@@ -54,8 +54,9 @@ struct IBundle
 
 	constexpr static unsigned int MaxHandlerStages = 4;
 
-	// chunk name, stage, major version, minor version, smart pointer to the base of memory
-	using ChunkCreateFunc = std::function<bool(std::string_view, int, uint16_t, uint16_t, std::shared_ptr<void>)>;
+	// chunk name, stage, major version, minor version, memory size, smart pointer to the base of memory
+	using ChunkCreateFunc = std::function<bool(std::string_view, int, uint16_t, uint16_t, size_t,
+											   std::shared_ptr<void>)>;
 
 	// the pointer passed to destroy is a unsmart pointer to the base memory
 	using ChunkDestroyFunc = std::function<auto(int, void*)->void>;

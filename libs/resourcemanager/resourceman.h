@@ -34,7 +34,9 @@ struct ISaver
 };
 using ResolveGetResourceMan = std::function<ResourceMan*()>;
 using ResolveLinkFunc = std::function<void(ResourceHandleBase&)>;
-using ResolverInterface = std::tuple<ResolveGetResourceMan, ResolveLinkFunc>;
+using ResolveNameFunc = std::function<ResourceNameView const()>;
+
+using ResolverInterface = std::tuple<ResolveGetResourceMan, ResolveLinkFunc, ResolveNameFunc>;
 using HandlerInit = std::function<bool(int stage_, ResolverInterface resolver_, uint16_t majorVersion_, uint16_t minorVersion_, ResourceBase::Ptr ptr_ )>;
 using HandlerDestroy = std::function<bool(int stage_, void* ptr_)>;
 
@@ -66,16 +68,18 @@ public:
 	auto getStorageForPrefix(std::string_view prefix_) -> IStorage::Ptr;
 	template<typename T>
 	auto placeInStorage(ResourceManager::ResourceNameView name_, T const& renderPass_) -> bool;
+	template<typename T>
+	auto placeInStorage(ResourceManager::ResourceNameView name_, std::shared_ptr<T> const& resource_) -> bool;
 
-	auto registerResourceHandler( 	uint32_t type_,
+	auto registerResourceHandler(ResourceId id_,
 									ResourceHandler funcs_,
 									HasResourceChangedFunc changed_ = nullptr,
 									SaveResourceFunc save_ = nullptr) -> void;
-	auto registerNextResourceHandler( 	uint32_t type_,
-										ResourceHandler funcs_ ) -> int;
-	auto removeResourceHandler(uint32_t type_, int stage_) -> void;
+	auto registerNextResourceHandler(ResourceId id_,
+									 ResourceHandler funcs_ ) -> int;
+	auto removeResourceHandler(ResourceId id_, int stage_) -> void;
 
-	template<uint32_t type_>
+	template<ResourceId type_>
 	auto openResourceById( uint64_t const id_ ) -> ResourceHandle<type_>
 	{
 		auto resourceHandleBase = indexToBase[id_];
@@ -83,19 +87,19 @@ public:
 		return ResourceHandle<type_>( resourceHandleBase );
 	}
 
-	template<uint32_t type_>
+	template<ResourceId type_>
 	auto openResourceByName( ResourceNameView const name_ ) -> ResourceHandle<type_>
 	{
 		uint64_t id = getIndexFromName(type_, name_);
 		return openResourceById<type_>( id );
 	}
 
-	auto getIndexFromName(uint32_t type_, ResourceNameView const name_) -> uint64_t;
+	auto getIndexFromName(ResourceId id_, ResourceNameView const name_) -> uint64_t;
 
 protected:
 	ResourceMan();
 
-	auto openBaseResourceByTypeAndName( uint32_t type_, ResourceNameView const name_ ) -> ResourceHandleBase&;
+	auto openBaseResourceByIdAndName(ResourceId id_, ResourceNameView const name_) -> ResourceHandleBase&;
 	auto acquire( ResourceHandleBase const& base_ ) -> ResourceBase::Ptr;
 	auto tryAcquire( ResourceHandleBase const& base_ ) -> ResourceBase::Ptr;
 	auto resolveLink(ResourceHandleBase& link_, ResourceNameView const& current_) -> void;
@@ -105,13 +109,13 @@ protected:
 	using ResourceNameToIndex = tbb::concurrent_unordered_map<ResourceNameView, uint64_t>;
 	using IndexToResourceName = tbb::concurrent_unordered_map<uint64_t, ResourceName>;
 	using IndexToBase = Core::MTFreeList<ResourceHandleBase, uint64_t>;
-	using TypeToHandler = tbb::concurrent_unordered_map<uint32_t, std::array<ResourceHandler,MaxHandlerStages>>;
-	using TypeToSavers = tbb::concurrent_unordered_map<uint32_t, std::pair<HasResourceChangedFunc,SaveResourceFunc>>;
+	using IdToHandler = tbb::concurrent_unordered_map<ResourceId, std::array<ResourceHandler, MaxHandlerStages>>;
+	using IdToSavers = tbb::concurrent_unordered_map<ResourceId, std::pair<HasResourceChangedFunc, SaveResourceFunc>>;
 	using ChunkHandlers = std::vector<IStorage::ChunkHandler>;
 
 	PrefixToStorage prefixToStorage;
-	TypeToHandler typeToHandler;
-	TypeToSavers typeToSavers;
+	IdToHandler typeToHandler;
+	IdToSavers typeToSavers;
 
 	IndexToResourceName indexToResourceName;
 	ResourceNameToIndex nameToResourceIndex;
@@ -126,12 +130,19 @@ protected:
 };
 
 template<typename T>
+auto ResourceMan::placeInStorage(ResourceManager::ResourceNameView name_, std::shared_ptr<T> const& resource_) -> bool
+{
+	return placeInStorage(name_, *resource_.get());
+}
+
+template<typename T>
 auto ResourceMan::placeInStorage(ResourceManager::ResourceNameView name_, T const& resource_) -> bool
 {
 	using namespace std::string_view_literals;
 
 	auto storage = getStorageForPrefix(name_.getStorage());
 	assert(storage);
+
 	switch(Core::QuickHash(name_.getStorage()))
 	{
 		case Core::QuickHash("mem"sv):
@@ -139,7 +150,7 @@ auto ResourceMan::placeInStorage(ResourceManager::ResourceNameView name_, T cons
 			auto memstorage = std::static_pointer_cast<ResourceManager::MemStorage>(storage);
 			return memstorage->addMemory(
 					std::string(name_.getName()),
-					T::Id, T::MajorVersion, T::MinorVersion, &resource_, sizeof(T));
+					T::Id, T::MajorVersion, T::MinorVersion, &resource_, resource_.getSize());
 			break;
 		}
 		default:

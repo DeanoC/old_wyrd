@@ -10,23 +10,18 @@
 
 namespace ResourceManager {
 class ResourceMan;
+
+struct ResourceNameView;
 }
 
 namespace Render {
 
-struct RenderPass : public ResourceManager::Resource<RenderPassId>
+struct alignas(8) RenderPass : public ResourceManager::Resource<RenderPassId>
 {
-	using Ptr = std::shared_ptr<RenderPass>;
-	using ConstPtr = std::shared_ptr<RenderPass const>;
-	using WeakPtr = std::weak_ptr<RenderPass>;
-	using ConstWeakPtr = std::weak_ptr<RenderPass const>;
-	using Handle = ResourceManager::ResourceHandle<Id>;
-
 	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void;
 	static constexpr uint16_t MajorVersion = 1;
 	static constexpr uint16_t MinorVersion = 1;
 
-	static constexpr uint8_t MaxTargets = 16;
 	struct Target
 	{
 		LoadOp load;
@@ -36,15 +31,21 @@ struct RenderPass : public ResourceManager::Resource<RenderPassId>
 		LoadOp stencilLoad; // nop except for stencil formats
 		StoreOp stencilStore;
 	};
+	static constexpr uint8_t MaxTargets = 16;
+
+	static auto Create(
+			std::shared_ptr<ResourceManager::ResourceMan> rm_,
+			ResourceManager::ResourceNameView const& name_,
+			std::vector<Target> const& targets_,
+			std::array<uint8_t, 4> const& byteClearColours) -> RenderPassHandle;
+
+	Target* getTargets() { return (Target*) (this + 1); }
 
 	uint8_t numTargets;
 	uint8_t padd[3];
 	// if load op is clear these will be used for all targets
 	// TODO better clear support
 	uint8_t byteClearValues[4];
-
-	Target targets[MaxTargets];
-
 
 };
 

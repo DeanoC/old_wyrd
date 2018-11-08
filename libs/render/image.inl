@@ -1,18 +1,6 @@
 
 
-template<uint32_t id_>
-auto Image<id_>::CreateZeroed(uint32_t width_, uint32_t height_, uint32_t depth_, uint32_t slices_,
-							  Render::GenericTextureFormat fmt_) -> Ptr
-{
-	uint64_t const dataSize = computeDataSize(width_, height_, depth_, slices_, fmt_);
-	void *ptr = malloc(sizeof(Image) + dataSize);
-	uint8_t *dataPtr = ((uint8_t *) ptr) + sizeof(Image);
-	std::memset(dataPtr, 0, dataSize);
-	new(ptr) Image{dataSize, width_, height_, depth_, slices_, fmt_, dataPtr};
-	return Ptr((Image *) ptr, &free);
-}
-
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 constexpr auto
 Image<id_>::calculateIndex(unsigned int x_, unsigned int y_, unsigned int z_, unsigned int slice_) const -> size_t
 {
@@ -29,7 +17,7 @@ Image<id_>::calculateIndex(unsigned int x_, unsigned int y_, unsigned int z_, un
 	return index;
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::channelAt(Channel channel_, unsigned int x_, unsigned int y_, unsigned int z_,
 						   unsigned int slice_) const -> double
 {
@@ -74,7 +62,7 @@ auto Image<id_>::channelAt(Channel channel_, unsigned int x_, unsigned int y_, u
 	}
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::setPixelAt(Pixel const& pixel_, unsigned int x_, unsigned int y_, unsigned int z_,
 							unsigned int slice_) -> void
 {
@@ -98,7 +86,7 @@ auto Image<id_>::setPixelAt(Pixel const& pixel_, unsigned int x_, unsigned int y
 	}
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto
 Image<id_>::pixelAt(unsigned int x_, unsigned int const y_, unsigned int z_, unsigned int const slice_) const -> Pixel
 {
@@ -125,7 +113,7 @@ Image<id_>::pixelAt(unsigned int x_, unsigned int const y_, unsigned int z_, uns
 	return pixel;
 }
 
-template<uint32_t id_>
+template<ResourceManager::ResourceId id_>
 auto Image<id_>::setChannelAt(double value_, Channel channel_, unsigned int x_, unsigned int y_, unsigned int z_,
 							  unsigned int slice_) -> void
 {

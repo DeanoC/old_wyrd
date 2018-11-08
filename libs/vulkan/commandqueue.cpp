@@ -63,7 +63,7 @@ auto CommandQueue::submit(std::shared_ptr<Render::Fence> const& fence_) -> void
 		if(encoder->endSemaphore) cbEndSemaphores.push_back(encoder->endSemaphore->vulkanSemaphore);
 	}
 
-	submitInfo.commandBufferCount = commandBuffers.size();
+	submitInfo.commandBufferCount = (uint32_t) commandBuffers.size();
 	submitInfo.pCommandBuffers = commandBuffers.data();
 
 	submitInfo.waitSemaphoreCount = cbBeginSemaphores.size();

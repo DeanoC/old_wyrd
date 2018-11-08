@@ -1,6 +1,7 @@
 #include "core/core.h"
 #include "resourcemanager/resourceman.h"
 #include "render/resources.h"
+#include "render/texture.h"
 #include "vulkan/rendertarget.h"
 #include "vulkan/device.h"
 #include "vulkan/renderpass.h"
@@ -20,10 +21,10 @@ auto RenderTarget::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 		auto renderPass = renderTarget->renderPassHandle.acquire<Render::RenderPass>();
 
 		std::vector<VkImageView> images(renderPass->numTargets);
-		std::array<Render::Texture::Ptr, Render::RenderPass::MaxTargets> targets;
+		std::array<Render::TexturePtr, Render::RenderPass::MaxTargets> targets;
 		for(auto j = 0u; j < renderPass->numTargets; ++j)
 		{
-			targets[j] = renderTarget->targetHandles[j].acquire<Render::Texture>();
+			targets[j] = renderTarget->getTargetTextures()[j].acquire<Render::Texture>();
 		}
 
 		uint32_t const width = targets[0]->width;

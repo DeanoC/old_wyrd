@@ -12,6 +12,8 @@
 
 namespace ResourceManager {
 class ResourceMan;
+
+struct ResourceNameView;
 }
 
 namespace Render {
@@ -25,18 +27,25 @@ struct IGpuTexture
 	virtual auto transitionFromRenderTarget(std::shared_ptr<Encoder> const& encoder_) -> void = 0;
 };
 
-struct Texture : public ResourceManager::Resource<"TXTR"_resource_id>
+struct alignas(8) Texture : public ResourceManager::Resource<TextureId>
 {
 public:
-	using Ptr = std::shared_ptr<Texture>;
-	using ConstPtr = std::shared_ptr<Texture const>;
-	using WeakPtr = std::weak_ptr<Texture>;
-	using ConstWeakPtr = std::weak_ptr<Texture const>;
-
 	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void;
-
 	static constexpr uint16_t MajorVersion = 1;
 	static constexpr uint16_t MinorVersion = 0;
+	static auto Create(
+			std::shared_ptr<ResourceManager::ResourceMan> rm_,
+			ResourceManager::ResourceNameView const& name_,
+			TextureFlag flags_,
+			uint32_t width_,
+			uint32_t height_,
+			uint32_t depth_,
+			uint32_t slices_,
+			uint32_t mipLevels_,
+			uint32_t samples_,
+			GenericTextureFormat format_,
+			GenericImageHandle imageHandle_ = {}
+	) -> TextureHandle;
 
 	constexpr auto is1D() const { return height == 1 && depth == 1; }
 
@@ -85,7 +94,7 @@ public:
 
 #define INTERFACE_THUNK(name) \
     template<typename... Args> auto name(Args... args) { \
-        for(auto i = 0u; i < getStageCount(); ++i) \
+        for(auto i = 1u; i < getStageCount(); ++i) \
         { \
             assert(getStage<IGpuTexture>(i) != nullptr); \
             return getStage<IGpuTexture>(i)->name(args...); \
@@ -95,7 +104,6 @@ public:
 	INTERFACE_THUNK(transitionToRenderTarget);
 
 	INTERFACE_THUNK(transitionFromRenderTarget);
-
 #undef INTERFACE_THUNK
 
 	TextureFlag flags;                    //!< flags for this texture
@@ -109,6 +117,10 @@ public:
 	GenericTextureFormat format;                    //!< format of this texture
 
 	GenericImageHandle imageHandle;
+
+protected:
+	Texture() = default;
+
 };
 
 }

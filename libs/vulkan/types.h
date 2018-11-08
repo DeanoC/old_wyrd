@@ -124,5 +124,38 @@ constexpr auto fromHostPipelineStage(Render::HostPipelineStages const in_) -> ui
 	return ret;
 }
 
+constexpr auto fromTopology(Render::Topology const in_)
+{
+	using namespace Render;
+	switch(in_)
+	{
+		case Topology::Points:
+			return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+		case Topology::Lines:
+			return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+		case Topology::Triangles:
+			return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		case Topology::Patches:
+			return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+		case Topology::LinesWithAdjacecy:
+			return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
+		case Topology::TrianglesWithAdjacency:
+			return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
+		case Topology::LineStrips:
+			return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+		case Topology::TriangleStrips:
+			return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+		case Topology::LineStripsWithAdjacency:
+			return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
+		case Topology::TriangleStripsWithAdjacency:
+			return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
+		case Topology::TriangleFans:
+			return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
+		default:
+			assert(false);
+			return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	}
+}
+
 }
 #endif //WYRD_VULKAN_TYPES_H

@@ -7,8 +7,10 @@
 namespace ResourceManager {
 class ResourceMan;
 
+enum class ResourceId : uint32_t;
+
 struct ResourceBase;
-template<uint32_t id_>
+template<ResourceId id_>
 struct Resource;
 
 // a resource handle is an opaque handle linked to a particular resource
@@ -19,7 +21,7 @@ struct ResourceHandleBase
 {
 	friend class ResourceMan;
 
-	template<uint32_t id_> friend
+	template<ResourceId id_> friend
 	struct ResourceHandle;
 	static constexpr uint64_t InvalidIndex = ~0;
 
@@ -30,7 +32,7 @@ struct ResourceHandleBase
 		uint64_t index = InvalidIndex;
 		char const* linkName;
 	};
-	uint32_t type;
+	ResourceId type;
 	union
 	{
 		uint16_t managerIndex;
@@ -45,7 +47,7 @@ protected:
 
 static_assert(sizeof(ResourceHandleBase) == 16);
 
-template<uint32_t id_>
+template<ResourceId id_>
 struct ResourceHandle
 {
 public:

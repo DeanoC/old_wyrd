@@ -1,5 +1,5 @@
-#include <core/quick_hash.h>
 #include "core/core.h"
+#include "core/quick_hash.h"
 #include "resourcemanager/resourceman.h"
 #include "resourcemanager/memstorage.h"
 #include "binny/writehelper.h"
@@ -15,7 +15,7 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void
 		assert(stage == 0);
 		if(majorVersion_ != MajorVersion) return false;
 		auto texture = std::static_pointer_cast<Texture>(ptr_);
-		auto[getRMFunc, resolverFunc] = resolver_;
+		auto[getRMFunc, resolverFunc, resourceNameFunc] = resolver_;
 		resolverFunc(texture->imageHandle.base);
 
 		if(Core::bitmask::test_equal(texture->flags, TextureFlag::NoInit) == false)
@@ -104,6 +104,36 @@ constexpr auto Texture::computeSize(bool withComputedMipMaps_) const -> size_t
 	}
 
 	return totalSize;
+}
+
+auto Texture::Create(
+		std::shared_ptr<ResourceManager::ResourceMan> rm_,
+		ResourceManager::ResourceNameView const& name_,
+		TextureFlag flags_,
+		uint32_t width_,
+		uint32_t height_,
+		uint32_t depth_,
+		uint32_t slices_,
+		uint32_t mipLevels_,
+		uint32_t samples_,
+		GenericTextureFormat format_,
+		GenericImageHandle imageHandle_
+) -> TextureHandle
+{
+	Texture tex{};
+	tex.stage0 = sizeof(Texture);
+	tex.flags = flags_;
+	tex.width = width_;
+	tex.height = height_;
+	tex.depth = depth_;
+	tex.slices = slices_;
+	tex.mipLevels = mipLevels_;
+	tex.samples = samples_;
+	tex.format = format_;
+	tex.imageHandle = imageHandle_;
+
+	rm_->placeInStorage(name_, tex);
+	return rm_->openResourceByName<Id>(name_);
 }
 
 } // end namespace

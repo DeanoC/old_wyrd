@@ -87,6 +87,22 @@ public:
 	auto createFramebuffer(VkFramebufferCreateInfo const& createInfo_) -> VkFramebuffer;
 	auto destroyFramebuffer(VkFramebuffer frameBuffer_) -> void;
 
+	auto createGraphicsPipeline(VkGraphicsPipelineCreateInfo const& createInfo_) -> VkPipeline;
+	auto createComputePipeline(VkComputePipelineCreateInfo const& createInfo_) -> VkPipeline;
+	auto destroyPipeline(VkPipeline pipeline_) -> void;
+
+	auto createShaderModule(VkShaderModuleCreateInfo const& createInfo_) -> VkShaderModule;
+	auto destroyShaderModule(VkShaderModule shaderModule_) -> void;
+
+	auto createDescriptorPool(VkDescriptorPoolCreateInfo& createInfo_) -> VkDescriptorPool;
+	auto destroyDescriptorPool(VkDescriptorPool descriptorPool_) -> void;
+
+	auto createDescriptorSetLayout(VkDescriptorSetLayoutCreateInfo& createInfo_) -> VkDescriptorSetLayout;
+	auto destroyDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout_) -> void;
+
+	auto createDescriptorSet(VkDescriptorSetLayout& layout_) -> VkDescriptorSet;
+	auto destroyDescriptorSet(VkDescriptorSet descriptorSet_) -> void;
+
 	//--
 	// functions also in device table
 	FenceVkVTable fenceVkVTable;

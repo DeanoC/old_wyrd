@@ -5,8 +5,10 @@
 #include "core/core.h"
 
 namespace ResourceManager {
+enum class ResourceId : uint32_t;
+
 /// used to identify resources, each should be unique to a project etc. IFF like
-constexpr uint32_t operator "" _resource_id(char const* s, size_t count)
+constexpr ResourceId operator "" _resource_id(char const* s, size_t count)
 {
 	assert(count <= 4 && count > 0);
 	uint32_t res =
@@ -14,7 +16,7 @@ constexpr uint32_t operator "" _resource_id(char const* s, size_t count)
 			((count > 1 ? s[1] : uint32_t('_')) << 8) |
 			((count > 2 ? s[2] : uint32_t('_')) << 16) |
 			((count > 3 ? s[3] : uint32_t('_')) << 24);
-	return res;
+	return (ResourceId) res;
 }
 }
 #endif //WYRD_RESOURCEMANAGER_RESOURCEID_H

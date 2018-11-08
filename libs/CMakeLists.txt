@@ -9,10 +9,14 @@ option(TBB_BUILD_STATIC "" ON)
 option(TBB_BUILD_TBBMALLOC "" ON)
 option(TBB_BUILD_TBBMALLOC_PROXY "" OFF)
 option(TBB_BUILD_TESTS "" OFF)
+option(SHADERC_SKIP_INSTALL "" ON)
+option(SHADERC_SKIP_TESTS "" ON)
+option(SHADERC_ENABLE_NV_EXTENSIONS "" ON)
 
 add_subdirectory(enkiTS)
 add_subdirectory(binify)
 add_subdirectory(tbb)
+add_subdirectory(shaderc)
 
 set( CRC32C_SRC
 		crc32c/crc32c.cpp
@@ -113,7 +117,18 @@ set( RENDER_SRC
 		render/image_fetch.inl
 		render/image_put.inl
 		render/image.h
-		render/resources.cpp render/resources.h render/commandqueue.h render/encoder.h render/renderpass.h render/rendertarget.h render/semaphore.h render/fence.h render/types.h render/renderpass.cpp render/image.cpp render/rendertarget.cpp)
+		render/resources.cpp
+		render/resources.h
+		render/commandqueue.h
+		render/encoder.h
+		render/renderpass.h
+		render/rendertarget.h
+		render/semaphore.h
+		render/fence.h
+		render/types.h
+		render/renderpass.cpp
+		render/image.cpp
+		render/rendertarget.cpp render/shader.cpp render/shader.h render/pipeline.cpp render/pipeline.h render/bindingtable.cpp render/bindingtable.h)
 
 set( MATH_SRC
 		math/vector_math.cpp
@@ -150,7 +165,10 @@ set( RESOURCEMAN_SRC
 		resourcemanager/resourceman.h
 		resourcemanager/resourcename.h
 		resourcemanager/textresource.h
-		resourcemanager/textresource.cpp resourcemanager/writer.h resourcemanager/resourcehandle.h resourcemanager/resourceid.h)
+		resourcemanager/textresource.cpp
+		resourcemanager/writer.h
+		resourcemanager/resourcehandle.h
+		resourcemanager/resourceid.h)
 
 set( SHELL_SRC
 		shell/interface.h
@@ -169,7 +187,35 @@ set( VULKAN_SRC
 		vulkan/functionlist.inl
 		vulkan/api.cpp
 		vulkan/api.h
-		vulkan/display.h vulkan/device.cpp vulkan/device.h vulkan/vk_mem_alloc.h vulkan/vk_mem_alloc.cpp vulkan/texture.cpp vulkan/texture.h vulkan/display.cpp vulkan/commandqueue.cpp vulkan/commandqueue.h vulkan/encoder.cpp vulkan/encoder.h vulkan/rendertarget.cpp vulkan/rendertarget.h vulkan/fence.cpp vulkan/fence.h vulkan/renderpass.cpp vulkan/renderpass.h shell/posixshell.cpp shell/posixshell.h vulkan/encoderpool.cpp vulkan/encoderpool.h vulkan/renderencoder.cpp vulkan/renderencoder.h vulkan/computeencoder.cpp vulkan/computeencoder.h vulkan/types.h vulkan/resources.cpp vulkan/resources.h)
+		vulkan/display.h
+		vulkan/device.cpp
+		vulkan/device.h
+		vulkan/vk_mem_alloc.h
+		vulkan/vk_mem_alloc.cpp
+		vulkan/texture.cpp
+		vulkan/texture.h
+		vulkan/display.cpp
+		vulkan/commandqueue.cpp
+		vulkan/commandqueue.h
+		vulkan/encoder.cpp
+		vulkan/encoder.h
+		vulkan/rendertarget.cpp
+		vulkan/rendertarget.h
+		vulkan/fence.cpp
+		vulkan/fence.h
+		vulkan/renderpass.cpp
+		vulkan/renderpass.h
+		vulkan/encoderpool.cpp
+		vulkan/encoderpool.h
+		vulkan/renderencoder.cpp
+		vulkan/renderencoder.h
+		vulkan/computeencoder.cpp
+		vulkan/computeencoder.h
+		vulkan/types.h
+		vulkan/resources.cpp
+		vulkan/resources.h
+		vulkan/semaphore.cpp
+		vulkan/semaphore.h vulkan/pipeline.cpp vulkan/pipeline.h vulkan/shadermodule.cpp vulkan/shadermodule.h vulkan/bindingtable.cpp vulkan/bindingtable.h)
 
 #-----------
 set(wryd_srcs
@@ -189,13 +235,14 @@ set(wryd_srcs
 		${RESOURCEMAN_SRC}
 		${SHELL_SRC}
 		${VULKAN_SRC}
-		vulkan/semaphore.cpp vulkan/semaphore.h)
+		)
+
 set( wyrd_LIBRARIES enkiTS
 					binify
 					tbb_static
 					tbbmalloc_static
+		shaderc
 					)
-list(APPEND wyrd_LIBRARIES ${glfw_LIBRARIES})
 
 set( wyrd_DEFINITIONS
 	-D__TBB_NO_IMPLICIT_LINKAGE=1 
@@ -207,9 +254,10 @@ set( wyrd_DEFINITIONS ${wyrd_DEFINITIONS} PARENT_SCOPE )
 
 set( wyrd_INCLUDES
 	${CMAKE_CURRENT_SOURCE_DIR}
+		${Vulkan_INCLUDE_DIRS}
 	${CMAKE_CURRENT_SOURCE_DIR}/tbb/include
 	${CMAKE_CURRENT_SOURCE_DIR}/fmt/include
-	${Vulkan_INCLUDE_DIRS}
+		${CMAKE_CURRENT_SOURCE_DIR}/shaderc/libshaderc/include
 	${CMAKE_CURRENT_SOURCE_DIR}/meshops/VHACD_Lib/inc
 	)
 set( wyrd_INCLUDES ${wyrd_INCLUDES} PARENT_SCOPE )
