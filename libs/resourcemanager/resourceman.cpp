@@ -215,7 +215,7 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 
 		for(int stage = 0; stage < MaxHandlerStages; ++stage)
 		{
-			uint32_t extramem = 0;
+			size_t extramem = 0;
 			HandlerInit init;
 			HandlerDestroy destroy;
 			std::tie(extramem, init, destroy) = orderedHandler[stage];
@@ -254,7 +254,8 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 			};
 
 			chunks.emplace_back(
-					Binny::IBundle::ChunkHandler{(uint32_t) type, stage, extramem, createFun, destroy, true, false}
+					Binny::IBundle::ChunkHandler{(uint32_t) type, stage, (uint32_t) extramem, createFun, destroy, true,
+												 false}
 			);
 
 		}

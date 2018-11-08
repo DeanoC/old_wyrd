@@ -208,10 +208,10 @@ bool System::Init(std::string const& appName_,
 			nullptr,
 			0,
 			&application_info,
-			validationLayers.size(),
+			static_cast<uint32_t>(validationLayers.size()),
 			validationLayers.data(),
 			static_cast<uint32_t>(instanceExtC.size()),
-			instanceExtC.size() > 0 ? instanceExtC.data() : nullptr
+			(instanceExtC.size() > 0) ? instanceExtC.data() : nullptr
 	};
 
 	CHK_F(vkCreateInstance(&instance_create_info, nullptr, &instance));
