@@ -443,8 +443,24 @@ void Device::upload(VkImage cpuImage, std::shared_ptr<Render::Texture> const& ds
 	hostBarrier.subresourceRange.layerCount = dst->entireRange.layerCount;
 	hostBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
 	hostBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+	encoder->textureBarrier(VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, hostBarrier);
 
-	encoder->textureBarrier(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, hostBarrier);
+	VkImageMemoryBarrier dstBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+	dstBarrier.oldLayout = dst->imageLayout;
+	dstBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	dst->imageLayout = dstBarrier.newLayout;
+	dstBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	dstBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	dstBarrier.image = dst->image;
+	dstBarrier.subresourceRange.aspectMask = dst->entireRange.aspectMask;
+	dstBarrier.subresourceRange.baseMipLevel = dst->entireRange.baseMipLevel;
+	dstBarrier.subresourceRange.levelCount = dst->entireRange.levelCount;
+	dstBarrier.subresourceRange.baseArrayLayer = dst->entireRange.baseArrayLayer;
+	dstBarrier.subresourceRange.layerCount = dst->entireRange.layerCount;
+	dstBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	dstBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	encoder->textureBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, dstBarrier);
+
 	VkImageSubresourceLayers srcLayers;
 	srcLayers.aspectMask = dst->entireRange.aspectMask;
 	srcLayers.baseArrayLayer = dst->entireRange.baseArrayLayer;
@@ -453,8 +469,9 @@ void Device::upload(VkImage cpuImage, std::shared_ptr<Render::Texture> const& ds
 	encoder->copy(cpuImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, srcLayers, dst_);
 
 	VkImageMemoryBarrier copyBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
-	copyBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	copyBarrier.oldLayout = dst->imageLayout;
 	copyBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	dst->imageLayout = copyBarrier.newLayout;
 	copyBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	copyBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	copyBarrier.image = dst->image;
@@ -464,9 +481,8 @@ void Device::upload(VkImage cpuImage, std::shared_ptr<Render::Texture> const& ds
 	copyBarrier.subresourceRange.baseArrayLayer = dst->entireRange.baseArrayLayer;
 	copyBarrier.subresourceRange.layerCount = dst->entireRange.layerCount;
 	copyBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	copyBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+	copyBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 	encoder->textureBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, copyBarrier);
-	dst->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	encoder->end();
 
 	getDMASpecificQueue()->enqueue(encoder);

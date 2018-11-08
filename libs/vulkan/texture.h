@@ -24,11 +24,12 @@ struct Texture : public Render::IGpuTexture
 	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_, std::weak_ptr<Device> device_) -> void;
 	inline static int s_stage = -1;
 
-	Texture() = delete;
-	~Texture() final;
+	~Texture() final {};
 
 	auto transitionToRenderTarget(std::shared_ptr<Render::Encoder> const& encoder_) -> void final;
-	auto transitionFromRenderTarget(std::shared_ptr<Render::Encoder> const& encoder_) -> void final;
+	auto transitionToDMADest(std::shared_ptr<Render::Encoder> const& encoder_) -> void;
+	auto transitionToShaderSrc(std::shared_ptr<Render::Encoder> const& encoder_) -> void final;
+	auto transitionToDMASrc(std::shared_ptr<Render::Encoder> const& encoder_) -> void final;
 
 	constexpr static ResourceManager::ResourceId Id = Render::Texture::Id;
 

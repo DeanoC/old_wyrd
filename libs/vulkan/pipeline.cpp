@@ -16,7 +16,7 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 								  ResourceManager::ResourceBase::Ptr ptr_) -> bool
 	{
 		auto renderPipeline = std::static_pointer_cast<Render::RenderPipeline>(ptr_);
-		auto vulkanRenderPipeline = renderPipeline->getStage<Vulkan::RenderPipeline>(stage_);
+		auto vulkanRenderPipeline = renderPipeline->getStage<Vulkan::RenderPipeline, false>(stage_);
 
 		auto device = device_.lock();
 		if(!device) return false;
@@ -64,7 +64,7 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 
 
 		VkGraphicsPipelineCreateInfo createInfo{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
-		createInfo.stageCount = stages.size();
+		createInfo.stageCount = (uint32_t) stages.size();
 		createInfo.pStages = stages.data();
 		createInfo.pInputAssemblyState = &inputCreateInfo;
 		//		createInfo.layout = ;

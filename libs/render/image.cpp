@@ -87,7 +87,7 @@ auto GenericImage::Create(
 	img->slices = slices_;
 	img->format = fmt_;
 	img->dataStore = dataPtr;
-	img->stage0 = totalSize;
+	img->sizeAndStageCount = totalSize;
 	rm_->placeInStorage(name_, *img);
 	free(img);
 

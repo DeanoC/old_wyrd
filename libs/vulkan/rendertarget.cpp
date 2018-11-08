@@ -16,7 +16,7 @@ auto RenderTarget::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 								  ResourceManager::ResourceBase::Ptr ptr_) -> bool
 	{
 		auto renderTarget = std::static_pointer_cast<Render::RenderTarget>(ptr_);
-		Vulkan::RenderTarget* vulkanRenderTarget = renderTarget->getStage<Vulkan::RenderTarget>(stage_);
+		Vulkan::RenderTarget* vulkanRenderTarget = renderTarget->getStage<Vulkan::RenderTarget, false>(stage_);
 
 		auto renderPass = renderTarget->renderPassHandle.acquire<Render::RenderPass>();
 
@@ -37,14 +37,6 @@ auto RenderTarget::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 
 			auto target = rtarget->getStage<Texture>(Texture::s_stage);
 			images[i] = target->imageView;
-			if(Render::GtfCracker::isDepth(rtarget->format) ||
-			   Render::GtfCracker::isStencil(rtarget->format))
-			{
-				target->imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-			} else
-			{
-				target->imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-			}
 		}
 		auto vulkanRenderPass = renderPass->getStage<Vulkan::RenderPass>(stage_);
 
@@ -53,9 +45,9 @@ auto RenderTarget::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 		createInfo.renderPass = vulkanRenderPass->renderpass;
 		createInfo.width = width;
 		createInfo.height = height;
-		createInfo.attachmentCount = images.size();
+		createInfo.attachmentCount = (uint32_t) images.size();
 		createInfo.pAttachments = images.data();
-		createInfo.layers = 0;
+		createInfo.layers = 1;
 
 		auto device = device_.lock();
 		if(!device) return false;

@@ -230,21 +230,27 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 				bool okay = init(stage_, resolver, majorVersion_, minorVersion_, ptr);
 				if(okay)
 				{
-					ptr->stage0 = (ptr->stage0 & ~0x3) |
-								  std::max(ptr->getStageCount(), (uint8_t) stage_);
 					if(stage_ == 0)
 					{
 						assert((size_ & 0x3) == 0);
-						ptr->stage0 = size_;
+						ptr->sizeAndStageCount = size_;
 
 						uint64_t id;
 						ResourceName newName(prefix, name, subObject_);
 						id = getIndexFromName(lambdaType, newName.getResourceName());
 						resourceCache.insert(id, ptr);
+					} else
+					{
+						ptr->sizeAndStageCount = (ptr->sizeAndStageCount & ~0x3) |
+												 std::max(ptr->getStageCount(), (uint8_t) stage_);
+
 					}
 					return true;
 				} else
+				{
+					LOG_S(WARNING) << name << " load stage " << stage_ << "has failed to process";
 					return false;
+				}
 			};
 
 			chunks.emplace_back(

@@ -118,32 +118,59 @@ bool System::Init(std::string const& appName_,
 
 #include "functionlist.inl"
 
+	std::set<std::string> requiredInstanceExtensions;
+	std::set<std::string> desiredInstanceExtensions;
+
 	for(auto const& ext : desiredInstanceExtensions_)
 	{
-		addDesiredInstanceExtensions(ext);
+		desiredInstanceExtensions.insert(ext);
 	}
 
 	uint32_t instanceExtensionsCount = 0;
 	CHK_F(vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionsCount, nullptr));
 
-	addDesiredInstanceExtensions(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-	addDesiredInstanceExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
+	desiredInstanceExtensions.insert(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+	desiredInstanceExtensions.insert(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+
+	requiredInstanceExtensions.insert(VK_KHR_SURFACE_EXTENSION_NAME);
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-	addDesiredInstanceExtensions(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+	requiredInstanceExtensions.insert(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
 #elif defined VK_USE_PLATFORM_MACOS_MVK
-	addDesiredInstanceExtensions(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+	requiredInstanceExtensions.insert(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
 #elif defined VK_USE_PLATFORM_XLIB_KHR
-	addDesiredInstanceExtensions(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+	requiredInstanceExtensions.insert(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
 #elif defined VK_USE_PLATFORM_MACOS_MVK
-	addDesiredInstanceExtensions(VK_MVK_MACOS_SURFACE_EXTENSION_NAME);
+	requiredInstanceExtensions.insert(VK_MVK_MACOS_SURFACE_EXTENSION_NAME);
 #endif
 
 	instanceExtensions.resize(instanceExtensionsCount);
 	CHK_F(vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionsCount, instanceExtensions.data()));
 
-	std::vector<char const*> desiredInstanceExt;
-	desiredInstanceExt.reserve(desiredInstanceExtensions.size());
+	std::vector<char const*> instanceExtC;
+	instanceExtC.reserve(requiredInstanceExtensions.size() + desiredInstanceExtensions.size());
+
 	// this is a slow repeated search, if extension get to many apply an accelerator
+	for(auto const& required : requiredInstanceExtensions)
+	{
+		auto const it = std::find_if(
+				instanceExtensions.cbegin(), instanceExtensions.cend(),
+				[&required](VkExtensionProperties const& lhs) -> bool
+				{
+					if(std::string(lhs.extensionName) == required)
+						return true;
+					else
+						return false;
+				});
+		if(it == instanceExtensions.end())
+		{
+			LOG_S(ERROR) << "The extension " << required << " is required by not available";
+			return false;
+		} else
+		{
+			extensions.insert(required);
+			instanceExtC.push_back(required.c_str());
+		}
+	}
 	for(auto const& desired : desiredInstanceExtensions)
 	{
 		auto const it = std::find_if(
@@ -155,13 +182,10 @@ bool System::Init(std::string const& appName_,
 					else
 						return false;
 				});
-		if(it == instanceExtensions.end())
+		if(it != instanceExtensions.end())
 		{
-			LOG_S(ERROR) << "The extension " << desired << "is required by not available";
-			return false;
-		} else
-		{
-			desiredInstanceExt.push_back(desired.c_str());
+			extensions.insert(desired);
+			instanceExtC.push_back(desired.c_str());
 		}
 	}
 
@@ -186,8 +210,8 @@ bool System::Init(std::string const& appName_,
 			&application_info,
 			validationLayers.size(),
 			validationLayers.data(),
-			static_cast<uint32_t>(desiredInstanceExt.size()),
-			desiredInstanceExt.size() > 0 ? desiredInstanceExt.data() : nullptr
+			static_cast<uint32_t>(instanceExtC.size()),
+			instanceExtC.size() > 0 ? instanceExtC.data() : nullptr
 	};
 
 	CHK_F(vkCreateInstance(&instance_create_info, nullptr, &instance));
@@ -196,7 +220,7 @@ bool System::Init(std::string const& appName_,
    if( name == nullptr ) { LOG_S(ERROR) << "Could not load instance vulkan function named: " << #name; return false; }
 
 #define INSTANCE_VK_FUNC_EXT(name, extension) \
-    if(desiredInstanceExtensions.find(extension) != desiredInstanceExtensions.end()) { \
+    if(extensions.find(extension) != extensions.end()) { \
         name = (PFN_##name)vkGetInstanceProcAddr(instance, #name); \
         if( name == nullptr ) { LOG_S(ERROR) << "Could not load instance vulkan function named: " << #name; return false; } \
     }
@@ -371,8 +395,7 @@ auto System::createGpuDevice(uint32_t deviceIndex_,
 		if(i > 0 && qs[i - 1] == q) continue;
 		if(i > 1 && qs[i - 2] == q) continue;
 
-		queueCreateInfos[queueCount].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfos[queueCount].pNext = nullptr;
+		queueCreateInfos[queueCount] = {VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
 		queueCreateInfos[queueCount].queueFamilyIndex = qs[i];
 		queueCreateInfos[queueCount].queueCount = minQueues_;
 		queueCreateInfos[queueCount].pQueuePriorities = queuePriority.data();

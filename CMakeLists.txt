@@ -26,7 +26,7 @@ option(BUILD_GFXTEST "Build the gfx test app." ON)
 option(BUILD_VIZ "Build the dvisualiser." OFF)
 
 if (BUILD_TOOLS)
-	add_subdirectory(tools/vulkaninfo)
+	#	add_subdirectory(tools/vulkaninfo)
 endif (BUILD_TOOLS)
 if(BUILD_TESTER)
 	add_subdirectory(tester)

@@ -59,7 +59,7 @@ auto RenderTarget::Create(
 	size_t const dataSize = sizeof(TextureHandle) * targetTextures_.size();
 	size_t const totalSize = Core::alignTo(sizeof(RenderTarget) + dataSize, 8);
 	RenderTarget* rt = (RenderTarget*) malloc(totalSize);
-	rt->stage0 = totalSize;
+	rt->sizeAndStageCount = totalSize;
 	rt->renderPassHandle = renderPassHandle_;
 	std::memcpy(rt->renderOffset, renderOffset_.data(), sizeof(int32_t) * 2);
 	std::memcpy(rt->renderExtent, renderExtent_.data(), sizeof(uint32_t) * 2);

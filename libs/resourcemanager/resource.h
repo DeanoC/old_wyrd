@@ -20,17 +20,17 @@ struct ResourceBase
 
 	static constexpr uint32_t MaxStages = Binny::IBundle::MaxHandlerStages;
 
-	uint8_t getStageCount() const { return stage0 & 0x3; }
+	uint8_t getStageCount() const { return (sizeAndStageCount & 0x3); }
 
-	uintptr_t getSize() const { return stage0 & ~0x3; }
+	uintptr_t getSize() const { return sizeAndStageCount & ~0x3; }
 
-	// note: this memory only exist if the resource handler asked for it
-	// so only use this if you know what the resource handler did
-	template<typename T>
+	template<typename T, bool dstChk_ = true>
 	T* getStage(uint32_t stage_) const
 	{
 		assert(stage_ != 0);
 		uintptr_t ptr = stages[stage_ - 1];
+		assert(ptr != 0);
+
 		if constexpr (sizeof(uintptr_t) == 4)
 		{
 			assert(ptr != 0xDEDEDEDE);
@@ -47,13 +47,23 @@ struct ResourceBase
 			}
 			assert(count != sizeof(uintptr_t));
 		}
+		static constexpr uint8_t stageChk[MaxStages]{0xB0, 0xB1, 0xB2, 0xB3};
+		if(dstChk_)
+		{
+			// check a single byte at the destination to see if wrote currently
+			assert(*(uint8_t*) ptr != stageChk[stage_]);
+		} else
+		{
+			// check a single byte at the dest to see if its still virgin
+			assert(*(uint8_t*) ptr == stageChk[stage_]);
+		}
 		return (T*) ptr;
 	}
 
 
-	// this is a misnomer, stage0 can't have extramem so use reuse its
+	// stage0 can't have extramem in the resource system so use reuse its
 	// pointer space for size and stageCount
-	uintptr_t stage0;
+	uintptr_t sizeAndStageCount;
 	uintptr_t stages[MaxStages - 1];
 };
 

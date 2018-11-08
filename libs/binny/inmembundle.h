@@ -114,7 +114,11 @@ public:
 						}
 						extraPtr += handler.extraMem;
 						okay |= handler.createFunc(name_, handler.stage, majorVersion, minorVersion, totalSize, ptr);
-						if(okay == false) break;
+						if(okay == false)
+						{
+							LOG_S(WARNING) << name_ << " stage " << j << "has returned false in bundle processing";
+							break;
+						}
 					}
 				}
 				if(okay) return { ErrorCode::Okay, 0 };

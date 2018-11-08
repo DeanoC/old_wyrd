@@ -24,7 +24,9 @@ struct IGpuTexture
 {
 	virtual ~IGpuTexture() = default;
 	virtual auto transitionToRenderTarget(std::shared_ptr<Encoder> const& encoder_) -> void = 0;
-	virtual auto transitionFromRenderTarget(std::shared_ptr<Encoder> const& encoder_) -> void = 0;
+	virtual auto transitionToDMADest(std::shared_ptr<Encoder> const& encoder_) -> void = 0;
+	virtual auto transitionToShaderSrc(std::shared_ptr<Encoder> const& encoder_) -> void = 0;
+	virtual auto transitionToDMASrc(std::shared_ptr<Encoder> const& encoder_) -> void = 0;
 };
 
 struct alignas(8) Texture : public ResourceManager::Resource<TextureId>
@@ -94,16 +96,18 @@ public:
 
 #define INTERFACE_THUNK(name) \
     template<typename... Args> auto name(Args... args) { \
-        for(auto i = 1u; i < getStageCount(); ++i) \
-        { \
-            assert(getStage<IGpuTexture>(i) != nullptr); \
-            return getStage<IGpuTexture>(i)->name(args...); \
-        } \
-    }
+        for(auto i = 0u; i < getStageCount(); ++i) \
+        { auto iptr = getStage<IGpuTexture>(i+1); \
+            assert(iptr != nullptr); return iptr->name(args...);  } }
 
 	INTERFACE_THUNK(transitionToRenderTarget);
 
-	INTERFACE_THUNK(transitionFromRenderTarget);
+	INTERFACE_THUNK(transitionToDMADest);
+
+	INTERFACE_THUNK(transitionToShaderSrc);
+
+	INTERFACE_THUNK(transitionToDMASrc);
+
 #undef INTERFACE_THUNK
 
 	TextureFlag flags;                    //!< flags for this texture

@@ -48,9 +48,7 @@ auto Encoder::asComputeEncoder() -> Render::IComputeEncoder*
 
 auto Encoder::begin(std::shared_ptr<Render::Semaphore> const& semaphore_) -> void
 {
-	VkCommandBufferBeginInfo beginInfo;
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	beginInfo.pNext = nullptr;
+	VkCommandBufferBeginInfo beginInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // TODO reuseable command buffers
 	beginInfo.pInheritanceInfo = nullptr; // TODO support secondary buffers
 	vkBeginCommandBuffer(&beginInfo);

@@ -121,7 +121,7 @@ auto Texture::Create(
 ) -> TextureHandle
 {
 	Texture tex{};
-	tex.stage0 = sizeof(Texture);
+	tex.sizeAndStageCount = sizeof(Texture);
 	tex.flags = flags_;
 	tex.width = width_;
 	tex.height = height_;

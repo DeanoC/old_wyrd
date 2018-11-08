@@ -87,7 +87,7 @@ auto RenderPipeline::Create(
 		SPIRVShaderHandle fragmentShader_) -> RenderPipelineHandle
 {
 	RenderPipeline renderPipeline{};
-	renderPipeline.stage0 = sizeof(RenderPipeline);
+	renderPipeline.sizeAndStageCount = sizeof(RenderPipeline);
 	renderPipeline.inputTopology = topology_;
 	renderPipeline.flags = flags_;
 	renderPipeline.vertexShader = vertexShader_;

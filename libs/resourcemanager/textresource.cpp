@@ -52,7 +52,7 @@ auto TextResource::Create(
 	std::memcpy(dataPtr, text_.data(), text_.size());
 
 	if(addZero)dataPtr[text_.size()] = 0;
-	txt->stage0 = totalSize;
+	txt->sizeAndStageCount = totalSize;
 
 	rm_->placeInStorage(name_, *txt);
 	free(txt);

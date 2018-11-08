@@ -51,7 +51,7 @@ auto RenderPass::Create(
 
 	RenderPass* rp = (RenderPass*) malloc(totalSize);
 	std::memset(rp, 0, totalSize);
-	rp->stage0 = totalSize;
+	rp->sizeAndStageCount = totalSize;
 	rp->numTargets = (uint8_t) targets_.size();
 	for(auto i = 0u; i < 4; ++i) rp->byteClearValues[i] = byteClearColours[i];
 	std::memcpy(rp + 1, targets_.data(), dataSize);

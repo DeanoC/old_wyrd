@@ -98,7 +98,8 @@ struct App
 		Texture::Create(
 				resourceManager,
 				blankTex4x4Name,
-				TextureFlag::InitZero | TextureFlagFromUsage(Usage::ShaderRead),
+				TextureFlag::InitZero |
+				TextureFlagFromUsage(Usage::ShaderRead | Usage::DMADst),
 				4, 4, 1, 1,
 				1, 1,
 				GenericTextureFormat::R8G8B8A8_UNORM);
@@ -106,14 +107,15 @@ struct App
 		Texture::Create(
 				resourceManager,
 				colourRT0Name,
-				TextureFlag::NoInit | TextureFlagFromUsage(Usage::RopRead | Usage::RopWrite),
+				TextureFlag::NoInit |
+				TextureFlagFromUsage(Usage::RopRead | Usage::RopWrite | Usage::DMASrc | Usage::DMADst),
 				display->getWidth(), display->getHeight(), 1, 1,
 				1, 1,
 				GenericTextureFormat::R8G8B8A8_UNORM);
 
 		auto defaultRenderPassHandle = RenderPass::Create(
 				resourceManager,
-				defaultRenderPipelineName,
+				defaultRenderPassName,
 				{{
 						 LoadOp::Clear,
 						 StoreOp::Store,
@@ -190,13 +192,14 @@ struct App
 			auto renderEncoder = encoder->asRenderEncoder();
 
 			encoder->begin();
+			colourRT0->transitionToDMADest(encoder);
 			renderEncoder->clearTexture(colourRT0, {1.0f, 0.0f, 0.0f, 1.0f});
 
 			colourRT0->transitionToRenderTarget(encoder);
 			renderEncoder->beginRenderPass(defaultRenderPass, defaultRenderTarget);
 			renderEncoder->endRenderPass();
-			colourRT0->transitionFromRenderTarget(encoder);
-
+			colourRT0->transitionToDMASrc(encoder);
+			
 			encoder->end();
 
 			renderQueue->enqueue(encoder);

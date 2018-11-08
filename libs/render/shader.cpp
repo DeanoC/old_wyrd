@@ -118,11 +118,11 @@ auto SPIRVShader::Create(
 	size_t const dataSize = sizeof(uint32_t) * spirvCode_.size();
 	size_t const totalSize = Core::alignTo(sizeof(SPIRVShader) + dataSize, 8);
 	auto* obj = (SPIRVShader*) malloc(totalSize);
-	obj->stage0 = totalSize;
+	obj->sizeAndStageCount = totalSize;
 	obj->sourceHandle = sourceHandle_;
 	obj->sourceLanguage = sourceLanguage_;
 	obj->shaderType = shaderType_;
-	obj->codeCount = spirvCode_.size();
+	obj->codeCount = (uint32_t) spirvCode_.size();
 	obj->flags = flags_;
 	uint8_t* dataPtr = (uint8_t*) (obj + 1);
 	std::memcpy(dataPtr, spirvCode_.data(), dataSize);

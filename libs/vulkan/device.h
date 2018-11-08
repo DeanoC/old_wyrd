@@ -128,6 +128,19 @@ public:
 	ComputeCBVkVTable computeCBVkVTable;
 	GeneralCBVkVTable generalCBVkVTable;
 
+	auto debugNameVkObject(uint64_t object_, VkDebugReportObjectTypeEXT type_, char const* name_)
+	{
+		if(deviceVkVTable.vkDebugMarkerSetObjectNameEXT != nullptr)
+		{
+			VkDebugMarkerObjectNameInfoEXT createInfo{VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT};
+			createInfo.objectType = type_;
+			createInfo.pObjectName = name_;
+			createInfo.object = object_;
+			vkDebugMarkerSetObjectNameEXT(&createInfo);
+		}
+	}
+
+
 private:
 
 	DeviceVkVTable deviceVkVTable;

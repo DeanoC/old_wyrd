@@ -44,8 +44,8 @@ struct MemStorage : public IStorage
 	auto addMemory(std::string name_, ResourceId id_, uint16_t majorVersion_, uint16_t minorVersion_, void const* mem_,
 				   size_t size_) -> bool
 	{
-		if(filenameToMemory.find(name_) != filenameToMemory.end())
-			return false;
+		assert(filenameToMemory.find(name_) == filenameToMemory.end());
+		if(filenameToMemory.find(name_) != filenameToMemory.end()) return false;
 
 		std::vector<uint8_t> mem(size_);
 		std::memcpy(mem.data(), mem_, size_);

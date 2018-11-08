@@ -17,13 +17,13 @@ auto RenderEncoder::clearTexture(std::shared_ptr<Render::Texture> const& texture
 	{
 		VkClearColorValue colour;
 		std::memcpy(&colour.float32, floats_.data(), floats_.size() * sizeof(float));
-		vkCmdClearColorImage(texture->image, VK_IMAGE_LAYOUT_GENERAL, &colour, 1, &texture->entireRange);
+		vkCmdClearColorImage(texture->image, texture->imageLayout, &colour, 1, &texture->entireRange);
 	} else
 	{
 		VkClearDepthStencilValue ds;
 		ds.depth = floats_[0];
 		ds.stencil = (uint32_t) floats_[1]; // this only works upto 23 integer bits but stencil cap at 8 so..
-		vkCmdClearDepthStencilImage(texture->image, VK_IMAGE_LAYOUT_GENERAL, &ds, 1, &texture->entireRange);
+		vkCmdClearDepthStencilImage(texture->image, texture->imageLayout, &ds, 1, &texture->entireRange);
 	}
 }
 
@@ -100,6 +100,47 @@ auto RenderEncoder::resolveForDisplay(
 {
 	auto src = src_->getStage<Texture>(Texture::s_stage);
 
+	std::array<VkImageMemoryBarrier, 2> barriers;
+
+	VkImageMemoryBarrier& sbarrier = barriers[0];
+	VkImageMemoryBarrier& pbarrier = barriers[1];
+	sbarrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+	pbarrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+
+	sbarrier.oldLayout = src->imageLayout;
+	sbarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	src->imageLayout = sbarrier.newLayout;
+	sbarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	sbarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	sbarrier.image = src->image;
+	sbarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	sbarrier.subresourceRange.baseMipLevel = 0;
+	sbarrier.subresourceRange.baseArrayLayer = 0;
+	sbarrier.subresourceRange.levelCount = 1;
+	sbarrier.subresourceRange.layerCount = 1;
+	sbarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+	sbarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+	pbarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	pbarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	pbarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	pbarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	pbarrier.image = display_;
+	pbarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	pbarrier.subresourceRange.baseMipLevel = 0;
+	pbarrier.subresourceRange.baseArrayLayer = 0;
+	pbarrier.subresourceRange.levelCount = 1;
+	pbarrier.subresourceRange.layerCount = 1;
+	pbarrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	pbarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+	vkCmdPipelineBarrier(
+			VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			0,
+			0, nullptr,
+			0, nullptr,
+			2, barriers.data());
+
 	if(src_->samples == 1)
 	{
 		VkImageBlit blitter = {
@@ -112,12 +153,12 @@ auto RenderEncoder::resolveForDisplay(
 		vkCmdBlitImage(src->image,
 					   src->imageLayout,
 					   display_,
-					   VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+					   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 					   1, &blitter, VK_FILTER_LINEAR);
 
 		VkImageMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -128,7 +169,7 @@ auto RenderEncoder::resolveForDisplay(
 		barrier.subresourceRange.levelCount = 1;
 		barrier.subresourceRange.layerCount = 1;
 		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 		vkCmdPipelineBarrier(
 				VK_PIPELINE_STAGE_TRANSFER_BIT,
 				VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,

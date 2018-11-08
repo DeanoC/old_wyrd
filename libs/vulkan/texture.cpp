@@ -12,11 +12,16 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 {
 	using namespace Core::bitmask;
 
-	auto registerFunc = [device_](int stage_, ResourceManager::ResolverInterface, uint16_t, uint16_t,
+	auto registerFunc = [device_](int stage_, ResourceManager::ResolverInterface resolver_, uint16_t, uint16_t,
 								  ResourceManager::ResourceBase::Ptr ptr_) -> bool
 	{
 		auto texture = std::static_pointer_cast<Render::Texture>(ptr_);
-		auto vulkanTexture = texture->getStage<Vulkan::Texture>(stage_);
+		auto vulkanTexture = texture->getStage<Vulkan::Texture, false>(stage_);
+		new(vulkanTexture) Vulkan::Texture{};
+
+		auto[getResourceManagerFunc, resolverFunc, getNameFunc] = resolver_;
+
+
 		vulkanTexture->cpuTexture = texture.get();
 
 		auto device = device_.lock();
@@ -71,6 +76,7 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 		createInfo.usage = usageflags;
 		createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		vulkanTexture->imageLayout = createInfo.initialLayout;
 
 		VmaAllocationCreateInfo gpuAllocInfo{};
 		gpuAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -81,6 +87,8 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 		if(alloc == nullptr) return false;
 		vulkanTexture->image = image;
 		vulkanTexture->allocation = alloc;
+		std::string resourceName(getNameFunc().getResourceName());
+		device->debugNameVkObject(*(uint64_t*) &image, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, resourceName.c_str());
 
 		// default range
 		vulkanTexture->entireRange.aspectMask = Render::GtfCracker::isDepth(texture->format)
@@ -98,9 +106,7 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 		vulkanTexture->entireRange.layerCount = texture->slices;
 
 		// default view
-		VkImageViewCreateInfo imageViewCreateInfo;
-		imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		imageViewCreateInfo.pNext = nullptr;
+		VkImageViewCreateInfo imageViewCreateInfo{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
 		imageViewCreateInfo.format = createInfo.format;
 		imageViewCreateInfo.image = vulkanTexture->image;
 		imageViewCreateInfo.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -110,7 +116,6 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 		imageViewCreateInfo.flags = createInfo.flags;
 		vulkanTexture->imageView = device->createImageView(imageViewCreateInfo);
 
-		vulkanTexture->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 		// now the gpu texture has been created, we may need to schedule 
 		// a cpu -> gpu transfer to initalise it if required.
@@ -153,45 +158,95 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 auto Texture::transitionToRenderTarget(std::shared_ptr<Render::Encoder> const& encoder_) -> void
 {
 	Encoder::Ptr encoder = std::static_pointer_cast<Encoder>(encoder_);
-	VkImageMemoryBarrier barrier{};
-
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
 	barrier.oldLayout = imageLayout;
-	barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	if(Render::GtfCracker::isDepth(cpuTexture->format) ||
+	   Render::GtfCracker::isStencil(cpuTexture->format))
+	{
+		barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	} else
+	{
+		barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	}
+	imageLayout = barrier.newLayout;
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.image = image;
 	barrier.subresourceRange = entireRange;
 	barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
-	barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
+	if(Render::GtfCracker::isDepth(cpuTexture->format) ||
+	   Render::GtfCracker::isStencil(cpuTexture->format))
+	{
+		barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	} else
+	{
+		barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	}
 	encoder->textureBarrier(
-			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-			VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 			barrier);
-	imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 }
 
-auto Texture::transitionFromRenderTarget(std::shared_ptr<Render::Encoder> const& encoder_) -> void
+auto Texture::transitionToDMADest(std::shared_ptr<Render::Encoder> const& encoder_) -> void
 {
 	Encoder::Ptr encoder = std::static_pointer_cast<Encoder>(encoder_);
-	VkImageMemoryBarrier barrier{};
-
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
 	barrier.oldLayout = imageLayout;
-	barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	imageLayout = barrier.newLayout;
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.image = image;
 	barrier.subresourceRange = entireRange;
-	barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
+	barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
 	encoder->textureBarrier(
 			VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 			barrier);
-	imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+}
+
+auto Texture::transitionToShaderSrc(std::shared_ptr<Render::Encoder> const& encoder_) -> void
+{
+	Encoder::Ptr encoder = std::static_pointer_cast<Encoder>(encoder_);
+	VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+	barrier.oldLayout = imageLayout;
+	barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageLayout = barrier.newLayout;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image;
+	barrier.subresourceRange = entireRange;
+	barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+	encoder->textureBarrier(
+			VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+			VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+			barrier);
+}
+
+auto Texture::transitionToDMASrc(std::shared_ptr<Render::Encoder> const& encoder_) -> void
+{
+	Encoder::Ptr encoder = std::static_pointer_cast<Encoder>(encoder_);
+	VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+	barrier.oldLayout = imageLayout;
+	barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	imageLayout = barrier.newLayout;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image;
+	barrier.subresourceRange = entireRange;
+	barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+	barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+	encoder->textureBarrier(
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			barrier);
 }
 
 } // end namespace

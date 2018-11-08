@@ -32,11 +32,6 @@ private:
 						 std::vector<char const*> const& requiredExtensions,
 						 std::shared_ptr<ResourceManager::ResourceMan> const& resourceManager_) -> Vulkan::Device::Ptr;
 
-	auto addDesiredInstanceExtensions(std::string const& desired_)
-	{
-		desiredInstanceExtensions.insert( desired_ );
-	}
-
 	// returns graphics, compute, transfer. The can be the same index
 	auto findQueueFamily(uint32_t deviceIndex_, uint32_t minQueues_) -> std::tuple<uint32_t,uint32_t,uint32_t>;
 
@@ -51,7 +46,7 @@ private:
 	std::vector<VkPhysicalDeviceFeatures> deviceFeatures;
 	std::vector<Device::QueueFamilies> deviceQueueFamilies;
 
-	std::set<std::string> desiredInstanceExtensions;
+	std::set<std::string> extensions;
 
 	std::vector<std::shared_ptr<Vulkan::Display>> activeDisplays;
 

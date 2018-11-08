@@ -13,7 +13,7 @@ auto RenderPass::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Devi
 								  ResourceManager::ResourceBase::Ptr ptr_) -> bool
 	{
 		auto renderPass = std::static_pointer_cast<Render::RenderPass>(ptr_);
-		auto vulkanRenderPass = renderPass->getStage<Vulkan::RenderPass>(stage_);
+		auto vulkanRenderPass = renderPass->getStage<Vulkan::RenderPass, false>(stage_);
 
 		auto device = device_.lock();
 		if(!device) return false;
@@ -52,7 +52,7 @@ auto RenderPass::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Devi
 				// we don't care, but we can't load from undefined
 				attach.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 			}
-			attach.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+			attach.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 			attach.loadOp = LoadConvertor[(int) target.load];
 			attach.storeOp = StoreConvertor[(int) target.store];
@@ -77,12 +77,12 @@ auto RenderPass::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Devi
 		// TODO subpasses, for now assume 1 and it matches the entire render target
 		VkSubpassDescription subpass = {};
 		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		subpass.colorAttachmentCount = cReferences.size();
+		subpass.colorAttachmentCount = (uint32_t) cReferences.size();
 		subpass.pColorAttachments = cReferences.data();
 		subpass.pDepthStencilAttachment =
 				(dsReference.attachment != ~0) ? &dsReference : nullptr;
 
-		createInfo.attachmentCount = attachments.size();
+		createInfo.attachmentCount = (uint32_t) attachments.size();
 		createInfo.pAttachments = attachments.data();
 		createInfo.flags = 0;
 		createInfo.subpassCount = 1;

@@ -44,7 +44,7 @@ using HasResourceChangedFunc = std::function<bool(ResourceBase::ConstPtr ptr_)>;
 using SaveResourceFunc = std::function<bool(ResourceBase::ConstPtr ptr_, ISaver& saver_)>;
 
 // extra memory, init, destroy
-using ResourceHandler = std::tuple<int, HandlerInit, HandlerDestroy>;
+using ResourceHandler = std::tuple<size_t, HandlerInit, HandlerDestroy>;
 
 class ResourceMan
 {
