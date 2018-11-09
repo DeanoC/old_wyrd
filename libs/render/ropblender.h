@@ -18,6 +18,7 @@ namespace Render {
 
 struct ROPTargetBlender
 {
+	static constexpr uint8_t Disable = 0;
 	static constexpr uint8_t EnableFlag = Core::Bit(0);
 
 	auto isEnabled() const -> bool { return flags & EnableFlag; }
@@ -38,7 +39,6 @@ struct alignas(8) ROPBlender : public ResourceManager::Resource<ROPBlenderId>
 	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void;
 	static constexpr uint16_t MajorVersion = 1;
 	static constexpr uint16_t MinorVersion = 0;
-
 
 	static constexpr uint8_t LogicEnableFlag = Core::Bit(0);
 

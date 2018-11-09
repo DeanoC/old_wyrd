@@ -12,6 +12,7 @@
 #include "render/pipeline.h"
 #include "render/ropblender.h"
 #include "render/viewport.h"
+#include "render/vertexinput.h"
 
 namespace Render {
 
@@ -28,7 +29,7 @@ auto RegisterResourceHandlers(ResourceManager::ResourceMan& rm_) -> void
 	ComputePipeline::RegisterResourceHandler(rm_);
 	ROPBlender::RegisterResourceHandler(rm_);
 	Viewport::RegisterResourceHandler(rm_);
-
+	VertexInput::RegisterResourceHandler(rm_);
 }
 
 } // end namespace

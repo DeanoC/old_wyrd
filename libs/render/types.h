@@ -227,7 +227,7 @@ enum class ROPBlendOps : uint8_t
 	Max,
 };
 
-enum ColourComponents : uint8_t
+enum class ColourComponents : uint8_t
 {
 	Red = Core::Bit(0),
 	Green = Core::Bit(1),
@@ -235,6 +235,62 @@ enum ColourComponents : uint8_t
 	Alpha = Core::Bit(3),
 
 	All = 0xF
+};
+
+enum class CullMode : uint8_t
+{
+	None,
+	Front,
+	Back,
+};
+
+enum class FrontFace : uint8_t
+{
+	CounterClockWise,
+	ClockWise
+};
+
+enum class FillMode : uint8_t
+{
+	Fill,
+	Line,
+	Point,
+	Rect
+};
+
+enum class CompareOp : uint8_t
+{
+	Never,
+	Less,
+	Equal,
+	LessOrEqual,
+	Greater,
+	NotEqual,
+	GreaterOrEqual,
+	Always,
+};
+
+enum class StencilOp : uint8_t
+{
+	Zero,            // 0
+	Ref,            // d = reference
+	Dst,            // d
+	InvertDst,    // ~d
+	IncAndClamp,    // clamp(d+1)
+	DecAndClamp,    // clamp(d-1)
+	IncAndWrap,        // d+1
+	DecAndWrap        // d-1
+};
+
+enum class SampleCounts : uint8_t
+{
+	One = Core::Bit(1),
+	Two = Core::Bit(2),
+	Four = Core::Bit(3),
+	Eight = Core::Bit(4),
+	Sixteen = Core::Bit(5),
+	ThirtyTwo = Core::Bit(6),
+	SixtyFour = Core::Bit(7),
 };
 
 constexpr auto is_bitmask_enum(RenderPipelineStages) -> bool { return true; }
@@ -258,6 +314,8 @@ constexpr auto is_bitmask_enum(Usage) -> bool { return true; }
 constexpr auto is_bitmask_enum(MemoryAccess) -> bool { return true; }
 
 constexpr auto is_bitmask_enum(ColourComponents) -> bool { return true; }
+
+constexpr auto is_bitmask_enum(SampleCounts) -> bool { return true; }
 
 
 constexpr auto TextureFlagsToUsage(TextureFlag flags_) -> Usage

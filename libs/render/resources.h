@@ -26,6 +26,7 @@ struct BindingTableMemoryMap;
 struct Sampler;
 struct ROPBlender;
 struct Viewport;
+struct VertexInput;
 
 auto RegisterResourceHandlers(ResourceManager::ResourceMan& rm_) -> void;
 
@@ -44,6 +45,7 @@ static constexpr ResourceManager::ResourceId BindingTableId = "BIND"_resource_id
 static constexpr ResourceManager::ResourceId SamplerId = "SAMP"_resource_id;
 static constexpr ResourceManager::ResourceId ROPBlenderId = "ROPB"_resource_id;
 static constexpr ResourceManager::ResourceId ViewportId = "VIEW"_resource_id;
+static constexpr ResourceManager::ResourceId VertexInputId = "VINP"_resource_id;
 
 using GenericImageHandle = ResourceManager::ResourceHandle<GenericImageId>;
 using RenderPassHandle = ResourceManager::ResourceHandle<RenderPassId>;
@@ -57,6 +59,7 @@ using BindingTableHandle = ResourceManager::ResourceHandle<BindingTableId>;
 using SamplerHandle = ResourceManager::ResourceHandle<SamplerId>;
 using ROPBlenderHandle = ResourceManager::ResourceHandle<ROPBlenderId>;
 using ViewportHandle = ResourceManager::ResourceHandle<ViewportId>;
+using VertexInputHandle = ResourceManager::ResourceHandle<VertexInputId>;
 
 using GenericImagePtr = std::shared_ptr<GenericImage>;
 using RenderPassPtr = std::shared_ptr<RenderPass>;
@@ -70,6 +73,7 @@ using BindingTablePtr = std::shared_ptr<BindingTable>;
 using SamplerPtr = std::shared_ptr<Sampler>;
 using ROPBlenderPtr = std::shared_ptr<ROPBlender>;
 using ViewportPtr = std::shared_ptr<Viewport>;
+using VertexInputPtr = std::shared_ptr<VertexInput>;
 
 using GenericImageConstPtr = std::shared_ptr<GenericImage const>;
 using RenderPassConstPtr = std::shared_ptr<RenderPass const>;
@@ -83,6 +87,7 @@ using BindingTableConstPtr = std::shared_ptr<BindingTable const>;
 using SamplerConstPtr = std::shared_ptr<Sampler const>;
 using ROPBlenderConstPtr = std::shared_ptr<ROPBlender const>;
 using ViewportConstPtr = std::shared_ptr<Viewport const>;
+using VertexInputConstPtr = std::shared_ptr<VertexInput const>;
 
 }
 

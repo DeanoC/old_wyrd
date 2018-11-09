@@ -336,6 +336,126 @@ constexpr auto from(Render::ShaderType const in_) -> uint32_t
 	return ret;
 }
 
+constexpr auto from(Render::CullMode const in_) -> VkCullModeFlags
+{
+	using namespace Render;
+	switch(in_)
+	{
+		case CullMode::None:
+			return VK_CULL_MODE_NONE;
+		case CullMode::Front:
+			return VK_CULL_MODE_FRONT_BIT;
+		case CullMode::Back:
+			return VK_CULL_MODE_BACK_BIT;
+		default:
+			assert(false);
+			return VK_CULL_MODE_NONE;
+	}
+}
+
+constexpr auto from(Render::FrontFace const in_) -> VkFrontFace
+{
+	using namespace Render;
+	switch(in_)
+	{
+		case FrontFace::ClockWise:
+			return VK_FRONT_FACE_CLOCKWISE;
+		case FrontFace::CounterClockWise:
+			return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+		default:
+			assert(false);
+			return VK_FRONT_FACE_CLOCKWISE;
+	}
+}
+
+constexpr auto from(Render::FillMode const in_) -> VkPolygonMode
+{
+	using namespace Render;
+	switch(in_)
+	{
+		case FillMode::Fill:
+			return VK_POLYGON_MODE_FILL;
+		case FillMode::Line:
+			return VK_POLYGON_MODE_LINE;
+		case FillMode::Point:
+			return VK_POLYGON_MODE_POINT;
+		case FillMode::Rect:
+			return VK_POLYGON_MODE_FILL_RECTANGLE_NV; // TODO
+		default:
+			assert(false);
+			return VK_POLYGON_MODE_FILL;
+	}
+}
+
+constexpr auto from(Render::CompareOp const in_) -> VkCompareOp
+{
+	using namespace Render;
+	switch(in_)
+	{
+		case CompareOp::Never:
+			return VK_COMPARE_OP_NEVER;
+		case CompareOp::Less:
+			return VK_COMPARE_OP_LESS;
+		case CompareOp::Equal:
+			return VK_COMPARE_OP_EQUAL;
+		case CompareOp::LessOrEqual:
+			return VK_COMPARE_OP_LESS_OR_EQUAL;
+		case CompareOp::Greater:
+			return VK_COMPARE_OP_GREATER;
+		case CompareOp::NotEqual:
+			return VK_COMPARE_OP_NOT_EQUAL;
+		case CompareOp::GreaterOrEqual:
+			return VK_COMPARE_OP_GREATER_OR_EQUAL;
+		case CompareOp::Always:
+			return VK_COMPARE_OP_ALWAYS;
+		default:
+			assert(false);
+			return VK_COMPARE_OP_NOT_EQUAL;
+	}
+}
+
+constexpr auto from(Render::StencilOp const in_) -> VkStencilOp
+{
+	using namespace Render;
+	switch(in_)
+	{
+		case StencilOp::Zero:
+			return VK_STENCIL_OP_ZERO;
+		case StencilOp::Ref:
+			return VK_STENCIL_OP_REPLACE;
+		case StencilOp::Dst:
+			return VK_STENCIL_OP_KEEP;
+		case StencilOp::InvertDst:
+			return VK_STENCIL_OP_INVERT;
+		case StencilOp::IncAndClamp:
+			return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
+		case StencilOp::DecAndClamp:
+			return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
+		case StencilOp::IncAndWrap:
+			return VK_STENCIL_OP_INCREMENT_AND_WRAP;
+		case StencilOp::DecAndWrap:
+			return VK_STENCIL_OP_DECREMENT_AND_WRAP;
+		default:
+			assert(false);
+			return VK_STENCIL_OP_ZERO;
+	}
+}
+
+constexpr auto from(Render::SampleCounts const in_) -> uint8_t
+{
+	using namespace Render;
+	using namespace Core::bitmask;
+
+	uint32_t ret = 0;
+	ret |= test_equal(in_, SampleCounts::One) ? VK_SAMPLE_COUNT_1_BIT : 0;
+	ret |= test_equal(in_, SampleCounts::Two) ? VK_SAMPLE_COUNT_2_BIT : 0;
+	ret |= test_equal(in_, SampleCounts::Four) ? VK_SAMPLE_COUNT_4_BIT : 0;
+	ret |= test_equal(in_, SampleCounts::Eight) ? VK_SAMPLE_COUNT_8_BIT : 0;
+	ret |= test_equal(in_, SampleCounts::Sixteen) ? VK_SAMPLE_COUNT_16_BIT : 0;
+	ret |= test_equal(in_, SampleCounts::ThirtyTwo) ? VK_SAMPLE_COUNT_32_BIT : 0;
+	ret |= test_equal(in_, SampleCounts::SixtyFour) ? VK_SAMPLE_COUNT_64_BIT : 0;
+	return ret;
+}
 
 } // end namespace Vulkan
 #endif //WYRD_VULKAN_TYPES_H

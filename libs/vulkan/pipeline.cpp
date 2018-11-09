@@ -6,14 +6,64 @@
 #include "vulkan/bindingtable.h"
 #include "render/renderpass.h"
 #include "render/ropblender.h"
+#include "render/vertexinput.h"
 #include "vulkan/renderpass.h"
 #include "render/viewport.h"
 #include "vulkan/device.h"
 #include "vulkan/types.h"
 #include "resourcemanager/resourceman.h"
 #include "vulkan/pipeline.h"
-
 namespace Vulkan {
+namespace {
+
+// convert shader type to a single vulkan shader bit
+constexpr auto fromSingle(Render::ShaderType const in_) -> VkShaderStageFlagBits
+{
+	using namespace Render;
+	switch(in_)
+	{
+		case ShaderType::Vertex:
+			return VK_SHADER_STAGE_VERTEX_BIT;
+		case ShaderType::TesselationControl:
+			return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+		case ShaderType::TesselationEval:
+			return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+		case ShaderType::Geometry:
+			return VK_SHADER_STAGE_GEOMETRY_BIT;
+		case ShaderType::Fragment:
+			return VK_SHADER_STAGE_FRAGMENT_BIT;
+		case ShaderType::Compute:
+			return VK_SHADER_STAGE_COMPUTE_BIT;
+		default:
+			assert(false);
+			return VK_SHADER_STAGE_COMPUTE_BIT;
+	}
+};
+
+constexpr auto from(Render::VertexInputType const in_) -> VkFormat
+{
+	using namespace Render;
+	switch(in_)
+	{
+		case VertexInputType::Float1:
+			return VK_FORMAT_R32_SFLOAT;
+		case VertexInputType::Float2:
+			return VK_FORMAT_R32G32_SFLOAT;
+		case VertexInputType::Float3:
+			return VK_FORMAT_R32G32B32_SFLOAT;
+		case VertexInputType::Float4:
+			return VK_FORMAT_R32G32B32A32_SFLOAT;
+		case VertexInputType::Byte4 :
+			return VK_FORMAT_A8B8G8R8_UNORM_PACK32;
+		default:
+			assert(false);
+			return VK_FORMAT_R32_SFLOAT;
+
+	}
+};
+
+}
+
 auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device::WeakPtr device_) -> void
 {
 	using namespace Core::bitmask;
@@ -28,9 +78,12 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 		auto device = device_.lock();
 		if(!device) return false;
 
+		// TODO pipeline inheritance
+		VkGraphicsPipelineCreateInfo createInfo{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
+
+
 		std::vector<VkPipelineShaderStageCreateInfo> stages;
 		stages.reserve(16);
-
 		std::array<Render::SPIRVShaderHandle, 5> shaderHandles{
 				renderPipeline->vertexShader,
 				renderPipeline->tesselationControlShader,
@@ -39,56 +92,96 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 				renderPipeline->fragmentShader,
 		};
 
-		// convert shader type to vulkan shader bit
-		static constexpr VkShaderStageFlagBits TypeConverter[5]{
-				VK_SHADER_STAGE_VERTEX_BIT,
-				VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
-				VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
-				VK_SHADER_STAGE_GEOMETRY_BIT,
-				VK_SHADER_STAGE_FRAGMENT_BIT,
-		};
-
 		for(auto& handle : shaderHandles)
 		{
 			auto shader = handle.acquire<Render::SPIRVShader>();
 			auto vulkanShader = shader->getStage<ShaderModule>(ShaderModule::s_stage);
 			VkPipelineShaderStageCreateInfo stage;
 			stage.module = vulkanShader->shaderModule;
-			stage.stage = TypeConverter[(uint8_t) shader->shaderType];
+			stage.stage = fromSingle(shader->shaderType);
 			stage.pName = "main"; // TODO
 			stage.pSpecializationInfo = nullptr; // TODO
 			stages.push_back(stage);
 		}
+		createInfo.stageCount = (uint32_t) stages.size();
+		createInfo.pStages = stages.data();
 
 		VkPipelineInputAssemblyStateCreateInfo inputCreateInfo{
 				VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
 		inputCreateInfo.topology = from(renderPipeline->inputTopology);
 		inputCreateInfo.primitiveRestartEnable =
 				renderPipeline->flags & Render::RenderPipeline::EnablePrimitiveRestartFlag;
-
-		VkPipelineLayoutCreateInfo layoutCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
-		layoutCreateInfo.setLayoutCount = renderPipeline->numBindingTableMemoryMaps;
-		std::vector<VkDescriptorSetLayout> layouts(renderPipeline->numBindingTableMemoryMaps);
-		for(auto i = 0u; i < renderPipeline->numBindingTableMemoryMaps; ++i)
-		{
-			auto memmap = renderPipeline->getBindingTableMemoryMaps()[i].acquire<Render::BindingTableMemoryMap>();
-			auto bindingLayout = memmap->getStage<Vulkan::BindingTableMemoryMap>(BindingTableMemoryMap::s_stage);
-			layouts[i] = bindingLayout->layout;
-		}
-		layoutCreateInfo.pSetLayouts = layouts.data();
-		layoutCreateInfo.pushConstantRangeCount = 0; // TODO push constant API
-		vulkanRenderPipeline->layout = device->createPipelineLayout(layoutCreateInfo);
-
-		// TODO pipeline inheritance
-		VkGraphicsPipelineCreateInfo createInfo{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
-		createInfo.stageCount = (uint32_t) stages.size();
-		createInfo.pStages = stages.data();
 		createInfo.pInputAssemblyState = &inputCreateInfo;
-		createInfo.layout = vulkanRenderPipeline->layout;
 
-		auto renderPass = renderPipeline->renderPass.acquire<Render::RenderPass>();
-		auto vulkanRenderPass = renderPass->getStage<RenderPass>(RenderPass::s_stage);
-		createInfo.renderPass = vulkanRenderPass->renderpass;
+		auto vertexInput = renderPipeline->vertexInput.acquire<Render::VertexInput>();
+
+		VkPipelineVertexInputStateCreateInfo vertexCreateInfo = {
+				VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
+		vertexCreateInfo.vertexAttributeDescriptionCount = vertexInput->numVertexInputs;
+		vertexCreateInfo.vertexBindingDescriptionCount = vertexInput->numVertexInputs;
+
+		std::vector<VkVertexInputBindingDescription> vinputBinding(vertexInput->numVertexInputs);
+		std::vector<VkVertexInputAttributeDescription> vinputAttr(vertexInput->numVertexInputs);
+		for(auto l = 0u; l < vertexInput->numVertexInputs; ++l)
+		{
+			auto const& input = vertexInput->getInputs()[l];
+			auto& inputBinding = vinputBinding[l];
+			auto& inputAttr = vinputAttr[l];
+			inputAttr.format = from(input.type);
+			inputAttr.location = input.shaderIndex;
+			inputAttr.binding = input.binding;
+			inputAttr.offset = vertexInput->getElementOffset(l);
+			inputBinding.binding = input.binding;
+			inputBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+			inputBinding.stride = vertexInput->getStride();
+		}
+		createInfo.pVertexInputState = &vertexCreateInfo;
+
+		auto const& rasterState = renderPipeline->rasterisationState;
+		VkPipelineRasterizationStateCreateInfo rasterStateCreateInfo{
+				VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
+		VkPipelineTessellationStateCreateInfo tessStateCreateInfo{
+				VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO};
+		VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo{
+				VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
+		VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo{
+				VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
+
+		rasterStateCreateInfo.rasterizerDiscardEnable = rasterState.isDiscardEnabled();
+
+		depthStencilStateCreateInfo.depthTestEnable = rasterState.isDepthTestEnabled();
+		depthStencilStateCreateInfo.depthWriteEnable = rasterState.isDepthWriteEnabled();
+		depthStencilStateCreateInfo.depthBoundsTestEnable = rasterState.isDepthBoundsEnabled();
+		depthStencilStateCreateInfo.stencilTestEnable = rasterState.isStencilTestEnable();
+		rasterStateCreateInfo.depthClampEnable = rasterState.isDepthClampEnabled();
+
+		depthStencilStateCreateInfo.depthCompareOp = from(rasterState.depthCompare);
+		depthStencilStateCreateInfo.front.compareOp = from(rasterState.frontStencil.compareOp);
+		depthStencilStateCreateInfo.front.depthFailOp = from(rasterState.frontStencil.depthFailOp);
+		depthStencilStateCreateInfo.front.failOp = from(rasterState.frontStencil.failOp);
+		depthStencilStateCreateInfo.front.passOp = from(rasterState.frontStencil.passOp);
+		depthStencilStateCreateInfo.front.writeMask = rasterState.frontStencil.writeMask;
+		depthStencilStateCreateInfo.front.compareMask = rasterState.frontStencil.compareMask;
+		depthStencilStateCreateInfo.front.reference = rasterState.frontStencil.reference;
+		depthStencilStateCreateInfo.back.compareOp = from(rasterState.backStencil.compareOp);
+		depthStencilStateCreateInfo.back.depthFailOp = from(rasterState.backStencil.depthFailOp);
+		depthStencilStateCreateInfo.back.failOp = from(rasterState.backStencil.failOp);
+		depthStencilStateCreateInfo.back.passOp = from(rasterState.backStencil.passOp);
+		depthStencilStateCreateInfo.back.writeMask = rasterState.backStencil.writeMask;
+		depthStencilStateCreateInfo.back.compareMask = rasterState.backStencil.compareMask;
+		depthStencilStateCreateInfo.back.reference = rasterState.backStencil.reference;
+		depthStencilStateCreateInfo.minDepthBounds = rasterState.minDepthBounds;
+		depthStencilStateCreateInfo.maxDepthBounds = rasterState.maxDepthBounds;
+
+		rasterStateCreateInfo.cullMode = from(rasterState.cullMode);
+		rasterStateCreateInfo.frontFace = from(rasterState.frontFace);
+		rasterStateCreateInfo.polygonMode = from(rasterState.fillMode);
+		rasterStateCreateInfo.lineWidth = rasterState.lineWidth;
+		rasterStateCreateInfo.depthBiasEnable = rasterState.isDepthBiasEnabled();
+		rasterStateCreateInfo.depthBiasClamp = rasterState.depthBias.clamp;
+		rasterStateCreateInfo.depthBiasConstantFactor = rasterState.depthBias.constantFactor;
+		rasterStateCreateInfo.depthBiasSlopeFactor = rasterState.depthBias.slopeFactor;
+		tessStateCreateInfo.patchControlPoints = rasterState.patchControlPointsCount;
 
 		auto ropBlender = renderPipeline->ropBlender.acquire<Render::ROPBlender>();
 		VkPipelineColorBlendStateCreateInfo colourBlendCreateInfo{
@@ -140,6 +233,24 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 		viewportCreateInfo.pViewports = vkviewports.data();
 		viewportCreateInfo.pScissors = vkscissors.data();
 		createInfo.pViewportState = &viewportCreateInfo;
+
+		VkPipelineLayoutCreateInfo layoutCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+		layoutCreateInfo.setLayoutCount = renderPipeline->numBindingTableMemoryMaps;
+		std::vector<VkDescriptorSetLayout> layouts(renderPipeline->numBindingTableMemoryMaps);
+		for(auto i = 0u; i < renderPipeline->numBindingTableMemoryMaps; ++i)
+		{
+			auto memmap = renderPipeline->getBindingTableMemoryMaps()[i].acquire<Render::BindingTableMemoryMap>();
+			auto bindingLayout = memmap->getStage<Vulkan::BindingTableMemoryMap>(BindingTableMemoryMap::s_stage);
+			layouts[i] = bindingLayout->layout;
+		}
+		layoutCreateInfo.pSetLayouts = layouts.data();
+		layoutCreateInfo.pushConstantRangeCount = 0; // TODO push constant API
+		vulkanRenderPipeline->layout = device->createPipelineLayout(layoutCreateInfo);
+		createInfo.layout = vulkanRenderPipeline->layout;
+
+		auto renderPass = renderPipeline->renderPass.acquire<Render::RenderPass>();
+		auto vulkanRenderPass = renderPass->getStage<RenderPass>(RenderPass::s_stage);
+		createInfo.renderPass = vulkanRenderPass->renderpass;
 
 		vulkanRenderPipeline->pipeline = device->createGraphicsPipeline(createInfo);
 		vulkanRenderPipeline->vtable = &device->pipelineVkVTable;

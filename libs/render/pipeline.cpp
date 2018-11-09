@@ -78,26 +78,45 @@ auto ComputePipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_)
 auto RenderPipeline::Create(
 		std::shared_ptr<ResourceManager::ResourceMan> rm_,
 		ResourceManager::ResourceNameView const& name_,
+		RasterisationState const rasterisationState_,
 		Topology topology_,
 		uint8_t flags_,
+		std::vector<BindingTableMemoryMapHandle> const& memoryMap_,
 		SPIRVShaderHandle vertexShader_,
 		SPIRVShaderHandle tesselationControlShader_,
 		SPIRVShaderHandle tesselationEvalShader_,
 		SPIRVShaderHandle geometryShader_,
-		SPIRVShaderHandle fragmentShader_) -> RenderPipelineHandle
+		SPIRVShaderHandle fragmentShader_,
+		RenderPassHandle renderPass_,
+		ROPBlenderHandle ropBlender_,
+		ViewportHandle viewport_,
+		VertexInputHandle vertexInput_) -> RenderPipelineHandle
 {
-	RenderPipeline renderPipeline{};
-	renderPipeline.sizeAndStageCount = sizeof(RenderPipeline);
-	renderPipeline.inputTopology = topology_;
-	renderPipeline.flags = flags_;
-	renderPipeline.vertexShader = vertexShader_;
-	renderPipeline.tesselationControlShader = tesselationControlShader_;
-	renderPipeline.tesselationEvalShader = tesselationEvalShader_;
-	renderPipeline.geometryShader = geometryShader_;
-	renderPipeline.fragmentShader = fragmentShader_;
+	size_t const dataSize = sizeof(BindingTableMemoryMapHandle) * memoryMap_.size();
+	size_t const totalSize = sizeof(RenderPipeline) + dataSize;
 
-	rm_->placeInStorage(name_, renderPipeline);
+	auto obj = (RenderPipeline*) malloc(totalSize);
+	std::memset(obj, 0, totalSize);
+	obj->sizeAndStageCount = totalSize;
+	obj->numBindingTableMemoryMaps = (uint8_t) memoryMap_.size();
+	obj->rasterisationState = rasterisationState_;
+	obj->inputTopology = topology_;
+	obj->flags = flags_;
+	std::memcpy(obj + 1, memoryMap_.data(), dataSize);
+	obj->vertexShader = vertexShader_;
+	obj->tesselationControlShader = tesselationControlShader_;
+	obj->tesselationEvalShader = tesselationEvalShader_;
+	obj->geometryShader = geometryShader_;
+	obj->fragmentShader = fragmentShader_;
+	obj->renderPass = renderPass_;
+	obj->ropBlender = ropBlender_;
+	obj->viewport = viewport_;
+	obj->vertexInput = vertexInput_;
+
+	rm_->placeInStorage(name_, *obj);
+	free(obj);
 	return rm_->openByName<Id>(name_);
+
 }
 
 } // end namespace

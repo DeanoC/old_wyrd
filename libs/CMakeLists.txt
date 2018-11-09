@@ -128,7 +128,7 @@ set( RENDER_SRC
 		render/types.h
 		render/renderpass.cpp
 		render/image.cpp
-		render/rendertarget.cpp render/shader.cpp render/shader.h render/pipeline.cpp render/pipeline.h render/bindingtable.cpp render/bindingtable.h render/ropblender.cpp render/ropblender.h render/viewport.cpp render/viewport.h)
+		render/rendertarget.cpp render/shader.cpp render/shader.h render/pipeline.cpp render/pipeline.h render/bindingtable.cpp render/bindingtable.h render/ropblender.cpp render/ropblender.h render/viewport.cpp render/viewport.h render/rasterisationstate.cpp render/rasterisationstate.h render/vertexinput.cpp render/vertexinput.h)
 
 set( MATH_SRC
 		math/vector_math.cpp

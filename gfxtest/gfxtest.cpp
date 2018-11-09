@@ -9,6 +9,9 @@
 #include "render/encoder.h"
 #include "render/pipeline.h"
 #include "render/bindingtable.h"
+#include "render/viewport.h"
+#include "render/vertexinput.h"
+#include "render/ropblender.h"
 
 static auto blankTex4x4Name = ResourceManager::ResourceNameView("mem$blankTex4x4");
 static auto colourRT0Name = ResourceManager::ResourceNameView("mem$colourRT0");
@@ -16,6 +19,12 @@ static auto defaultRenderPassName = ResourceManager::ResourceNameView("mem$defau
 static auto defaultRenderTargetName = ResourceManager::ResourceNameView("mem$defaultRenderTarget");
 static auto defaultBindingTableMemoryMapName = ResourceManager::ResourceNameView("mem$defaultBindingTableMemoryMap");
 static auto defaultBindingTableName = ResourceManager::ResourceNameView("mem$defaultBindingTable");
+static auto defaultViewportName = ResourceManager::ResourceNameView("mem$defaultViewport");
+static auto defaultVertexInputName = ResourceManager::ResourceNameView("mem$defaultVertexInput");
+static auto defaultROPBlenderName = ResourceManager::ResourceNameView("mem$defaultROPBlender");
+
+static auto redOutFragmentShaderName = ResourceManager::ResourceNameView("mem$redIytFragmentShader");
+static auto defaultRenderPipelineName = ResourceManager::ResourceNameView("mem$defaultRenderPipeline");
 
 struct App
 {
@@ -88,87 +97,117 @@ struct App
 		resourceManager.reset();
 	}
 
-	static constexpr std::string_view redOutFragmentShaderName = "mem$redIytFragmentShader";
-	static constexpr std::string_view defaultRenderPipelineName = "mem$defaultRenderPipeline";
-
 	auto createResources() -> void
 	{
 		using namespace std::string_literals;
 		using namespace std::string_view_literals;
 		using namespace Core::bitmask;
 		using namespace Render;
+		using namespace ResourceManager;
 
-		Texture::Create(
-				resourceManager,
-				blankTex4x4Name,
-				TextureFlag::InitZero |
-				TextureFlagFromUsage(Usage::ShaderRead | Usage::DMADst),
-				4, 4, 1, 1,
-				1, 1,
-				GenericTextureFormat::R8G8B8A8_UNORM);
+		// alias resourceManager name (why can't I use 'using' C++ standard body!)
+		auto& rm = resourceManager;
+		Texture::Create(rm,
+						blankTex4x4Name,
+						TextureFlag::InitZero |
+						TextureFlagFromUsage(Usage::ShaderRead | Usage::DMADst),
+						4, 4, 1, 1,
+						1, 1,
+						GenericTextureFormat::R8G8B8A8_UNORM);
 
-		Texture::Create(
-				resourceManager,
-				colourRT0Name,
-				TextureFlag::NoInit |
-				TextureFlagFromUsage(Usage::RopRead | Usage::RopWrite | Usage::DMASrc | Usage::DMADst),
-				display->getWidth(), display->getHeight(), 1, 1,
-				1, 1,
-				GenericTextureFormat::R8G8B8A8_UNORM);
+		Texture::Create(rm,
+						colourRT0Name,
+						TextureFlag::NoInit |
+						TextureFlagFromUsage(Usage::RopRead | Usage::RopWrite | Usage::DMASrc | Usage::DMADst),
+						display->getWidth(), display->getHeight(), 1, 1,
+						1, 1,
+						GenericTextureFormat::R8G8B8A8_UNORM);
 
-		auto defaultRenderPassHandle = RenderPass::Create(
-				resourceManager,
-				defaultRenderPassName,
-				{{
-						 LoadOp::Clear,
-						 StoreOp::Store,
-						 GenericTextureFormat::R8G8B8A8_UNORM,
-				 }},
-				{0, 0, 0xFF, 0xFF});
+		RenderPass::Create(rm,
+						   defaultRenderPassName,
+						   {{
+									LoadOp::Clear,
+									StoreOp::Store,
+									GenericTextureFormat::R8G8B8A8_UNORM,
+							}},
+						   {0, 0, 0xFF, 0xFF});
 
-		RenderTarget::Create(
-				resourceManager,
-				defaultRenderTargetName,
-				defaultRenderPassHandle,
-				{resourceManager->openByName<Texture::Id>(colourRT0Name)},
-				{0, 0},
-				{display->getWidth(), display->getHeight()}
+		RenderTarget::Create(rm,
+							 defaultRenderTargetName,
+							 rm->openByName<RenderPassId>(defaultRenderPassName),
+							 {rm->openByName<TextureId>(colourRT0Name)},
+							 {0, 0},
+							 {display->getWidth(), display->getHeight()}
 		);
 
-		auto redOutFragmentShaderSourceHandle = ResourceManager::TextResource::Create(
-				resourceManager,
-				ResourceManager::ResourceNameView("mem$redOutFragmentShaderSource"sv),
-				"[[vk::location(0)]] float4 main()\n"
-				"{\n"
-				"		return float4(1.0f, 0.0f, 0.0f, 1.0f);\n"
-				"}\n");
-		auto redOutFragmentShaderHandle = SPIRVShader::Compile(
-				resourceManager,
-				redOutFragmentShaderName,
-				redOutFragmentShaderSourceHandle,
-				ShaderSourceLanguage::HLSL,
-				ShaderType::Fragment,
-				0);
+		auto const redShaderName = ResourceNameView("mem$redOutFragmentShaderSource"sv);
 
-		RenderPipeline::Create(
-				resourceManager,
-				defaultRenderPipelineName,
-				Topology::Triangles,
-				0, // flags
-				{}, // vertex
-				{}, // tess control
-				{}, // tess eval
-				{}, // geometry
-				redOutFragmentShaderHandle);
-		BindingTableMemoryMap::Create(
-				resourceManager,
-				defaultBindingTableMemoryMapName,
-				{});
+		TextResource::Create(rm,
+							 redShaderName,
+							 "[[vk::location(0)]] float4 main()\n"
+							 "{\n"
+							 "		return float4(1.0f, 0.0f, 0.0f, 1.0f);\n"
+							 "}\n");
+		SPIRVShader::Compile(rm,
+							 redOutFragmentShaderName,
+							 {rm->openByName<TextResourceId>(redShaderName)},
+							 ShaderSourceLanguage::HLSL,
+							 ShaderType::Fragment,
+							 0);
 
-		BindingTable::Create(
-				resourceManager,
-				defaultBindingTableName,
-				{resourceManager->openByName<BindingTableMemoryMapId>(defaultBindingTableMemoryMapName)});
+		BindingTableMemoryMap::Create(rm,
+									  defaultBindingTableMemoryMapName,
+									  {});
+
+		BindingTable::Create(rm,
+							 defaultBindingTableName,
+							 {rm->openByName<BindingTableMemoryMapId>(defaultBindingTableMemoryMapName)});
+
+		Viewport::Create(rm,
+						 defaultViewportName,
+						 {{
+								  0, 0,
+								  (float) display->getWidth(), (float) display->getHeight(),
+								  0.0f, 1.0f,
+								  {0, 0},
+								  {display->getWidth(), display->getHeight()}
+						  }}
+		);
+		VertexInput::Create(rm,
+							defaultVertexInputName,
+							{
+									{0, 0, VertexInputElement::Position, VertexInputType::Float3}
+							});
+		ROPBlender::Create(rm,
+						   defaultROPBlenderName,
+						   {{ROPTargetBlender::Disable}},
+						   {0.0f, 0.0f, 0.0f, 0.0f}
+		);
+
+		RenderPipeline::Create(rm,
+							   defaultRenderPipelineName,
+							   {
+									   FrontFace::CounterClockWise,
+									   CullMode::None,
+									   FillMode::Fill,
+									   {},
+									   CompareOp::Always,
+									   SampleCounts::One,
+									   0, // flags
+							   },
+							   Topology::Triangles,
+							   0, // flags
+							   {rm->openByName<BindingTableMemoryMapId>(defaultBindingTableMemoryMapName)},
+							   {}, // vertex
+							   {}, // tess control
+							   {}, // tess eval
+							   {}, // geometry
+							   {rm->openByName<SPIRVShaderId>(redOutFragmentShaderName)},
+							   {rm->openByName<RenderPassId>(defaultRenderPassName)},
+							   {rm->openByName<ROPBlenderId>(defaultROPBlenderName)},
+							   {rm->openByName<ViewportId>(defaultViewportName)},
+							   {rm->openByName<VertexInputId>(defaultVertexInputName)}
+		);
 	}
 
 	auto body() -> bool
@@ -176,19 +215,14 @@ struct App
 		using namespace Render;
 		using namespace std::string_view_literals;
 
-		// grab handles
-		auto blankTexHandle = resourceManager->openByName<Texture::Id>(blankTex4x4Name);
-		auto colourRT0Handle = resourceManager->openByName<Texture::Id>(colourRT0Name);
-		auto defaultRenderPassHandle = resourceManager->openByName<RenderPass::Id>(defaultRenderPassName);
-		auto defaultRenderTargetHandle = resourceManager->openByName<RenderTarget::Id>(defaultRenderTargetName);
-		auto fragShaderHandle = resourceManager->openByName<SPIRVShader::Id>(redOutFragmentShaderName);
-
-		// acquire the resources
-		auto blankTex = blankTexHandle.acquire<Texture>();
-		auto colourRT0 = colourRT0Handle.acquire<Texture>();
-		auto defaultRenderPass = defaultRenderPassHandle.acquire<RenderPass>();
-		auto defaultRenderTarget = defaultRenderTargetHandle.acquire<RenderTarget>();
-		auto fragShader = fragShaderHandle.acquire<SPIRVShader>();
+		// acquire the resources by name
+		auto& rm = resourceManager;
+		auto blankTex = rm->acquireByName<Texture>(blankTex4x4Name);
+		auto colourRT0 = rm->acquireByName<Texture>(colourRT0Name);
+		auto defaultRenderPass = rm->acquireByName<RenderPass>(defaultRenderPassName);
+		auto defaultRenderTarget = rm->acquireByName<RenderTarget>(defaultRenderTargetName);
+		auto fragShader = rm->acquireByName<SPIRVShader>(redOutFragmentShaderName);
+		auto renderPipeline = rm->acquireByName<RenderPipeline>(defaultRenderPipelineName);
 
 		auto renderQueue = device->getGeneralQueue();
 		auto rEncoderPool = device->makeEncoderPool(true, CommandQueueFlavour::Render);
@@ -208,7 +242,7 @@ struct App
 			renderEncoder->beginRenderPass(defaultRenderPass, defaultRenderTarget);
 			renderEncoder->endRenderPass();
 			colourRT0->transitionToDMASrc(encoder);
-			
+
 			encoder->end();
 
 			renderQueue->enqueue(encoder);

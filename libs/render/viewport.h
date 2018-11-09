@@ -32,7 +32,6 @@ struct alignas(8) Viewport : public ResourceManager::Resource<ViewportId>
 	static constexpr uint16_t MajorVersion = 1;
 	static constexpr uint16_t MinorVersion = 1;
 
-
 	static auto Create(
 			std::shared_ptr<ResourceManager::ResourceMan> rm_,
 			ResourceManager::ResourceNameView const& name_,

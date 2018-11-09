@@ -7,6 +7,7 @@
 #include "render/types.h"
 #include "resourcemanager/resourcehandle.h"
 #include "resourcemanager/resource.h"
+#include "render/rasterisationstate.h"
 
 namespace ResourceManager {
 class ResourceMan;
@@ -25,13 +26,19 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 	static auto Create(
 			std::shared_ptr<ResourceManager::ResourceMan> rm_,
 			ResourceManager::ResourceNameView const& name_,
+			RasterisationState const rasterisationState_,
 			Topology topology_,
 			uint8_t flags_,
+			std::vector<BindingTableMemoryMapHandle> const& memoryMap_,
 			SPIRVShaderHandle vertexShader_,
 			SPIRVShaderHandle tesselationControlShader_,
 			SPIRVShaderHandle tesselationEvalShader_,
 			SPIRVShaderHandle geometryShader_,
-			SPIRVShaderHandle fragmentShader_) -> RenderPipelineHandle;
+			SPIRVShaderHandle fragmentShader_,
+			RenderPassHandle renderPass_,
+			ROPBlenderHandle ropBlender_,
+			ViewportHandle viewport_,
+			VertexInputHandle vertexInput_) -> RenderPipelineHandle;
 
 	static constexpr uint8_t EnablePrimitiveRestartFlag = Core::Bit(0);
 
@@ -39,6 +46,8 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 	{
 		return (BindingTableMemoryMapHandle*) ((uint8_t*) (this + 1) + bindingTableMemoryMapsOffset);
 	}
+
+	RasterisationState rasterisationState;
 
 	Topology inputTopology;
 	uint8_t flags;
@@ -54,6 +63,7 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 	RenderPassHandle renderPass;
 	ROPBlenderHandle ropBlender;
 	ViewportHandle viewport;
+	VertexInputHandle vertexInput;
 
 };
 

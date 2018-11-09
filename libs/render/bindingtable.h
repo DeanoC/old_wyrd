@@ -6,23 +6,13 @@
 #include "render/resources.h"
 #include "render/types.h"
 #include "resourcemanager/resource.h"
+#include "resourcemanager/resourcehandle.h"
 #include "resourcemanager/resourcename.h"
 #include <variant>
 
 namespace ResourceManager { class ResourceMan; }
 
 namespace Render {
-
-struct SamplerBinding
-{
-	SamplerConstPtr sampler;
-};
-
-struct TextureBinding : public SamplerBinding
-{
-	TextureConstPtr texture;
-};
-
 
 struct BindingLayout
 {
@@ -33,8 +23,8 @@ struct BindingLayout
 
 struct Binding : public BindingLayout
 {
-	using Storage = std::variant<SamplerBinding, TextureBinding>;
-	Storage binding;
+	// use type to convert this back into the actual handle
+	ResourceManager::ResourceHandleBase resource;
 };
 
 struct alignas(8) BindingTableMemoryMap : public ResourceManager::Resource<BindingTableMemoryMapId>
