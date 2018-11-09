@@ -240,6 +240,7 @@ struct App
 
 			colourRT0->transitionToRenderTarget(encoder);
 			renderEncoder->beginRenderPass(defaultRenderPass, defaultRenderTarget);
+			renderEncoder->bind(renderPipeline);
 			renderEncoder->endRenderPass();
 			colourRT0->transitionToDMASrc(encoder);
 

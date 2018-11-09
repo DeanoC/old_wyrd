@@ -4,6 +4,7 @@
 #include "resourcemanager/resourceman.h"
 #include "resourcemanager/writer.h"
 #include "render/resources.h"
+#include "render/bindingtable.h"
 #include "render/image.h"
 #include "render/texture.h"
 #include "render/renderpass.h"
@@ -25,6 +26,8 @@ auto RegisterResourceHandlers(ResourceManager::ResourceMan& rm_) -> void
 	RenderPass::RegisterResourceHandler(rm_);
 	RenderTarget::RegisterResourceHandler(rm_);
 	SPIRVShader::RegisterResourceHandler(rm_);
+	BindingTable::RegisterResourceHandler(rm_);
+	BindingTableMemoryMap::RegisterResourceHandler(rm_);
 	RenderPipeline::RegisterResourceHandler(rm_);
 	ComputePipeline::RegisterResourceHandler(rm_);
 	ROPBlender::RegisterResourceHandler(rm_);

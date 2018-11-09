@@ -40,6 +40,31 @@ constexpr auto fromSingle(Render::ShaderType const in_) -> VkShaderStageFlagBits
 	}
 };
 
+constexpr auto fromSingle(Render::SampleCounts const in_) -> VkSampleCountFlagBits
+{
+	using namespace Render;
+	switch(in_)
+	{
+		case SampleCounts::One:
+			return VK_SAMPLE_COUNT_1_BIT;
+		case SampleCounts::Two:
+			return VK_SAMPLE_COUNT_2_BIT;
+		case SampleCounts::Four:
+			return VK_SAMPLE_COUNT_4_BIT;
+		case SampleCounts::Eight:
+			return VK_SAMPLE_COUNT_8_BIT;
+		case SampleCounts::Sixteen:
+			return VK_SAMPLE_COUNT_16_BIT;
+		case SampleCounts::ThirtyTwo:
+			return VK_SAMPLE_COUNT_32_BIT;
+		case SampleCounts::SixtyFour:
+			return VK_SAMPLE_COUNT_64_BIT;
+		default:
+			assert(false);
+			return VK_SAMPLE_COUNT_1_BIT;
+	}
+};
+
 constexpr auto from(Render::VertexInputType const in_) -> VkFormat
 {
 	using namespace Render;
@@ -94,14 +119,17 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 
 		for(auto& handle : shaderHandles)
 		{
-			auto shader = handle.acquire<Render::SPIRVShader>();
-			auto vulkanShader = shader->getStage<ShaderModule>(ShaderModule::s_stage);
-			VkPipelineShaderStageCreateInfo stage;
-			stage.module = vulkanShader->shaderModule;
-			stage.stage = fromSingle(shader->shaderType);
-			stage.pName = "main"; // TODO
-			stage.pSpecializationInfo = nullptr; // TODO
-			stages.push_back(stage);
+			if(handle.isValid())
+			{
+				auto shader = handle.acquire<Render::SPIRVShader>();
+				auto vulkanShader = shader->getStage<ShaderModule>(ShaderModule::s_stage);
+				VkPipelineShaderStageCreateInfo stage{VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
+				stage.module = vulkanShader->shaderModule;
+				stage.stage = fromSingle(shader->shaderType);
+				stage.pName = "main"; // TODO
+				stage.pSpecializationInfo = nullptr; // TODO
+				stages.push_back(stage);
+			}
 		}
 		createInfo.stageCount = (uint32_t) stages.size();
 		createInfo.pStages = stages.data();
@@ -135,6 +163,8 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 			inputBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 			inputBinding.stride = vertexInput->getStride();
 		}
+		vertexCreateInfo.pVertexAttributeDescriptions = vinputAttr.data();
+		vertexCreateInfo.pVertexBindingDescriptions = vinputBinding.data();
 		createInfo.pVertexInputState = &vertexCreateInfo;
 
 		auto const& rasterState = renderPipeline->rasterisationState;
@@ -152,7 +182,7 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 		depthStencilStateCreateInfo.depthTestEnable = rasterState.isDepthTestEnabled();
 		depthStencilStateCreateInfo.depthWriteEnable = rasterState.isDepthWriteEnabled();
 		depthStencilStateCreateInfo.depthBoundsTestEnable = rasterState.isDepthBoundsEnabled();
-		depthStencilStateCreateInfo.stencilTestEnable = rasterState.isStencilTestEnable();
+		depthStencilStateCreateInfo.stencilTestEnable = rasterState.isStencilTestEnabled();
 		rasterStateCreateInfo.depthClampEnable = rasterState.isDepthClampEnabled();
 
 		depthStencilStateCreateInfo.depthCompareOp = from(rasterState.depthCompare);
@@ -182,16 +212,26 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 		rasterStateCreateInfo.depthBiasConstantFactor = rasterState.depthBias.constantFactor;
 		rasterStateCreateInfo.depthBiasSlopeFactor = rasterState.depthBias.slopeFactor;
 		tessStateCreateInfo.patchControlPoints = rasterState.patchControlPointsCount;
+		multisampleStateCreateInfo.rasterizationSamples = fromSingle(rasterState.sampleCount);
+		multisampleStateCreateInfo.alphaToCoverageEnable = rasterState.isAlphaToCoverageEnabled();
+		multisampleStateCreateInfo.alphaToOneEnable = rasterState.isAlphaToOneEnabled();
+		multisampleStateCreateInfo.minSampleShading = rasterState.minSampleShadingRate;
+		multisampleStateCreateInfo.pSampleMask = (VkSampleMask*) &rasterState.sampleMask;
+
+		createInfo.pRasterizationState = &rasterStateCreateInfo;
+		createInfo.pTessellationState = &tessStateCreateInfo;
+		createInfo.pDepthStencilState = &depthStencilStateCreateInfo;
+		createInfo.pMultisampleState = &multisampleStateCreateInfo;
 
 		auto ropBlender = renderPipeline->ropBlender.acquire<Render::ROPBlender>();
 		VkPipelineColorBlendStateCreateInfo colourBlendCreateInfo{
 				VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
 		colourBlendCreateInfo.logicOpEnable = ropBlender->isLogicBlender();
 		colourBlendCreateInfo.logicOp = from(ropBlender->logicOp);
-		colourBlendCreateInfo.attachmentCount = ropBlender->numTargets;
 		std::memcpy(colourBlendCreateInfo.blendConstants, ropBlender->constants, sizeof(float) * 4);
-		std::vector<VkPipelineColorBlendAttachmentState> vulkanBlenders(ropBlender->numTargets);
 
+		colourBlendCreateInfo.attachmentCount = ropBlender->numTargets;
+		std::vector<VkPipelineColorBlendAttachmentState> vulkanBlenders(ropBlender->numTargets);
 		for(auto j = 0u; j < ropBlender->numTargets; ++j)
 		{
 			auto const& blender = ropBlender->targetBlenders()[j];
@@ -205,6 +245,7 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 			vkblender.dstAlphaBlendFactor = from(blender.dstAlphaFactor);
 			vkblender.colorWriteMask = from(blender.writeMask);
 		}
+		colourBlendCreateInfo.pAttachments = vulkanBlenders.data();
 		createInfo.pColorBlendState = &colourBlendCreateInfo;
 
 		auto viewport = renderPipeline->viewport.acquire<Render::Viewport>();

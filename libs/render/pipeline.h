@@ -44,7 +44,7 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 
 	BindingTableMemoryMapHandle* getBindingTableMemoryMaps()
 	{
-		return (BindingTableMemoryMapHandle*) ((uint8_t*) (this + 1) + bindingTableMemoryMapsOffset);
+		return (BindingTableMemoryMapHandle*) (this + 1);
 	}
 
 	RasterisationState rasterisationState;
@@ -53,7 +53,6 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 	uint8_t flags;
 	uint8_t numBindingTableMemoryMaps;
 	uint8_t padd;
-	uint32_t bindingTableMemoryMapsOffset;
 
 	SPIRVShaderHandle vertexShader;
 	SPIRVShaderHandle tesselationControlShader;

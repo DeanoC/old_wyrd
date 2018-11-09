@@ -53,8 +53,6 @@ struct ResourceHandle
 public:
 	friend class ResourceMan;
 
-	virtual ~ResourceHandle() = default;
-
 	auto isValid() const { return base.isValid(); }
 
 	auto acquire() -> typename Resource<id_>::Ptr

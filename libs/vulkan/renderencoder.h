@@ -23,6 +23,7 @@ struct RenderEncoder : public Render::IRenderEncoder
 	) -> void final;
 	auto endRenderPass() -> void final;
 	auto blit(Render::TexturePtr const& src_, Render::TexturePtr const& dst_) -> void final;
+	auto bind(Render::RenderPipelinePtr const& pipeline_) -> void final;
 
 #define GENERAL_CB_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(commandBuffer, args...); }
 #define GENERAL_CB_VK_FUNC_EXT(name, extension) GENERAL_CB_VK_FUNC(name)

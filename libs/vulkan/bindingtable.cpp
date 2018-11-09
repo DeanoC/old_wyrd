@@ -15,7 +15,7 @@ auto BindingTableMemoryMap::RegisterResourceHandler(ResourceManager::ResourceMan
 								  ResourceManager::ResourceBase::Ptr ptr_) -> bool
 	{
 		auto bindingTableMM = std::static_pointer_cast<Render::BindingTableMemoryMap>(ptr_);
-		auto vulkanBindingtableMM = bindingTableMM->getStage<Vulkan::BindingTableMemoryMap>(stage_);
+		auto vulkanBindingtableMM = bindingTableMM->getStage<Vulkan::BindingTableMemoryMap, false>(stage_);
 
 		auto device = device_.lock();
 		if(!device) return false;
@@ -42,8 +42,8 @@ auto BindingTableMemoryMap::RegisterResourceHandler(ResourceManager::ResourceMan
 
 	auto deleteFunc = [device_](int stage_, void* ptr_) -> bool
 	{
-		auto bindingTable = (Render::BindingTable*) ptr_;
-		auto vulkanBindingTable = bindingTable->getStage<Vulkan::BindingTable>(stage_);
+		auto bindingTable = (Render::BindingTableMemoryMap*) ptr_;
+		auto vulkanBindingTable = bindingTable->getStage<Vulkan::BindingTableMemoryMap>(stage_);
 
 		auto device = device_.lock();
 		if(!device) return false;
@@ -51,8 +51,8 @@ auto BindingTableMemoryMap::RegisterResourceHandler(ResourceManager::ResourceMan
 		return true;
 	};
 
-	s_stage = rm_.registerNextHandler(Render::BindingTableId,
-									  {sizeof(Vulkan::BindingTable), registerFunc, deleteFunc});
+	s_stage = rm_.registerNextHandler(Render::BindingTableMemoryMapId,
+									  {sizeof(Vulkan::BindingTableMemoryMap), registerFunc, deleteFunc});
 }
 
 auto BindingTable::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device::WeakPtr device_) -> void

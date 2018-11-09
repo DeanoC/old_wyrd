@@ -20,7 +20,7 @@ auto ShaderModule::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 
 		VkShaderModuleCreateInfo moduleCreateInfo{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
 		moduleCreateInfo.pCode = shader->getByteCode();
-		moduleCreateInfo.codeSize = shader->codeCount;
+		moduleCreateInfo.codeSize = shader->codeCount * sizeof(uint32_t);
 
 		vulkanShaderModule->shaderModule = device->createShaderModule(moduleCreateInfo);
 		vulkanShaderModule->vtable = &device->shaderModuleVkVTable;

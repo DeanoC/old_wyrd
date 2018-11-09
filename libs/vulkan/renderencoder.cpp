@@ -5,6 +5,8 @@
 #include "vulkan/renderencoder.h"
 #include "vulkan/renderpass.h"
 #include "vulkan/rendertarget.h"
+#include "render/pipeline.h"
+#include "vulkan/pipeline.h"
 
 namespace Vulkan {
 
@@ -182,6 +184,12 @@ auto RenderEncoder::resolveForDisplay(
 		// TODO MSAA resolve
 		assert(false);
 	}
+}
+
+auto RenderEncoder::bind(Render::RenderPipelinePtr const& pipeline_) -> void
+{
+	auto pipeline = pipeline_->getStage<RenderPipeline>(RenderPipeline::s_stage);
+	vkCmdBindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipeline);
 }
 
 }

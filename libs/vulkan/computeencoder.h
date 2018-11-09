@@ -18,6 +18,7 @@ struct ComputeEncoder : public Render::IComputeEncoder
 
 	auto clearTexture(std::shared_ptr<Render::Texture> const& texture_,
 					  std::array<float_t, 4> const& floats_) -> void final;
+	auto bind(Render::ComputePipelinePtr const& pipeline_) -> void final;
 
 #define GENERAL_CB_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(commandBuffer, args...); }
 #define GENERAL_CB_VK_FUNC_EXT(name, extension) GENERAL_CB_VK_FUNC(name)

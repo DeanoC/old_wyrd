@@ -95,16 +95,16 @@ public:
 	auto createShaderModule(VkShaderModuleCreateInfo const& createInfo_) -> VkShaderModule;
 	auto destroyShaderModule(VkShaderModule shaderModule_) -> void;
 
-	auto createDescriptorPool(VkDescriptorPoolCreateInfo& createInfo_) -> VkDescriptorPool;
+	auto createDescriptorPool(VkDescriptorPoolCreateInfo const& createInfo_) -> VkDescriptorPool;
 	auto destroyDescriptorPool(VkDescriptorPool descriptorPool_) -> void;
 
-	auto createDescriptorSetLayout(VkDescriptorSetLayoutCreateInfo& createInfo_) -> VkDescriptorSetLayout;
+	auto createDescriptorSetLayout(VkDescriptorSetLayoutCreateInfo const& createInfo_) -> VkDescriptorSetLayout;
 	auto destroyDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout_) -> void;
 
-	auto allocDescriptorSet(VkDescriptorSetAllocateInfo& allocInfo) -> VkDescriptorSet;
+	auto allocDescriptorSet(VkDescriptorSetAllocateInfo const& allocInfo) -> VkDescriptorSet;
 	auto freeDescriptorSet(VkDescriptorSet descriptorSet_) -> void;
 
-	auto createPipelineLayout(VkPipelineLayoutCreateInfo& createInfo) -> VkPipelineLayout;
+	auto createPipelineLayout(VkPipelineLayoutCreateInfo const& createInfo) -> VkPipelineLayout;
 	auto destroyPipelineLayout(VkPipelineLayout pipelineLayout_) -> void;
 
 	auto getDescriptorPool() -> VkDescriptorPool { return descriptorPool; }

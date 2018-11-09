@@ -74,12 +74,14 @@ struct IRenderEncoder
 	virtual auto beginRenderPass(RenderPassPtr const& renderPass_, RenderTargetPtr const& renderTarget_) -> void = 0;
 	virtual auto endRenderPass() -> void = 0;
 	virtual auto blit(TexturePtr const& src_, TexturePtr const& dst_) -> void = 0;
+	virtual auto bind(RenderPipelinePtr const& pipeline_) -> void = 0;
 };
 
 struct IComputeEncoder
 {
 	virtual auto clearTexture(std::shared_ptr<Texture> const& texture_,
 							  std::array<float_t, 4> const& floats_) -> void = 0;
+	virtual auto bind(ComputePipelinePtr const& pipeline_) -> void = 0;
 };
 
 struct EncoderPool

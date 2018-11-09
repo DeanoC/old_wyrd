@@ -50,9 +50,15 @@ struct RasterisationState
 
 	auto isDepthBoundsEnabled() const { return flags & DepthBoundsEnableFlag; }
 
-	auto isStencilTestEnable() const { return flags & StencilTestEnableFlag; }
+	auto isStencilTestEnabled() const { return flags & StencilTestEnableFlag; }
 
 	auto isDiscardEnabled() const { return flags & DiscardFlag; }
+
+	auto isSampleRateShadingEnabled() const { return flags & SampleRateShadingFlag; }
+
+	auto isAlphaToCoverageEnabled() const { return flags & AlphaToCoverageFlag; }
+
+	auto isAlphaToOneEnabled() const { return flags & AlphaToOneFlag; }
 
 	FrontFace frontFace;
 	CullMode cullMode;
@@ -66,9 +72,9 @@ struct RasterisationState
 	StencilState frontStencil;
 	StencilState backStencil;
 
-	float lineWidth;
-	float minDepthBounds;
-	float maxDepthBounds;
+	float lineWidth = 1.0f;
+	float minDepthBounds = 0.0f;
+	float maxDepthBounds = 0.0f;
 	float minSampleShadingRate;
 
 	DepthBias depthBias;

@@ -651,6 +651,54 @@ auto Device::destroyShaderModule(VkShaderModule shaderModule_) -> void
 	vkDestroyShaderModule(shaderModule_, &allocationCallbacks);
 }
 
+auto Device::createDescriptorPool(VkDescriptorPoolCreateInfo const& createInfo_) -> VkDescriptorPool
+{
+	VkDescriptorPool pool;
+	CHKED(vkCreateDescriptorPool(&createInfo_, &allocationCallbacks, &pool));
+	return pool;
+}
+
+auto Device::destroyDescriptorPool(VkDescriptorPool descriptorPool_) -> void
+{
+	vkDestroyDescriptorPool(descriptorPool_, &allocationCallbacks);
+}
+
+auto Device::createDescriptorSetLayout(VkDescriptorSetLayoutCreateInfo const& createInfo_) -> VkDescriptorSetLayout
+{
+	VkDescriptorSetLayout layout;
+	CHKED(vkCreateDescriptorSetLayout(&createInfo_, &allocationCallbacks, &layout));
+	return layout;
+}
+
+auto Device::destroyDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout_) -> void
+{
+	vkDestroyDescriptorSetLayout(descriptorSetLayout_, &allocationCallbacks);
+}
+
+auto Device::allocDescriptorSet(VkDescriptorSetAllocateInfo const& allocInfo) -> VkDescriptorSet
+{
+	VkDescriptorSet descriptorSet;
+	vkAllocateDescriptorSets(&allocInfo, &descriptorSet);
+	return descriptorSet;
+}
+
+auto Device::freeDescriptorSet(VkDescriptorSet descriptorSet_) -> void
+{
+	vkFreeDescriptorSets(getDescriptorPool(), 1, &descriptorSet_);
+}
+
+auto Device::createPipelineLayout(VkPipelineLayoutCreateInfo const& createInfo) -> VkPipelineLayout
+{
+	VkPipelineLayout layout;
+	CHKED(vkCreatePipelineLayout(&createInfo, &allocationCallbacks, &layout));
+	return layout;
+}
+
+auto Device::destroyPipelineLayout(VkPipelineLayout pipelineLayout_) -> void
+{
+	vkDestroyPipelineLayout(pipelineLayout_, &allocationCallbacks);
+}
+
 auto Device::houseKeepTick() -> void
 {
 	dmaEncoderPool->reset();
