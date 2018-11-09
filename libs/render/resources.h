@@ -24,6 +24,8 @@ struct ComputePipeline;
 struct BindingTable;
 struct BindingTableMemoryMap;
 struct Sampler;
+struct ROPBlender;
+struct Viewport;
 
 auto RegisterResourceHandlers(ResourceManager::ResourceMan& rm_) -> void;
 
@@ -40,6 +42,8 @@ static constexpr ResourceManager::ResourceId ComputePipelineId = "CPIP"_resource
 static constexpr ResourceManager::ResourceId BindingTableMemoryMapId = "BNDM"_resource_id;
 static constexpr ResourceManager::ResourceId BindingTableId = "BIND"_resource_id;
 static constexpr ResourceManager::ResourceId SamplerId = "SAMP"_resource_id;
+static constexpr ResourceManager::ResourceId ROPBlenderId = "ROPB"_resource_id;
+static constexpr ResourceManager::ResourceId ViewportId = "VIEW"_resource_id;
 
 using GenericImageHandle = ResourceManager::ResourceHandle<GenericImageId>;
 using RenderPassHandle = ResourceManager::ResourceHandle<RenderPassId>;
@@ -48,9 +52,11 @@ using TextureHandle = ResourceManager::ResourceHandle<TextureId>;
 using SPIRVShaderHandle = ResourceManager::ResourceHandle<SPIRVShaderId>;
 using RenderPipelineHandle = ResourceManager::ResourceHandle<RenderPipelineId>;
 using ComputePipelineHandle = ResourceManager::ResourceHandle<ComputePipelineId>;
-using BindingTableMemoryMapHandler = ResourceManager::ResourceHandle<BindingTableMemoryMapId>;
-using BindingTableHandler = ResourceManager::ResourceHandle<BindingTableId>;
-using SamplerHandler = ResourceManager::ResourceHandle<SamplerId>;
+using BindingTableMemoryMapHandle = ResourceManager::ResourceHandle<BindingTableMemoryMapId>;
+using BindingTableHandle = ResourceManager::ResourceHandle<BindingTableId>;
+using SamplerHandle = ResourceManager::ResourceHandle<SamplerId>;
+using ROPBlenderHandle = ResourceManager::ResourceHandle<ROPBlenderId>;
+using ViewportHandle = ResourceManager::ResourceHandle<ViewportId>;
 
 using GenericImagePtr = std::shared_ptr<GenericImage>;
 using RenderPassPtr = std::shared_ptr<RenderPass>;
@@ -62,6 +68,8 @@ using ComputePipelinePtr = std::shared_ptr<ComputePipeline>;
 using BindingTableMemoryMapPtr = std::shared_ptr<BindingTableMemoryMap>;
 using BindingTablePtr = std::shared_ptr<BindingTable>;
 using SamplerPtr = std::shared_ptr<Sampler>;
+using ROPBlenderPtr = std::shared_ptr<ROPBlender>;
+using ViewportPtr = std::shared_ptr<Viewport>;
 
 using GenericImageConstPtr = std::shared_ptr<GenericImage const>;
 using RenderPassConstPtr = std::shared_ptr<RenderPass const>;
@@ -73,6 +81,8 @@ using ComputePipelineConstPtr = std::shared_ptr<ComputePipeline const>;
 using BindingTableMemoryMapConstPtr = std::shared_ptr<BindingTableMemoryMap const>;
 using BindingTableConstPtr = std::shared_ptr<BindingTable const>;
 using SamplerConstPtr = std::shared_ptr<Sampler const>;
+using ROPBlenderConstPtr = std::shared_ptr<ROPBlender const>;
+using ViewportConstPtr = std::shared_ptr<Viewport const>;
 
 }
 

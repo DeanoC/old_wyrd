@@ -69,7 +69,7 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void
 		return true;
 	};
 
-	rm_.registerResourceHandler(Id, {0, load, destroy}, changed, save);
+	rm_.registerHandler(Id, {0, load, destroy}, changed, save);
 
 }
 
@@ -133,7 +133,7 @@ auto Texture::Create(
 	tex.imageHandle = imageHandle_;
 
 	rm_->placeInStorage(name_, tex);
-	return rm_->openResourceByName<Id>(name_);
+	return rm_->openByName<Id>(name_);
 }
 
 } // end namespace

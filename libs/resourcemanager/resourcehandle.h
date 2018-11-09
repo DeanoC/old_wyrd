@@ -32,7 +32,7 @@ struct ResourceHandleBase
 		uint64_t index = InvalidIndex;
 		char const* linkName;
 	};
-	ResourceId type;
+	ResourceId id;
 	union
 	{
 		uint16_t managerIndex;

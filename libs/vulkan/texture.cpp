@@ -1,7 +1,7 @@
 #include "core/core.h"
 #include "vulkan/api.h"
+#include "render/texture.h"
 #include "vulkan/texture.h"
-#include "vulkan/system.h"
 #include "vulkan/vkfcracker.h"
 #include "vulkan/encoder.h"
 #include "resourcemanager/resourceman.h"
@@ -18,9 +18,7 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 		auto texture = std::static_pointer_cast<Render::Texture>(ptr_);
 		auto vulkanTexture = texture->getStage<Vulkan::Texture, false>(stage_);
 		new(vulkanTexture) Vulkan::Texture{};
-
-		auto[getResourceManagerFunc, resolverFunc, getNameFunc] = resolver_;
-
+		auto[getRMFunc, resolverFunc, resourceNameFunc] = resolver_;
 
 		vulkanTexture->cpuTexture = texture.get();
 
@@ -87,7 +85,7 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 		if(alloc == nullptr) return false;
 		vulkanTexture->image = image;
 		vulkanTexture->allocation = alloc;
-		std::string resourceName(getNameFunc().getResourceName());
+		std::string resourceName(resourceNameFunc().getResourceName());
 		device->debugNameVkObject(*(uint64_t*) &image, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, resourceName.c_str());
 
 		// default range
@@ -152,7 +150,7 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 		return true;
 	};
 
-	s_stage = rm_.registerNextResourceHandler(Id, {sizeof(Vulkan::Texture), registerFunc, deleteFunc});
+	s_stage = rm_.registerNextHandler(Id, {sizeof(Vulkan::Texture), registerFunc, deleteFunc});
 }
 
 auto Texture::transitionToRenderTarget(std::shared_ptr<Render::Encoder> const& encoder_) -> void

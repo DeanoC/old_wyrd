@@ -10,6 +10,8 @@
 #include "render/rendertarget.h"
 #include "render/shader.h"
 #include "render/pipeline.h"
+#include "render/ropblender.h"
+#include "render/viewport.h"
 
 namespace Render {
 
@@ -24,6 +26,8 @@ auto RegisterResourceHandlers(ResourceManager::ResourceMan& rm_) -> void
 	SPIRVShader::RegisterResourceHandler(rm_);
 	RenderPipeline::RegisterResourceHandler(rm_);
 	ComputePipeline::RegisterResourceHandler(rm_);
+	ROPBlender::RegisterResourceHandler(rm_);
+	Viewport::RegisterResourceHandler(rm_);
 
 }
 

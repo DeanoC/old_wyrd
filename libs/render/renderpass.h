@@ -31,8 +31,6 @@ struct alignas(8) RenderPass : public ResourceManager::Resource<RenderPassId>
 		LoadOp stencilLoad; // nop except for stencil formats
 		StoreOp stencilStore;
 	};
-	static constexpr uint8_t MaxTargets = 16;
-
 	static auto Create(
 			std::shared_ptr<ResourceManager::ResourceMan> rm_,
 			ResourceManager::ResourceNameView const& name_,

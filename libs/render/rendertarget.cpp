@@ -44,7 +44,7 @@ auto RenderTarget::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) ->
 		return true;
 	};
 
-	rm_.registerResourceHandler(Id, {0, load, destroy}, changed, save);
+	rm_.registerHandler(Id, {0, load, destroy}, changed, save);
 
 }
 
@@ -72,7 +72,7 @@ auto RenderTarget::Create(
 
 	rm_->placeInStorage(name_, *rt);
 	free(rt);
-	return rm_->openResourceByName<Id>(name_);
+	return rm_->openByName<Id>(name_);
 }
 
 

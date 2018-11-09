@@ -59,8 +59,8 @@ auto ResourceMan::getStorageForPrefix(std::string_view prefix_) -> IStorage::Ptr
 	else return storage->second;
 }
 
-void ResourceMan::registerResourceHandler(ResourceId id_, ResourceHandler handler_, HasResourceChangedFunc changed_,
-										  SaveResourceFunc save_)
+void ResourceMan::registerHandler(ResourceId id_, ResourceHandler handler_, HasResourceChangedFunc changed_,
+								  SaveResourceFunc save_)
 {
 	if(typeToHandler.find(id_) != typeToHandler.end())
 	{
@@ -73,7 +73,7 @@ void ResourceMan::registerResourceHandler(ResourceId id_, ResourceHandler handle
 	typeToSavers[id_] = {changed_, save_};
 }
 
-auto ResourceMan::registerNextResourceHandler(ResourceId id_, ResourceHandler handler_) -> int
+auto ResourceMan::registerNextHandler(ResourceId id_, ResourceHandler handler_) -> int
 {
 	assert(typeToHandler.find(id_) != typeToHandler.end());
 	assert(std::get<1>(typeToHandler[id_][0]) != nullptr);
@@ -91,7 +91,7 @@ auto ResourceMan::registerNextResourceHandler(ResourceId id_, ResourceHandler ha
 	return -1;
 }
 
-auto ResourceMan::removeResourceHandler(ResourceId id_, int stage_) -> void
+auto ResourceMan::removeHandler(ResourceId id_, int stage_) -> void
 {
 	assert(typeToHandler.find(id_) != typeToHandler.end());
 	if(stage_ == 0)
@@ -138,12 +138,6 @@ auto ResourceMan::GetNameFromHandleBase(ResourceHandleBase const& base_) -> Reso
 	return rm->indexToResourceName[base_.index].getName();
 }
 
-auto ResourceMan::openBaseResourceByIdAndName(ResourceId id_, ResourceNameView const name_) -> ResourceHandleBase&
-{
-	uint64_t id = getIndexFromName(id_, name_);
-	return indexToBase[id];
-}
-
 auto ResourceHandleBase::acquire() -> ResourceBase::Ptr
 {
 	auto resourceMan = ResourceMan::GetFromIndex(managerIndex);
@@ -160,7 +154,7 @@ auto ResourceMan::acquire(ResourceHandleBase const& base_) -> ResourceBase::Ptr
 {
 	if(base_.index == ResourceHandleBase::InvalidIndex) return ResourceBase::Ptr();
 
-	assert(typeToHandler.find(base_.type) != typeToHandler.end());
+	assert(typeToHandler.find(base_.id) != typeToHandler.end());
 	ResourceBase::Ptr ptr;
 	while(!ptr)
 	{
@@ -180,7 +174,7 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 	ResourceBase::Ptr cached = resourceCache.lookup(base_.index);
 	if(cached) return cached;
 
-	assert(typeToHandler.find(base_.type) != typeToHandler.end());
+	assert(typeToHandler.find(base_.id) != typeToHandler.end());
 
 	// get storage manager
 	assert(indexToResourceName.find(base_.index) != indexToResourceName.end());
@@ -291,10 +285,10 @@ auto ResourceMan::resolveLink(ResourceHandleBase& link_, ResourceNameView const&
 	if(nameView.isCurrentLink())
 	{
 		ResourceName name(current_.getStorage(), current_.getName(), nameView.getSubObject());
-		index = getIndexFromName(link_.type, name.getView());
+		index = getIndexFromName(link_.id, name.getView());
 	} else
 	{
-		index = getIndexFromName(link_.type, nameView);
+		index = getIndexFromName(link_.id, nameView);
 	}
 
 	link_.index = index;

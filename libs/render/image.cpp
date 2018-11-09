@@ -55,12 +55,12 @@ auto GenericImage::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) ->
 					w_.write((uint32_t) image->format,
 							 fmt::format("Format: {0}", GtfCracker::name(image->format)));
 					w_.align();
-					w_.write_byte_array(image->dataStore, image->dataSize);
+					w_.write_byte_array(image->data(), image->dataSize);
 				});
 		return true;
 	};
 
-	rm_.registerResourceHandler(Id, {0, load, destroy}, changed, save);
+	rm_.registerHandler(Id, {0, load, destroy}, changed, save);
 
 }
 
@@ -75,23 +75,22 @@ auto GenericImage::Create(
 {
 	size_t const dataSize = computeDataSize(width_, height_, depth_, slices_, fmt_);
 	size_t const totalSize = Core::alignTo(sizeof(Image) + dataSize, 8);
-	GenericImage* img = (GenericImage*) malloc(totalSize);
+	auto* obj = (GenericImage*) malloc(totalSize);
 
-	uint8_t* dataPtr = ((uint8_t*) img) + sizeof(Image);
+	uint8_t* dataPtr = ((uint8_t*) (obj + 1));
 	std::memset(dataPtr, 0, dataSize);
+	obj->sizeAndStageCount = totalSize;
+	obj->dataSize = dataSize;
+	obj->width = width_;
+	obj->height = height_;
+	obj->depth = depth_;
+	obj->slices = slices_;
+	obj->format = fmt_;
 
-	img->dataSize = dataSize;
-	img->width = width_;
-	img->height = height_;
-	img->depth = depth_;
-	img->slices = slices_;
-	img->format = fmt_;
-	img->dataStore = dataPtr;
-	img->sizeAndStageCount = totalSize;
-	rm_->placeInStorage(name_, *img);
-	free(img);
+	rm_->placeInStorage(name_, *obj);
+	free(obj);
 
-	return rm_->openResourceByName<Id>(name_);
+	return rm_->openByName<Id>(name_);
 }
 
 } // end namespace

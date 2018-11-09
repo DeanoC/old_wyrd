@@ -4,6 +4,8 @@
 #include "render/generictextureformat.h"
 #include "render/gtfcracker.h"
 #include "render/image.h"
+#include "resourcemanager/resourceman.h"
+#include "fmt/format.h"
 
 auto ImageTester(size_t w_, size_t h_, size_t d_, size_t s_, Render::GenericTextureFormat fmt_, bool doLog_) -> void
 {
@@ -11,11 +13,19 @@ auto ImageTester(size_t w_, size_t h_, size_t d_, size_t s_, Render::GenericText
 	using namespace Catch::literals;
 	if(fmt_ == GenericTextureFormat::UNDEFINED) return;
 
-	auto img = GenericImage::Create(w_, h_, d_, s_, fmt_);
+	auto rm = ResourceManager::ResourceMan::Create();
+	auto memstorage = std::make_shared<ResourceManager::MemStorage>();
+	rm->registerStorageHandler(memstorage);
+	GenericImage::RegisterResourceHandler(*rm);
+
+	std::string name = fmt::format("mem${}_{}_{}_{}_{}_Image", w_, h_, d_, s_, GtfCracker::name(fmt_));
+	ResourceManager::ResourceName rname(name);
+
+	auto imgHandle = GenericImage::Create(rm, rname.getView(), w_, h_, d_, s_, fmt_);
+	auto img = imgHandle.acquire<GenericImage>();
 	if(doLog_)
 	{
-		LOG_S(INFO) << "Testing " << GtfCracker::name(fmt_) << " @ "
-					<< w_ << " x " << h_ << " x " << d_ << " x " << s_;
+		LOG_S(INFO) << "Testing " << name;
 	}
 	REQUIRE(img);
 	REQUIRE(img->width == w_);

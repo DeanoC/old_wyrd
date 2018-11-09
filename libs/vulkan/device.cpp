@@ -1,7 +1,9 @@
 #include "core/core.h"
 #include "render/types.h"
+#include "vulkan/types.h"
 #include "render/gtfcracker.h"
 #include "vulkan/device.h"
+#include "vulkan/bindingtable.h"
 #include "vulkan/commandqueue.h"
 #include "vulkan/display.h"
 #include "vulkan/encoder.h"
@@ -348,6 +350,25 @@ Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
 		assert(computeSpecificQueue);
 		dmaOnlyQueue = dmaOnlyQueue ? dmaOnlyQueue : computeSpecificQueue;
 	}
+
+	std::array<VkDescriptorPoolSize, 9> poolSizes{
+			from(Render::BindingTableType::Texture), 2000,
+			from(Render::BindingTableType::RWTexture), 500,
+			from(Render::BindingTableType::Buffer), 2000,
+			from(Render::BindingTableType::RWBuffer), 500,
+			from(Render::BindingTableType::TextureBuffer), 50,
+			from(Render::BindingTableType::RWTextureBuffer), 50,
+			from(Render::BindingTableType::DynamicBuffer), 100,
+			from(Render::BindingTableType::DynamicRWBuffer), 100,
+			from(Render::BindingTableType::Sampler), 32
+	};
+
+	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+	descriptorPoolCreateInfo.poolSizeCount = (uint32_t) poolSizes.size();
+	descriptorPoolCreateInfo.pPoolSizes = poolSizes.data();
+	descriptorPoolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	descriptorPoolCreateInfo.maxSets = 2000;
+	CHKED(vkCreateDescriptorPool(&descriptorPoolCreateInfo, &allocationCallbacks, &descriptorPool));
 
 }
 

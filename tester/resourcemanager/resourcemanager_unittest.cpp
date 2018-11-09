@@ -35,17 +35,17 @@ SCENARIO("Resource Manager has mem storage", "[resourcemanager]")
 		auto memstorage = std::make_shared<MemStorage>();
 		REQUIRE(memstorage);
 		rm->registerStorageHandler(memstorage);
-		rm->registerResourceHandler("TEST"_resource_id,
-									{0, [](int stage_, ResourceManager::ResolverInterface, uint16_t majorVersion_,
-										   uint16_t minorVersion_, std::shared_ptr<void> ptr_) -> bool
-									{
-										if(majorVersion_ != 0) return false;
-										if(minorVersion_ != 0) return false;
-										if(stage_ != 0) return false;
+		rm->registerHandler("TEST"_resource_id,
+							{0, [](int stage_, ResourceManager::ResolverInterface, uint16_t majorVersion_,
+								   uint16_t minorVersion_, std::shared_ptr<void> ptr_) -> bool
+							{
+								if(majorVersion_ != 0) return false;
+								if(minorVersion_ != 0) return false;
+								if(stage_ != 0) return false;
 
-										return true;
-									}, [](int, void *) -> bool
-									 { return true; }});
+								return true;
+							}, [](int, void*) -> bool
+							 { return true; }});
 
 		bool ok0 = memstorage->addMemory("test"s, "TEST"_resource_id, 0, 0, TestTxt0, strlen(TestTxt0) + 1);
 		REQUIRE(ok0);
@@ -54,8 +54,8 @@ SCENARIO("Resource Manager has mem storage", "[resourcemanager]")
 
 		WHEN("resource handles are opened")
 		{
-			auto handle0 = rm->openResourceByName<"TEST"_resource_id>("mem$test"sv);
-			auto handle1 = rm->openResourceByName<"TEST"_resource_id>("mem$test2"sv);
+			auto handle0 = rm->openByName<"TEST"_resource_id>("mem$test"sv);
+			auto handle1 = rm->openByName<"TEST"_resource_id>("mem$test2"sv);
 			WHEN("resources are acquired")
 			{
 				auto resource0 = handle0.acquire();
@@ -77,30 +77,30 @@ SCENARIO("Resource Manager has mem storage", "[resourcemanager]")
 			}
 		} WHEN("TextResource is added and used")
 		{
-			auto stage = rm->registerNextResourceHandler(TextResource::Id,
-				 {10, [&testText](int stage_, ResourceManager::ResolverInterface,
-								  uint16_t majorVersion_,
-								  uint16_t minorVersion_,
-								  ResourceBase::Ptr ptr_) -> bool
-				 {
-					 if(majorVersion_ != 0) return false;
-					 if(minorVersion_ != 0) return false;
-					 if(stage_ != 1) return false;
+			auto stage = rm->registerNextHandler(TextResource::Id,
+												 {10, [&testText](int stage_, ResourceManager::ResolverInterface,
+																  uint16_t majorVersion_,
+																  uint16_t minorVersion_,
+																  ResourceBase::Ptr ptr_) -> bool
+												 {
+													 if(majorVersion_ != 0) return false;
+													 if(minorVersion_ != 0) return false;
+													 if(stage_ != 1) return false;
 
-					 auto txtr = std::static_pointer_cast<TextResource>(ptr_);
-					 std::string txt = txtr->getText();
-					 REQUIRE(txt == testText);
-					 uint8_t* bytePtr = txtr->getStage<uint8_t>(stage_);
-					 for(auto i = 0u; i < 10; ++i)
-					 {
-						 REQUIRE(bytePtr[i] == 0xB1);
-					 }
+													 auto txtr = std::static_pointer_cast<TextResource>(ptr_);
+													 std::string txt = txtr->getText();
+													 REQUIRE(txt == testText);
+													 uint8_t* bytePtr = txtr->getStage<uint8_t>(stage_);
+													 for(auto i = 0u; i < 10; ++i)
+													 {
+														 REQUIRE(bytePtr[i] == 0xB1);
+													 }
 
-					 std::memset(bytePtr, 0xAA, 10);
+													 std::memset(bytePtr, 0xAA, 10);
 
-					 return true;
-				 }, [](int, void *) -> bool
-				  { return true; }});
+													 return true;
+												 }, [](int, void*) -> bool
+												  { return true; }});
 
 			REQUIRE(stage == 1);
 
@@ -109,8 +109,8 @@ SCENARIO("Resource Manager has mem storage", "[resourcemanager]")
 			bool okay1 = memstorage->addMemory("testr2"s, TextResource::Id, 0, 0, TestTxt0, strlen(TestTxt0) + 1);
 			REQUIRE(okay1);
 
-			auto h0 = rm->openResourceByName<TextResource::Id>("mem$testr"sv);
-			auto h1 = rm->openResourceByName<TextResource::Id>("mem$testr2"sv);
+			auto h0 = rm->openByName<TextResource::Id>("mem$testr"sv);
+			auto h1 = rm->openByName<TextResource::Id>("mem$testr2"sv);
 
 			auto r0 = h0.acquire<TextResource>();
 			REQUIRE(r0);

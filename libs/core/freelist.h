@@ -225,8 +225,8 @@ public:
 	using value_type = typename tbb::concurrent_vector<Type>::value_type;
 	using size_type = typename tbb::concurrent_vector<Type>::size_type;
 	using difference_type = typename tbb::concurrent_vector<Type>::difference_type;
-	using pointer = typename tbb::concurrent_vector<Type>::pointer;
-	using const_pointer = typename tbb::concurrent_vector<Type>::const_pointer;
+	using pointer = typename tbb::concurrent_vector<Type>*;
+	using const_pointer = typename tbb::concurrent_vector<Type> const*;
 	using reference = typename tbb::concurrent_vector<Type>::reference;
 	using const_reference = typename tbb::concurrent_vector<Type>::const_reference;
 

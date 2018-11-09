@@ -21,6 +21,7 @@ struct ShaderModule
 	inline static int s_stage = -1;
 
 #define SHADERMODULE_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(renderpass, args...); }
+#define SHADERMODULE_VK_FUNC_EXT(name, extension) SHADERMODULE_VK_FUNC(name)
 
 #include "functionlist.inl"
 

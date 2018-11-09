@@ -19,7 +19,9 @@ struct RenderTarget
 	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_, std::weak_ptr<Device> device_) -> void;
 	inline static int s_stage = -1;
 
-#define FRAMEBUFFER_VK_FUNC_EXT(name) template<typename... Args> auto name(Args... args) { return vtable-> name(renderpass, args...); }
+
+#define FRAMEBUFFER_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(renderpass, args...); }
+#define FRAMEBUFFER_VK_FUNC_EXT(name, extension) FRAMEBUFFER_VK_FUNC(name)
 
 #include "functionlist.inl"
 

@@ -66,11 +66,11 @@ auto CommandQueue::submit(std::shared_ptr<Render::Fence> const& fence_) -> void
 	submitInfo.commandBufferCount = (uint32_t) commandBuffers.size();
 	submitInfo.pCommandBuffers = commandBuffers.data();
 
-	submitInfo.waitSemaphoreCount = cbBeginSemaphores.size();
+	submitInfo.waitSemaphoreCount = (uint32_t) cbBeginSemaphores.size();
 	submitInfo.pWaitSemaphores = cbBeginSemaphores.data();
 	submitInfo.pWaitDstStageMask = cbBeginPipelineFlags.data();
 
-	submitInfo.signalSemaphoreCount = cbEndSemaphores.size();
+	submitInfo.signalSemaphoreCount = (uint32_t) cbEndSemaphores.size();
 	submitInfo.pSignalSemaphores = cbEndSemaphores.data();
 
 	VkFence vulkanFence = VK_NULL_HANDLE;

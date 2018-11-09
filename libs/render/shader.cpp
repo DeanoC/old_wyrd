@@ -103,7 +103,7 @@ auto SPIRVShader::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> 
 		return true;
 	};
 
-	rm_.registerResourceHandler(Id, {0, load, destroy}, changed, save);
+	rm_.registerHandler(Id, {0, load, destroy}, changed, save);
 }
 
 auto SPIRVShader::Create(
@@ -129,7 +129,7 @@ auto SPIRVShader::Create(
 
 	rm_->placeInStorage(name_, *obj);
 	free(obj);
-	return rm_->openResourceByName<Id>(name_);
+	return rm_->openByName<Id>(name_);
 }
 
 auto SPIRVShader::Compile(

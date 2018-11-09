@@ -11,6 +11,7 @@
 #include "resourcemanager/resourcecache.h"
 #include "resourcemanager/memstorage.h"
 #include "tbb/concurrent_unordered_map.h"
+#include "tbb/concurrent_vector.h"
 #include "istorage.h"
 #include <iostream>
 #include <string_view>
@@ -71,27 +72,36 @@ public:
 	template<typename T>
 	auto placeInStorage(ResourceManager::ResourceNameView name_, std::shared_ptr<T> const& resource_) -> bool;
 
-	auto registerResourceHandler(ResourceId id_,
-									ResourceHandler funcs_,
-									HasResourceChangedFunc changed_ = nullptr,
-									SaveResourceFunc save_ = nullptr) -> void;
-	auto registerNextResourceHandler(ResourceId id_,
-									 ResourceHandler funcs_ ) -> int;
-	auto removeResourceHandler(ResourceId id_, int stage_) -> void;
+	auto registerHandler(ResourceId id_,
+						 ResourceHandler funcs_,
+						 HasResourceChangedFunc changed_ = nullptr,
+						 SaveResourceFunc save_ = nullptr) -> void;
+	auto registerNextHandler(ResourceId id_,
+							 ResourceHandler funcs_) -> int;
+	auto removeHandler(ResourceId id_, int stage_) -> void;
 
-	template<ResourceId type_>
-	auto openResourceById( uint64_t const id_ ) -> ResourceHandle<type_>
+	template<ResourceId id_>
+	auto openByIndex(uint64_t const index_) -> ResourceHandle<id_>
 	{
-		auto resourceHandleBase = indexToBase[id_];
-		assert( type_ == resourceHandleBase.type );
-		return ResourceHandle<type_>( resourceHandleBase );
+		auto resourceHandleBase = indexToBase[index_];
+		assert(id_ == resourceHandleBase.id);
+		return ResourceHandle<id_>(resourceHandleBase);
 	}
 
-	template<ResourceId type_>
-	auto openResourceByName( ResourceNameView const name_ ) -> ResourceHandle<type_>
+	template<ResourceId id_>
+	auto openByName(ResourceNameView const name_) -> ResourceHandle<id_>
 	{
-		uint64_t id = getIndexFromName(type_, name_);
-		return openResourceById<type_>( id );
+		uint64_t id = getIndexFromName(id_, name_);
+		return openByIndex<id_>(id);
+	}
+
+	// for single usage, this get the handle and acquires the resource in one shot
+	template<ResourceId id_, typename type_>
+	auto acquireByName(ResourceNameView const name_) -> std::shared_ptr<type_>
+	{
+		uint64_t id = getIndexFromName(id_, name_);
+		auto handle = openByIndex<id_>(id);
+		return handle.acquire<type_>();
 	}
 
 	auto getIndexFromName(ResourceId id_, ResourceNameView const name_) -> uint64_t;
@@ -99,11 +109,9 @@ public:
 protected:
 	ResourceMan();
 
-	auto openBaseResourceByIdAndName(ResourceId id_, ResourceNameView const name_) -> ResourceHandleBase&;
 	auto acquire( ResourceHandleBase const& base_ ) -> ResourceBase::Ptr;
 	auto tryAcquire( ResourceHandleBase const& base_ ) -> ResourceBase::Ptr;
 	auto resolveLink(ResourceHandleBase& link_, ResourceNameView const& current_) -> void;
-
 
 	using PrefixToStorage = std::unordered_map<std::string_view, IStorage::Ptr>;
 	using ResourceNameToIndex = tbb::concurrent_unordered_map<ResourceNameView, uint64_t>;

@@ -109,8 +109,8 @@ auto RenderPass::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Devi
 		return true;
 	};
 
-	s_stage = rm_.registerNextResourceHandler(Render::RenderPass::Id,
-											  {sizeof(Vulkan::RenderPass), registerFunc, deleteFunc});
+	s_stage = rm_.registerNextHandler(Render::RenderPass::Id,
+									  {sizeof(Vulkan::RenderPass), registerFunc, deleteFunc});
 }
 
 }

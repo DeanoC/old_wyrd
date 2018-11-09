@@ -4,7 +4,7 @@
 #include "vulkan/semaphore.h"
 #include "vulkan/encoderpool.h"
 #include "vulkan/encoder.h"
-#include "types.h"
+#include "vulkan/types.h"
 
 namespace Vulkan {
 
@@ -123,8 +123,8 @@ auto Encoder::textureBarrier(
 {
 	Texture* texture = texture_->getStage<Texture>(Texture::s_stage);
 
-	uint32_t srcMask = fromMemoryAccess(waitAccess_);
-	uint32_t dstMask = fromMemoryAccess(stallAccess_);
+	uint32_t srcMask = from(waitAccess_);
+	uint32_t dstMask = from(stallAccess_);
 
 	VkImageMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;

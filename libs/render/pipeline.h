@@ -35,15 +35,26 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 
 	static constexpr uint8_t EnablePrimitiveRestartFlag = Core::Bit(0);
 
+	BindingTableMemoryMapHandle* getBindingTableMemoryMaps()
+	{
+		return (BindingTableMemoryMapHandle*) ((uint8_t*) (this + 1) + bindingTableMemoryMapsOffset);
+	}
+
 	Topology inputTopology;
 	uint8_t flags;
-	uint8_t padd[2];
+	uint8_t numBindingTableMemoryMaps;
+	uint8_t padd;
+	uint32_t bindingTableMemoryMapsOffset;
 
 	SPIRVShaderHandle vertexShader;
 	SPIRVShaderHandle tesselationControlShader;
 	SPIRVShaderHandle tesselationEvalShader;
 	SPIRVShaderHandle geometryShader;
 	SPIRVShaderHandle fragmentShader;
+	RenderPassHandle renderPass;
+	ROPBlenderHandle ropBlender;
+	ViewportHandle viewport;
+
 };
 
 struct alignas(8) ComputePipeline : public ResourceManager::Resource<ComputePipelineId>

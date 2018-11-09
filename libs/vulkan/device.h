@@ -10,6 +10,7 @@
 #include "vulkan/vk_mem_alloc.h"
 #include "texture.h"
 #include <array>
+#include <tbb/src/old/concurrent_vector_v2.h>
 
 namespace Vulkan {
 struct CommandQueue;
@@ -100,8 +101,13 @@ public:
 	auto createDescriptorSetLayout(VkDescriptorSetLayoutCreateInfo& createInfo_) -> VkDescriptorSetLayout;
 	auto destroyDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout_) -> void;
 
-	auto createDescriptorSet(VkDescriptorSetLayout& layout_) -> VkDescriptorSet;
-	auto destroyDescriptorSet(VkDescriptorSet descriptorSet_) -> void;
+	auto allocDescriptorSet(VkDescriptorSetAllocateInfo& allocInfo) -> VkDescriptorSet;
+	auto freeDescriptorSet(VkDescriptorSet descriptorSet_) -> void;
+
+	auto createPipelineLayout(VkPipelineLayoutCreateInfo& createInfo) -> VkPipelineLayout;
+	auto destroyPipelineLayout(VkPipelineLayout pipelineLayout_) -> void;
+
+	auto getDescriptorPool() -> VkDescriptorPool { return descriptorPool; }
 
 	//--
 	// functions also in device table
@@ -128,7 +134,7 @@ public:
 	ComputeCBVkVTable computeCBVkVTable;
 	GeneralCBVkVTable generalCBVkVTable;
 
-	auto debugNameVkObject(uint64_t object_, VkDebugReportObjectTypeEXT type_, char const* name_)
+	auto debugNameVkObject(uint64_t object_, VkDebugReportObjectTypeEXT type_, char const* name_) -> void
 	{
 		if(deviceVkVTable.vkDebugMarkerSetObjectNameEXT != nullptr)
 		{
@@ -205,6 +211,9 @@ private:
 	VmaAllocationCreateInfo imageCreateInfo;
 
 	VkAllocationCallbacks allocationCallbacks;
+
+	// for now we have a single pool
+	VkDescriptorPool descriptorPool;
 
 	void upload(VkImage cpuImage, std::shared_ptr<Render::Texture> const& dst_);
 };

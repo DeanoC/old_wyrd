@@ -41,7 +41,7 @@ auto ShaderModule::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 		return true;
 	};
 
-	s_stage = rm_.registerNextResourceHandler(
+	s_stage = rm_.registerNextHandler(
 			Render::SPIRVShaderId, {sizeof(Vulkan::ShaderModule), registerFunc, deleteFunc});
 }
 

@@ -38,7 +38,7 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) 
 		return true;
 	};
 
-	rm_.registerResourceHandler(Id, {0, load, destroy}, changed, save);
+	rm_.registerHandler(Id, {0, load, destroy}, changed, save);
 }
 
 auto ComputePipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void
@@ -72,7 +72,7 @@ auto ComputePipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_)
 		return true;
 	};
 
-	rm_.registerResourceHandler(Id, {0, load, destroy}, changed, save);
+	rm_.registerHandler(Id, {0, load, destroy}, changed, save);
 }
 
 auto RenderPipeline::Create(
@@ -97,7 +97,7 @@ auto RenderPipeline::Create(
 	renderPipeline.fragmentShader = fragmentShader_;
 
 	rm_->placeInStorage(name_, renderPipeline);
-	return rm_->openResourceByName<Id>(name_);
+	return rm_->openByName<Id>(name_);
 }
 
 } // end namespace

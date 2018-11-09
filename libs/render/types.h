@@ -172,6 +172,71 @@ enum class BindingTableType : uint8_t
 	Sampler,
 };
 
+enum class ROPLogicOps : uint8_t
+{
+	Dest,        // d
+	Src,        // s
+	NSrc,        // ~s
+	Zero,        // 0
+	NZero,        // all 1s
+
+	Or,            // s | d
+	OrNSrc,        // ~s | d
+	OrNDest,    // s | ~d
+	And,        // s & d
+	AndNSrc,    // ~s & d
+	AndNDest,    // s & ~d
+	Xor,        // s ^ d
+
+	Not,        // ~s
+	Nor,        // ~(s | d)
+	Nand,        // ~(s & d)
+	NXor,        // ~(s ^ d) AKA equivilant
+};
+
+enum class ROPBlendFactor : uint8_t
+{
+	Zero,
+	One, // One could be encoded as invert(Zero) but looks nicer this way
+	SrcColour,
+	DstColour,
+	SrcAlpha,
+	DstAlpha,
+	ConstantColour,
+	ConstantAlpha,
+	Src1Colour,
+	Src1Alpha,
+
+	SrcAlphaSaturate, // no invert version
+
+	InvertedBit = 0x80
+};
+
+// most blend ops can be inverted (AKA 1 - Op)
+constexpr auto invert(ROPBlendFactor op_) -> ROPBlendFactor
+{
+	return (ROPBlendFactor) (((uint8_t) op_) | (uint8_t) ROPBlendFactor::InvertedBit);
+}
+
+enum class ROPBlendOps : uint8_t
+{
+	Add,
+	Sub,
+	ReverseSub,
+	Min,
+	Max,
+};
+
+enum ColourComponents : uint8_t
+{
+	Red = Core::Bit(0),
+	Green = Core::Bit(1),
+	Blue = Core::Bit(2),
+	Alpha = Core::Bit(3),
+
+	All = 0xF
+};
+
 constexpr auto is_bitmask_enum(RenderPipelineStages) -> bool { return true; }
 
 constexpr auto is_bitmask_enum(ComputePipelineStages) -> bool { return true; }
@@ -190,7 +255,9 @@ constexpr auto is_bitmask_enum(CommandQueueFlavour) -> bool { return true; }
 
 constexpr auto is_bitmask_enum(Usage) -> bool { return true; }
 
-constexpr auto is_bitmask_enum(Render::MemoryAccess) -> bool { return true; }
+constexpr auto is_bitmask_enum(MemoryAccess) -> bool { return true; }
+
+constexpr auto is_bitmask_enum(ColourComponents) -> bool { return true; }
 
 
 constexpr auto TextureFlagsToUsage(TextureFlag flags_) -> Usage

@@ -84,11 +84,9 @@ public:
 	GenericTextureFormat format;
 	uint32_t subClassData; // not used by generic but allows subclasses to store something
 
-	uint8_t* dataStore;
+	auto data() { return (uint8_t*) (this + 1); }
 
-	auto data() { return dataStore; }
-
-	auto data() const { return dataStore; }
+	auto data() const { return (uint8_t*) (this + 1); }
 
 	auto pixelAt(unsigned int x_, unsigned int y_ = 0, unsigned int z_ = 0, unsigned int slice_ = 0) const -> Pixel;
 

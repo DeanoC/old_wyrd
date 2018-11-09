@@ -29,7 +29,7 @@ struct RenderEncoder : public Render::IRenderEncoder
 #define GFXCOMP_CB_VK_FUNC(name) GENERAL_CB_VK_FUNC(name)
 #define GFXCOMP_CB_VK_FUNC_EXT(name, extension) GENERAL_CB_VK_FUNC(name)
 #define GRAPHIC_CB_VK_FUNC(name) GENERAL_CB_VK_FUNC(name)
-#define GFX_CB_VK_FUNC_EXT(name, extension) GENERAL_CB_VK_FUNC(name)
+#define GRAPHIC_CB_VK_FUNC_EXT(name, extension) GENERAL_CB_VK_FUNC(name)
 
 #include "functionlist.inl"
 

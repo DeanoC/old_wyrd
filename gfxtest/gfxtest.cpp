@@ -8,11 +8,14 @@
 #include "render/stable.h"
 #include "render/encoder.h"
 #include "render/pipeline.h"
+#include "render/bindingtable.h"
 
 static auto blankTex4x4Name = ResourceManager::ResourceNameView("mem$blankTex4x4");
 static auto colourRT0Name = ResourceManager::ResourceNameView("mem$colourRT0");
 static auto defaultRenderPassName = ResourceManager::ResourceNameView("mem$defaultRenderPass");
 static auto defaultRenderTargetName = ResourceManager::ResourceNameView("mem$defaultRenderTarget");
+static auto defaultBindingTableMemoryMapName = ResourceManager::ResourceNameView("mem$defaultBindingTableMemoryMap");
+static auto defaultBindingTableName = ResourceManager::ResourceNameView("mem$defaultBindingTable");
 
 struct App
 {
@@ -122,13 +125,12 @@ struct App
 						 GenericTextureFormat::R8G8B8A8_UNORM,
 				 }},
 				{0, 0, 0xFF, 0xFF});
-		auto colourRT0Handle = resourceManager->openResourceByName<Texture::Id>(colourRT0Name);
 
 		RenderTarget::Create(
 				resourceManager,
 				defaultRenderTargetName,
 				defaultRenderPassHandle,
-				{colourRT0Handle},
+				{resourceManager->openByName<Texture::Id>(colourRT0Name)},
 				{0, 0},
 				{display->getWidth(), display->getHeight()}
 		);
@@ -148,18 +150,25 @@ struct App
 				ShaderType::Fragment,
 				0);
 
-		RenderPipeline defaultRenderPipelineDef{
-				{sizeof(RenderPipeline)},
+		RenderPipeline::Create(
+				resourceManager,
+				defaultRenderPipelineName,
 				Topology::Triangles,
 				0, // flags
-				{}, // padd
 				{}, // vertex
 				{}, // tess control
 				{}, // tess eval
 				{}, // geometry
-				redOutFragmentShaderHandle,
-		};
-		resourceManager->placeInStorage(defaultRenderPipelineName, defaultRenderPipelineDef);
+				redOutFragmentShaderHandle);
+		BindingTableMemoryMap::Create(
+				resourceManager,
+				defaultBindingTableMemoryMapName,
+				{});
+
+		BindingTable::Create(
+				resourceManager,
+				defaultBindingTableName,
+				{resourceManager->openByName<BindingTableMemoryMapId>(defaultBindingTableMemoryMapName)});
 	}
 
 	auto body() -> bool
@@ -168,11 +177,11 @@ struct App
 		using namespace std::string_view_literals;
 
 		// grab handles
-		auto blankTexHandle = resourceManager->openResourceByName<Texture::Id>(blankTex4x4Name);
-		auto colourRT0Handle = resourceManager->openResourceByName<Texture::Id>(colourRT0Name);
-		auto defaultRenderPassHandle = resourceManager->openResourceByName<RenderPass::Id>(defaultRenderPassName);
-		auto defaultRenderTargetHandle = resourceManager->openResourceByName<RenderTarget::Id>(defaultRenderTargetName);
-		auto fragShaderHandle = resourceManager->openResourceByName<SPIRVShader::Id>(redOutFragmentShaderName);
+		auto blankTexHandle = resourceManager->openByName<Texture::Id>(blankTex4x4Name);
+		auto colourRT0Handle = resourceManager->openByName<Texture::Id>(colourRT0Name);
+		auto defaultRenderPassHandle = resourceManager->openByName<RenderPass::Id>(defaultRenderPassName);
+		auto defaultRenderTargetHandle = resourceManager->openByName<RenderTarget::Id>(defaultRenderTargetName);
+		auto fragShaderHandle = resourceManager->openByName<SPIRVShader::Id>(redOutFragmentShaderName);
 
 		// acquire the resources
 		auto blankTex = blankTexHandle.acquire<Texture>();

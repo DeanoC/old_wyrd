@@ -6,6 +6,7 @@
 #include "render/resources.h"
 #include "render/types.h"
 #include "resourcemanager/resource.h"
+#include "resourcemanager/resourcename.h"
 #include <variant>
 
 namespace ResourceManager { class ResourceMan; }
@@ -42,10 +43,12 @@ struct alignas(8) BindingTableMemoryMap : public ResourceManager::Resource<Bindi
 	static constexpr uint16_t MajorVersion = 1;
 	static constexpr uint16_t MinorVersion = 0;
 
-	static constexpr uint32_t MaxBindings = 16;
+	static auto Create(std::shared_ptr<ResourceManager::ResourceMan> rm_,
+					   ResourceManager::ResourceNameView const& name_,
+					   std::vector<BindingLayout> const& bindingLayouts) -> BindingTableMemoryMapHandle;
 
+	BindingLayout* getBindingLayouts() { return (BindingLayout*) (this + 1); }
 	uint8_t numBindings;
-	BindingLayout* Bindings;
 };
 
 struct BindingTable : public ResourceManager::Resource<BindingTableId>
@@ -54,6 +57,13 @@ struct BindingTable : public ResourceManager::Resource<BindingTableId>
 	static constexpr uint16_t MajorVersion = 1;
 	static constexpr uint16_t MinorVersion = 0;
 
+	static auto Create(std::shared_ptr<ResourceManager::ResourceMan> rm_,
+					   ResourceManager::ResourceNameView const& name_,
+					   std::vector<BindingTableMemoryMapHandle> const& bindingTables) -> BindingTableHandle;
+
+	BindingTableMemoryMapHandle* getMemoryMaps() { return (BindingTableMemoryMapHandle*) (this + 1); }
+
+	uint8_t numMemoryMaps;
 };
 
 }

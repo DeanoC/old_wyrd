@@ -21,7 +21,7 @@ auto RenderTarget::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 		auto renderPass = renderTarget->renderPassHandle.acquire<Render::RenderPass>();
 
 		std::vector<VkImageView> images(renderPass->numTargets);
-		std::array<Render::TexturePtr, Render::RenderPass::MaxTargets> targets;
+		std::vector<Render::TexturePtr> targets(renderPass->numTargets);
 		for(auto j = 0u; j < renderPass->numTargets; ++j)
 		{
 			targets[j] = renderTarget->getTargetTextures()[j].acquire<Render::Texture>();
@@ -70,8 +70,8 @@ auto RenderTarget::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 		return true;
 	};
 
-	s_stage = rm_.registerNextResourceHandler(Render::RenderTarget::Id,
-											  {sizeof(Vulkan::RenderTarget), registerFunc, deleteFunc});
+	s_stage = rm_.registerNextHandler(Render::RenderTarget::Id,
+									  {sizeof(Vulkan::RenderTarget), registerFunc, deleteFunc});
 }
 
 }
