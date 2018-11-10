@@ -67,6 +67,10 @@ public:
 					 VmaAllocationInfo& outInfo_) -> std::pair<VkImage, VmaAllocation>;
 	auto destroyImage(std::pair<VkImage, VmaAllocation> const& image_) -> void;
 
+	auto createBuffer(VkBufferCreateInfo const& createInfo_, VmaAllocationCreateInfo const& allocInfo_,
+					  VmaAllocationInfo& outInfo_) -> std::pair<VkBuffer, VmaAllocation>;
+	auto destroyBuffer(std::pair<VkBuffer, VmaAllocation> const& buffer_) -> void;
+
 	auto createImageView(VkImageViewCreateInfo const& createInfo_) -> VkImageView;
 	auto destroyImageView(VkImageView const& texture_) -> void;
 

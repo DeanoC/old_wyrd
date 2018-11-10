@@ -53,7 +53,8 @@ struct VkfCracker
 		// TODO handle the rest of the vk textures names for debugging purposes
 		return "";
 	}
-	constexpr static auto isDepthFormat( VkFormat const fmt_ ) -> bool
+
+	constexpr static auto isDepth(VkFormat const fmt_) -> bool
 	{
 		// vulkan only formats
 		/*		switch(fmt_)

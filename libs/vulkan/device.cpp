@@ -557,6 +557,20 @@ auto Device::destroyImage(std::pair<VkImage, VmaAllocation> const& image_) -> vo
 	vmaDestroyImage(allocator, image_.first, image_.second);
 }
 
+auto Device::createBuffer(VkBufferCreateInfo const& createInfo_, VmaAllocationCreateInfo const& allocInfo_,
+						  VmaAllocationInfo& outInfo_) -> std::pair<VkBuffer, VmaAllocation>
+{
+	std::pair<VkBuffer, VmaAllocation> result{VK_NULL_HANDLE, VK_NULL_HANDLE};
+	CHKED(vmaCreateBuffer(allocator, &createInfo_, &allocInfo_, &result.first, &result.second, &outInfo_));
+
+	return result;
+}
+
+auto Device::destroyBuffer(std::pair<VkBuffer, VmaAllocation> const& buffer_) -> void
+{
+	vmaDestroyBuffer(allocator, buffer_.first, buffer_.second);
+}
+
 auto Device::createImageView(VkImageViewCreateInfo const& createInfo_) -> VkImageView
 {
 	VkImageView imageView;

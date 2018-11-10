@@ -8,7 +8,6 @@
 #include "resourcemanager/resource.h"
 #include "resourcemanager/resourcehandle.h"
 #include "resourcemanager/resourcename.h"
-#include <variant>
 
 namespace ResourceManager { class ResourceMan; }
 

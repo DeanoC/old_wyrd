@@ -97,7 +97,7 @@ public:
 
 	// for single usage, this get the handle and acquires the resource in one shot
 	template<typename type_>
-	auto acquireByName(ResourceNameView const name_) -> std::shared_ptr<type_>
+	auto acquireByName(ResourceNameView const name_) -> std::shared_ptr<type_ const>
 	{
 		uint64_t id = getIndexFromName(type_::Id, name_);
 		auto handle = openByIndex<type_::Id>(id);

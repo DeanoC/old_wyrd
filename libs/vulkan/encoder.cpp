@@ -1,5 +1,7 @@
 #include "core/core.h"
+#include "render/buffer.h"
 #include "render/commandqueue.h"
+#include "vulkan/buffer.h"
 #include "vulkan/texture.h"
 #include "vulkan/semaphore.h"
 #include "vulkan/encoderpool.h"
@@ -66,7 +68,7 @@ auto Encoder::reset() -> void
 	vkResetCommandBuffer(VkCommandPoolResetFlagBits::VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
 }
 
-auto Encoder::copy(std::shared_ptr<Render::Texture> const& src_, std::shared_ptr<Render::Texture> const& dst_) -> void
+auto Encoder::copy(Render::TextureConstPtr const& src_, Render::TextureConstPtr const& dst_) -> void
 {
 	Texture* src = src_->getStage<Texture>(Texture::s_stage);
 
@@ -80,10 +82,16 @@ auto Encoder::copy(std::shared_ptr<Render::Texture> const& src_, std::shared_ptr
 
 }
 
+auto Encoder::fill(uint32_t fill_, Render::BufferPtr const& dst_) -> void
+{
+	Buffer* dst = dst_->getStage<Buffer>(Buffer::s_stage);
+	vkCmdFillBuffer(dst->buffer, 0, VK_WHOLE_SIZE, fill_);
+}
+
 auto Encoder::copy(VkImage srcImage_,
 				   VkImageLayout srcLayout_,
 				   VkImageSubresourceLayers const& srcExtents_,
-				   std::shared_ptr<Render::Texture> const& dst_) -> void
+				   Render::TextureConstPtr const& dst_) -> void
 {
 	Texture* dst = dst_->getStage<Texture>(Texture::s_stage);
 	assert(srcExtents_.aspectMask == dst->entireRange.aspectMask);
@@ -119,7 +127,7 @@ auto Encoder::copy(VkImage srcImage_,
 auto Encoder::textureBarrier(
 		Render::MemoryAccess waitAccess_,
 		Render::MemoryAccess stallAccess_,
-		std::shared_ptr<Render::Texture> const& texture_) -> void
+		Render::TextureConstPtr const& texture_) -> void
 {
 	Texture* texture = texture_->getStage<Texture>(Texture::s_stage);
 
@@ -147,7 +155,7 @@ auto Encoder::textureBarrier(
 
 }
 
-auto Encoder::textureBarrier(std::shared_ptr<Render::Texture> const& texture_) -> void
+auto Encoder::textureBarrier(Render::TextureConstPtr const& texture_) -> void
 {
 	using namespace Render;
 	textureBarrier(MemoryAccess::GeneralWrite, MemoryAccess::GeneralRead, texture_);

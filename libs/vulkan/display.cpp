@@ -94,7 +94,7 @@ auto Display::createSwapChain() -> void
 	blitterPool = device->makeEncoderPool(true, Render::CommandQueueFlavour::Render);
 }
 
-auto Display::present(std::shared_ptr<Render::Texture> const& src_) -> void
+auto Display::present(Render::TextureConstPtr const& src_) -> void
 {
 	auto device = weakDevice.lock();
 

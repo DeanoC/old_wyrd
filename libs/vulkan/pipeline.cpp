@@ -106,18 +106,8 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 		// TODO pipeline inheritance
 		VkGraphicsPipelineCreateInfo createInfo{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
 
-
-		std::vector<VkPipelineShaderStageCreateInfo> stages;
-		stages.reserve(16);
-		std::array<Render::SPIRVShaderHandle, 5> shaderHandles{
-				renderPipeline->vertexShader,
-				renderPipeline->tesselationControlShader,
-				renderPipeline->tesselationEvalShader,
-				renderPipeline->geometryShader,
-				renderPipeline->fragmentShader,
-		};
-
-		for(auto& handle : shaderHandles)
+		std::vector<VkPipelineShaderStageCreateInfo> stages(renderPipeline->numShaders);
+		for(auto& handle : renderPipeline->shaders)
 		{
 			if(handle.isValid())
 			{
@@ -137,8 +127,7 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 		VkPipelineInputAssemblyStateCreateInfo inputCreateInfo{
 				VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
 		inputCreateInfo.topology = from(renderPipeline->inputTopology);
-		inputCreateInfo.primitiveRestartEnable =
-				renderPipeline->flags & Render::RenderPipeline::EnablePrimitiveRestartFlag;
+		inputCreateInfo.primitiveRestartEnable = renderPipeline->isPrimitiveRestartEnabled();
 		createInfo.pInputAssemblyState = &inputCreateInfo;
 
 		auto vertexInput = renderPipeline->vertexInput.acquire<Render::VertexInput>();
@@ -167,7 +156,8 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 		vertexCreateInfo.pVertexBindingDescriptions = vinputBinding.data();
 		createInfo.pVertexInputState = &vertexCreateInfo;
 
-		auto const& rasterState = renderPipeline->rasterisationState;
+		auto rasterState = renderPipeline->rasterisationState.acquire<Render::RasterisationState>();
+
 		VkPipelineRasterizationStateCreateInfo rasterStateCreateInfo{
 				VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
 		VkPipelineTessellationStateCreateInfo tessStateCreateInfo{
@@ -177,46 +167,46 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 		VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo{
 				VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
 
-		rasterStateCreateInfo.rasterizerDiscardEnable = rasterState.isDiscardEnabled();
+		rasterStateCreateInfo.rasterizerDiscardEnable = rasterState->isDiscardEnabled();
 
-		depthStencilStateCreateInfo.depthTestEnable = rasterState.isDepthTestEnabled();
-		depthStencilStateCreateInfo.depthWriteEnable = rasterState.isDepthWriteEnabled();
-		depthStencilStateCreateInfo.depthBoundsTestEnable = rasterState.isDepthBoundsEnabled();
-		depthStencilStateCreateInfo.stencilTestEnable = rasterState.isStencilTestEnabled();
-		rasterStateCreateInfo.depthClampEnable = rasterState.isDepthClampEnabled();
+		depthStencilStateCreateInfo.depthTestEnable = rasterState->isDepthTestEnabled();
+		depthStencilStateCreateInfo.depthWriteEnable = rasterState->isDepthWriteEnabled();
+		depthStencilStateCreateInfo.depthBoundsTestEnable = rasterState->isDepthBoundsEnabled();
+		depthStencilStateCreateInfo.stencilTestEnable = rasterState->isStencilTestEnabled();
+		rasterStateCreateInfo.depthClampEnable = rasterState->isDepthClampEnabled();
 
-		depthStencilStateCreateInfo.depthCompareOp = from(rasterState.depthCompare);
-		depthStencilStateCreateInfo.front.compareOp = from(rasterState.frontStencil.compareOp);
-		depthStencilStateCreateInfo.front.depthFailOp = from(rasterState.frontStencil.depthFailOp);
-		depthStencilStateCreateInfo.front.failOp = from(rasterState.frontStencil.failOp);
-		depthStencilStateCreateInfo.front.passOp = from(rasterState.frontStencil.passOp);
-		depthStencilStateCreateInfo.front.writeMask = rasterState.frontStencil.writeMask;
-		depthStencilStateCreateInfo.front.compareMask = rasterState.frontStencil.compareMask;
-		depthStencilStateCreateInfo.front.reference = rasterState.frontStencil.reference;
-		depthStencilStateCreateInfo.back.compareOp = from(rasterState.backStencil.compareOp);
-		depthStencilStateCreateInfo.back.depthFailOp = from(rasterState.backStencil.depthFailOp);
-		depthStencilStateCreateInfo.back.failOp = from(rasterState.backStencil.failOp);
-		depthStencilStateCreateInfo.back.passOp = from(rasterState.backStencil.passOp);
-		depthStencilStateCreateInfo.back.writeMask = rasterState.backStencil.writeMask;
-		depthStencilStateCreateInfo.back.compareMask = rasterState.backStencil.compareMask;
-		depthStencilStateCreateInfo.back.reference = rasterState.backStencil.reference;
-		depthStencilStateCreateInfo.minDepthBounds = rasterState.minDepthBounds;
-		depthStencilStateCreateInfo.maxDepthBounds = rasterState.maxDepthBounds;
+		depthStencilStateCreateInfo.depthCompareOp = from(rasterState->depthCompare);
+		depthStencilStateCreateInfo.front.compareOp = from(rasterState->frontStencil.compareOp);
+		depthStencilStateCreateInfo.front.depthFailOp = from(rasterState->frontStencil.depthFailOp);
+		depthStencilStateCreateInfo.front.failOp = from(rasterState->frontStencil.failOp);
+		depthStencilStateCreateInfo.front.passOp = from(rasterState->frontStencil.passOp);
+		depthStencilStateCreateInfo.front.writeMask = rasterState->frontStencil.writeMask;
+		depthStencilStateCreateInfo.front.compareMask = rasterState->frontStencil.compareMask;
+		depthStencilStateCreateInfo.front.reference = rasterState->frontStencil.reference;
+		depthStencilStateCreateInfo.back.compareOp = from(rasterState->backStencil.compareOp);
+		depthStencilStateCreateInfo.back.depthFailOp = from(rasterState->backStencil.depthFailOp);
+		depthStencilStateCreateInfo.back.failOp = from(rasterState->backStencil.failOp);
+		depthStencilStateCreateInfo.back.passOp = from(rasterState->backStencil.passOp);
+		depthStencilStateCreateInfo.back.writeMask = rasterState->backStencil.writeMask;
+		depthStencilStateCreateInfo.back.compareMask = rasterState->backStencil.compareMask;
+		depthStencilStateCreateInfo.back.reference = rasterState->backStencil.reference;
+		depthStencilStateCreateInfo.minDepthBounds = rasterState->minDepthBounds;
+		depthStencilStateCreateInfo.maxDepthBounds = rasterState->maxDepthBounds;
 
-		rasterStateCreateInfo.cullMode = from(rasterState.cullMode);
-		rasterStateCreateInfo.frontFace = from(rasterState.frontFace);
-		rasterStateCreateInfo.polygonMode = from(rasterState.fillMode);
-		rasterStateCreateInfo.lineWidth = rasterState.lineWidth;
-		rasterStateCreateInfo.depthBiasEnable = rasterState.isDepthBiasEnabled();
-		rasterStateCreateInfo.depthBiasClamp = rasterState.depthBias.clamp;
-		rasterStateCreateInfo.depthBiasConstantFactor = rasterState.depthBias.constantFactor;
-		rasterStateCreateInfo.depthBiasSlopeFactor = rasterState.depthBias.slopeFactor;
-		tessStateCreateInfo.patchControlPoints = rasterState.patchControlPointsCount;
-		multisampleStateCreateInfo.rasterizationSamples = fromSingle(rasterState.sampleCount);
-		multisampleStateCreateInfo.alphaToCoverageEnable = rasterState.isAlphaToCoverageEnabled();
-		multisampleStateCreateInfo.alphaToOneEnable = rasterState.isAlphaToOneEnabled();
-		multisampleStateCreateInfo.minSampleShading = rasterState.minSampleShadingRate;
-		multisampleStateCreateInfo.pSampleMask = (VkSampleMask*) &rasterState.sampleMask;
+		rasterStateCreateInfo.cullMode = from(rasterState->cullMode);
+		rasterStateCreateInfo.frontFace = from(rasterState->frontFace);
+		rasterStateCreateInfo.polygonMode = from(rasterState->fillMode);
+		rasterStateCreateInfo.lineWidth = rasterState->lineWidth;
+		rasterStateCreateInfo.depthBiasEnable = rasterState->isDepthBiasEnabled();
+		rasterStateCreateInfo.depthBiasClamp = rasterState->depthBias.clamp;
+		rasterStateCreateInfo.depthBiasConstantFactor = rasterState->depthBias.constantFactor;
+		rasterStateCreateInfo.depthBiasSlopeFactor = rasterState->depthBias.slopeFactor;
+		tessStateCreateInfo.patchControlPoints = rasterState->patchControlPointsCount;
+		multisampleStateCreateInfo.rasterizationSamples = fromSingle(rasterState->sampleCount);
+		multisampleStateCreateInfo.alphaToCoverageEnable = rasterState->isAlphaToCoverageEnabled();
+		multisampleStateCreateInfo.alphaToOneEnable = rasterState->isAlphaToOneEnabled();
+		multisampleStateCreateInfo.minSampleShading = rasterState->minSampleShadingRate;
+		multisampleStateCreateInfo.pSampleMask = (VkSampleMask*) &rasterState->sampleMask;
 
 		createInfo.pRasterizationState = &rasterStateCreateInfo;
 		createInfo.pTessellationState = &tessStateCreateInfo;

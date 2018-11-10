@@ -23,13 +23,16 @@ struct alignas(8) RenderTarget : public ResourceManager::Resource<RenderTargetId
 			std::array<int32_t, 2> const& renderOffset_,
 			std::array<uint32_t, 2> const& renderExtent_) -> RenderTargetHandle;
 
-	TextureHandle* getTargetTextures() { return (TextureHandle*) (this + 1); }
+	TextureHandle const* getTargetTextures() const { return (TextureHandle const*) (this + 1); }
 
 	RenderPassHandle renderPassHandle;
 	int32_t renderOffset[2];
 	uint32_t renderExtent[2];
 	uint8_t numTargetTextures;
 	uint8_t padd[7];
+
+protected:
+	TextureHandle* getTargetTextures() { return (TextureHandle*) (this + 1); }
 };
 
 }

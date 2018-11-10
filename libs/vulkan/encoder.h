@@ -33,19 +33,19 @@ struct Encoder : public Render::Encoder
 	auto begin(std::shared_ptr<Render::Semaphore> const& semaphore_ = {}) -> void final;
 	auto end(std::shared_ptr<Render::Semaphore> const& semaphore_ = {}) -> void final;
 	auto reset() -> void final;
-	auto copy(std::shared_ptr<Render::Texture> const& src_, std::shared_ptr<Render::Texture> const& dst_) -> void final;
+	auto copy(Render::TextureConstPtr const& src_, Render::TextureConstPtr const& dst_) -> void final;
+	auto fill(uint32_t fill_, Render::BufferPtr const& dst_) -> void final;
 
-	auto textureBarrier(std::shared_ptr<Render::Texture> const& texture_) -> void final;
+	auto textureBarrier(Render::TextureConstPtr const& texture_) -> void final;
 	auto textureBarrier(
 			Render::MemoryAccess waitAccess_,
 			Render::MemoryAccess stallAccess_,
-			std::shared_ptr<Render::Texture> const& texture_) -> void final;
-
+			Render::TextureConstPtr const& texture_) -> void final;
 
 	auto copy(VkImage srcImage_,
 			  VkImageLayout srcLayout_,
 			  VkImageSubresourceLayers const& srcExtents_,
-			  std::shared_ptr<Render::Texture> const& dst_) -> void;
+			  Render::TextureConstPtr const& dst_) -> void;
 	auto textureBarrier(VkPipelineStageFlagBits srcStage_, VkPipelineStageFlagBits dstStage_,
 						VkImageMemoryBarrier const& barrier_) -> void;
 

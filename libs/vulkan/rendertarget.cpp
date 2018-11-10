@@ -15,13 +15,13 @@ auto RenderTarget::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 	auto registerFunc = [device_](int stage_, ResourceManager::ResolverInterface, uint16_t, uint16_t,
 								  ResourceManager::ResourceBase::Ptr ptr_) -> bool
 	{
-		auto renderTarget = std::static_pointer_cast<Render::RenderTarget>(ptr_);
+		auto renderTarget = std::static_pointer_cast<Render::RenderTarget const>(ptr_);
 		Vulkan::RenderTarget* vulkanRenderTarget = renderTarget->getStage<Vulkan::RenderTarget, false>(stage_);
 
-		auto renderPass = renderTarget->renderPassHandle.acquire<Render::RenderPass>();
+		auto renderPass = renderTarget->renderPassHandle.acquire < Render::RenderPass const>();
 
 		std::vector<VkImageView> images(renderPass->numTargets);
-		std::vector<Render::TexturePtr> targets(renderPass->numTargets);
+		std::vector<Render::TextureConstPtr> targets(renderPass->numTargets);
 		for(auto j = 0u; j < renderPass->numTargets; ++j)
 		{
 			targets[j] = renderTarget->getTargetTextures()[j].acquire<Render::Texture>();

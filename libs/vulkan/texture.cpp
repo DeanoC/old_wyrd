@@ -20,8 +20,6 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 		new(vulkanTexture) Vulkan::Texture{};
 		auto[getRMFunc, resolverFunc, resourceNameFunc] = resolver_;
 
-		vulkanTexture->cpuTexture = texture.get();
-
 		auto device = device_.lock();
 		if(!device) return false;
 
@@ -49,8 +47,8 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 		VkImageUsageFlags usageflags = 0;
 		usageflags |= texture->canBeDMASrc() ? VK_IMAGE_USAGE_TRANSFER_SRC_BIT : 0;
 		usageflags |= texture->canBeDMADst() ? VK_IMAGE_USAGE_TRANSFER_DST_BIT : 0;
-		usageflags |= texture->canBeShaderRead() ? VK_IMAGE_USAGE_SAMPLED_BIT : 0;
-		if(texture->canBeRopRead() || texture->canBeRopWrite())
+		usageflags |= texture->canBeReadByShader() ? VK_IMAGE_USAGE_SAMPLED_BIT : 0;
+		if(texture->canBeReadByRop() || texture->canBeWrittenByRop())
 		{
 			if(Render::GtfCracker::isDepthStencil(texture->format))
 			{
@@ -61,11 +59,12 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 			}
 		}
 
-		VkImageCreateInfo createInfo{};
-		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		vulkanTexture->format = VkfCracker::fromGeneric(texture->format);
+
+		VkImageCreateInfo createInfo{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
 		createInfo.flags = texture->isCubeMap() ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0u;
 		createInfo.imageType = type;
-		createInfo.format = VkfCracker::fromGeneric(texture->format);
+		createInfo.format = vulkanTexture->format;
 		createInfo.extent = {texture->width, texture->height, texture->depth};
 		createInfo.mipLevels = texture->mipLevels;
 		createInfo.arrayLayers = texture->slices;
@@ -114,12 +113,11 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 		imageViewCreateInfo.flags = createInfo.flags;
 		vulkanTexture->imageView = device->createImageView(imageViewCreateInfo);
 
-
 		// now the gpu texture has been created, we may need to schedule 
 		// a cpu -> gpu transfer to initalise it if required.
-		if(!test_equal(texture->flags, Render::TextureFlag::NoInit))
+		if(!test_equal(texture->flags, Render::TextureFlags::NoInit))
 		{
-			if(test_equal(texture->flags, Render::TextureFlag::InitZero))
+			if(test_equal(texture->flags, Render::TextureFlags::InitZero))
 			{
 				device->fill(0x0, createInfo, texture);
 			}
@@ -150,7 +148,7 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 		return true;
 	};
 
-	s_stage = rm_.registerNextHandler(Id, {sizeof(Vulkan::Texture), registerFunc, deleteFunc});
+	s_stage = rm_.registerNextHandler(Render::TextureId, {sizeof(Vulkan::Texture), registerFunc, deleteFunc});
 }
 
 auto Texture::transitionToRenderTarget(std::shared_ptr<Render::Encoder> const& encoder_) -> void
@@ -159,8 +157,7 @@ auto Texture::transitionToRenderTarget(std::shared_ptr<Render::Encoder> const& e
 	VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
 	barrier.oldLayout = imageLayout;
 
-	if(Render::GtfCracker::isDepth(cpuTexture->format) ||
-	   Render::GtfCracker::isStencil(cpuTexture->format))
+	if(VkfCracker::isDepth(format) || VkfCracker::isStencil(format))
 	{
 		barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 	} else
@@ -173,8 +170,7 @@ auto Texture::transitionToRenderTarget(std::shared_ptr<Render::Encoder> const& e
 	barrier.image = image;
 	barrier.subresourceRange = entireRange;
 	barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
-	if(Render::GtfCracker::isDepth(cpuTexture->format) ||
-	   Render::GtfCracker::isStencil(cpuTexture->format))
+	if(VkfCracker::isDepth(format) || VkfCracker::isStencil(format))
 	{
 		barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 	} else

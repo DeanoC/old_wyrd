@@ -128,7 +128,7 @@ set( RENDER_SRC
 		render/types.h
 		render/renderpass.cpp
 		render/image.cpp
-		render/rendertarget.cpp render/shader.cpp render/shader.h render/pipeline.cpp render/pipeline.h render/bindingtable.cpp render/bindingtable.h render/ropblender.cpp render/ropblender.h render/viewport.cpp render/viewport.h render/rasterisationstate.cpp render/rasterisationstate.h render/vertexinput.cpp render/vertexinput.h)
+		render/rendertarget.cpp render/shader.cpp render/shader.h render/pipeline.cpp render/pipeline.h render/bindingtable.cpp render/bindingtable.h render/ropblender.cpp render/ropblender.h render/viewport.cpp render/viewport.h render/rasterisationstate.cpp render/rasterisationstate.h render/vertexinput.cpp render/vertexinput.h render/buffer.cpp render/buffer.h)
 
 set( MATH_SRC
 		math/vector_math.cpp
@@ -215,7 +215,7 @@ set( VULKAN_SRC
 		vulkan/resources.cpp
 		vulkan/resources.h
 		vulkan/semaphore.cpp
-		vulkan/semaphore.h vulkan/pipeline.cpp vulkan/pipeline.h vulkan/shadermodule.cpp vulkan/shadermodule.h vulkan/bindingtable.cpp vulkan/bindingtable.h)
+		vulkan/semaphore.h vulkan/pipeline.cpp vulkan/pipeline.h vulkan/shadermodule.cpp vulkan/shadermodule.h vulkan/bindingtable.cpp vulkan/bindingtable.h vulkan/buffer.cpp vulkan/buffer.h)
 
 #-----------
 set(wryd_srcs

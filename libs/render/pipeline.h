@@ -17,48 +17,58 @@ struct ResourceNameView;
 
 namespace Render {
 
+enum class RenderPipelineFlags : uint8_t
+{
+	None = 0,
+	EnablePrimitiveRestart = Core::Bit(0),
+};
+
+constexpr auto is_bitmask_enum(RenderPipelineFlags) -> bool { return true; }
+
 struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipelineId>
 {
 	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void;
 	static constexpr uint16_t MajorVersion = 1;
 	static constexpr uint16_t MinorVersion = 0;
 
+	// the shader array passed to Create should be only the shader used.
+	// 0 shaders = illegal
+	// 1 shader = vertex only, discard flag required
+	// 2 shaders = vertex + fragment
+	// 3 shaders =  vertex + geometry + fragment
+	// 4 shaders = vertex + tess control + tess eval + fragment
+	// 5 shaders = vertex + tess control + tess eval + geometry + fragment
 	static auto Create(
 			std::shared_ptr<ResourceManager::ResourceMan> rm_,
 			ResourceManager::ResourceNameView const& name_,
-			RasterisationState const rasterisationState_,
 			Topology topology_,
-			uint8_t flags_,
+			RenderPipelineFlags flags_,
 			std::vector<BindingTableMemoryMapHandle> const& memoryMap_,
-			SPIRVShaderHandle vertexShader_,
-			SPIRVShaderHandle tesselationControlShader_,
-			SPIRVShaderHandle tesselationEvalShader_,
-			SPIRVShaderHandle geometryShader_,
-			SPIRVShaderHandle fragmentShader_,
+			std::vector<SPIRVShaderHandle> const& shaders_,
+			RasterisationStateHandle rasterisationState_,
 			RenderPassHandle renderPass_,
 			ROPBlenderHandle ropBlender_,
 			ViewportHandle viewport_,
 			VertexInputHandle vertexInput_) -> RenderPipelineHandle;
 
-	static constexpr uint8_t EnablePrimitiveRestartFlag = Core::Bit(0);
+	auto isPrimitiveRestartEnabled() const
+	{
+		return Core::bitmask::test_equal(flags, RenderPipelineFlags::EnablePrimitiveRestart);
+	}
 
-	BindingTableMemoryMapHandle* getBindingTableMemoryMaps()
+	BindingTableMemoryMapHandle const* getBindingTableMemoryMaps() const
 	{
 		return (BindingTableMemoryMapHandle*) (this + 1);
 	}
 
-	RasterisationState rasterisationState;
 
 	Topology inputTopology;
-	uint8_t flags;
+	RenderPipelineFlags flags;
 	uint8_t numBindingTableMemoryMaps;
-	uint8_t padd;
+	uint8_t numShaders;
 
-	SPIRVShaderHandle vertexShader;
-	SPIRVShaderHandle tesselationControlShader;
-	SPIRVShaderHandle tesselationEvalShader;
-	SPIRVShaderHandle geometryShader;
-	SPIRVShaderHandle fragmentShader;
+	SPIRVShaderHandle shaders[5];
+	RasterisationStateHandle rasterisationState;
 	RenderPassHandle renderPass;
 	ROPBlenderHandle ropBlender;
 	ViewportHandle viewport;

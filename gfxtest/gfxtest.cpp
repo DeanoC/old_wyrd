@@ -22,9 +22,11 @@ static auto defaultBindingTableName = ResourceManager::ResourceNameView("mem$def
 static auto defaultViewportName = ResourceManager::ResourceNameView("mem$defaultViewport");
 static auto defaultVertexInputName = ResourceManager::ResourceNameView("mem$defaultVertexInput");
 static auto defaultROPBlenderName = ResourceManager::ResourceNameView("mem$defaultROPBlender");
-
-static auto redOutFragmentShaderName = ResourceManager::ResourceNameView("mem$redIytFragmentShader");
+static auto defaultRasterStateName = ResourceManager::ResourceNameView("mem$defaultRasterState");
 static auto defaultRenderPipelineName = ResourceManager::ResourceNameView("mem$defaultRenderPipeline");
+
+static auto redOutVertexShaderName = ResourceManager::ResourceNameView("mem$redIytVertexShader");
+static auto redOutFragmentShaderName = ResourceManager::ResourceNameView("mem$redIytFragmentShader");
 
 struct App
 {
@@ -109,16 +111,16 @@ struct App
 		auto& rm = resourceManager;
 		Texture::Create(rm,
 						blankTex4x4Name,
-						TextureFlag::InitZero |
-						TextureFlagFromUsage(Usage::ShaderRead | Usage::DMADst),
+						TextureFlags::InitZero |
+						Texture::FromUsage(Usage::ShaderRead | Usage::DMADst),
 						4, 4, 1, 1,
 						1, 1,
 						GenericTextureFormat::R8G8B8A8_UNORM);
 
 		Texture::Create(rm,
 						colourRT0Name,
-						TextureFlag::NoInit |
-						TextureFlagFromUsage(Usage::RopRead | Usage::RopWrite | Usage::DMASrc | Usage::DMADst),
+						TextureFlags::NoInit |
+						Texture::FromUsage(Usage::RopRead | Usage::RopWrite | Usage::DMASrc | Usage::DMADst),
 						display->getWidth(), display->getHeight(), 1, 1,
 						1, 1,
 						GenericTextureFormat::R8G8B8A8_UNORM);
@@ -184,29 +186,24 @@ struct App
 						   {0.0f, 0.0f, 0.0f, 0.0f}
 		);
 
+		RasterisationState::Create(rm, defaultRasterStateName);
+
 		RenderPipeline::Create(rm,
 							   defaultRenderPipelineName,
-							   {
-									   FrontFace::CounterClockWise,
-									   CullMode::None,
-									   FillMode::Fill,
-									   {},
-									   CompareOp::Always,
-									   SampleCounts::One,
-									   0, // flags
-							   },
 							   Topology::Triangles,
-							   0, // flags
-							   {rm->openByName<BindingTableMemoryMapId>(defaultBindingTableMemoryMapName)},
-							   {}, // vertex
-							   {}, // tess control
-							   {}, // tess eval
-							   {}, // geometry
-							   {rm->openByName<SPIRVShaderId>(redOutFragmentShaderName)},
-							   {rm->openByName<RenderPassId>(defaultRenderPassName)},
-							   {rm->openByName<ROPBlenderId>(defaultROPBlenderName)},
-							   {rm->openByName<ViewportId>(defaultViewportName)},
-							   {rm->openByName<VertexInputId>(defaultVertexInputName)}
+							   RenderPipelineFlags::None,
+							   {
+									   rm->openByName<BindingTableMemoryMapId>(defaultBindingTableMemoryMapName)
+							   },
+							   {
+									   rm->openByName<SPIRVShaderId>(redOutVertexShaderName),
+									   rm->openByName<SPIRVShaderId>(redOutFragmentShaderName),
+							   },
+							   rm->openByName<RasterisationStateId>(defaultRasterStateName),
+							   rm->openByName<RenderPassId>(defaultRenderPassName),
+							   rm->openByName<ROPBlenderId>(defaultROPBlenderName),
+							   rm->openByName<ViewportId>(defaultViewportName),
+							   rm->openByName<VertexInputId>(defaultVertexInputName)
 		);
 	}
 

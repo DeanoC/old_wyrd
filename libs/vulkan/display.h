@@ -26,7 +26,7 @@ public:
 
 	auto createSwapChain() -> void;
 
-	auto present(std::shared_ptr<Render::Texture> const& src_) -> void final;
+	auto present(Render::TextureConstPtr const& src_) -> void final;
 
 private:
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat() const;

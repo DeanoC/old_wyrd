@@ -52,19 +52,17 @@ enum class Usage : uint32_t
 	ShaderWrite = Core::Bit(3),
 	RopRead = Core::Bit(4),
 	RopWrite = Core::Bit(5),
-	MASK = DMASrc | DMADst | ShaderRead | RopRead | RopWrite,
+
+	VertexRead = Core::Bit(6),
+	IndexRead = Core::Bit(7),
+	IndirectRead = Core::Bit(8),
+	TextureRead = Core::Bit(9), // implicitly true for textures, buffers can use for texture buffers
+	TextureWrite = Core::Bit(10) // implicity true for texture with ShaderWrite, buffer that can be written to as a texture
 };
 
-enum class TextureFlag : uint32_t
-{
-	// should we keep a copy of the texture data after init?
-			KeepCpuCopy = Core::Bit(0),
-	NoInit = Core::Bit(1),
-	InitZero = Core::Bit(2),
-	CubeMap = Core::Bit(3),
-	ComputeMipMaps = Core::Bit(4),
-	UsageMask = (uint32_t) (Usage::MASK) << 5
-};
+static constexpr uint32_t UsageBitCount = 11u;
+static constexpr uint32_t UsageMask = (1u << UsageBitCount) - 1u;
+
 
 enum class MemoryAccess : uint32_t
 {
@@ -303,8 +301,6 @@ constexpr auto is_bitmask_enum(DMAPipelineStages) -> bool { return true; }
 
 constexpr auto is_bitmask_enum(ShaderType) -> bool { return true; }
 
-constexpr auto is_bitmask_enum(TextureFlag) -> bool { return true; }
-
 constexpr auto is_bitmask_enum(EncoderFlag) -> bool { return true; }
 
 constexpr auto is_bitmask_enum(CommandQueueFlavour) -> bool { return true; }
@@ -316,19 +312,6 @@ constexpr auto is_bitmask_enum(MemoryAccess) -> bool { return true; }
 constexpr auto is_bitmask_enum(ColourComponents) -> bool { return true; }
 
 constexpr auto is_bitmask_enum(SampleCounts) -> bool { return true; }
-
-
-constexpr auto TextureFlagsToUsage(TextureFlag flags_) -> Usage
-{
-	using namespace Core::bitmask;
-	return from_uint<Usage>(to_uint(flags_ & TextureFlag::UsageMask) >> 5);
-}
-
-constexpr auto TextureFlagFromUsage(Usage usage) -> TextureFlag
-{
-	using namespace Core::bitmask;
-	return from_uint<TextureFlag>(to_uint(usage) << 5);
-}
 
 }
 

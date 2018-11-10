@@ -17,8 +17,11 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) 
 		auto renderPipeline = std::static_pointer_cast<RenderPipeline>(ptr_);
 		auto[getRMFunc, resolverFunc, resourceNameFunc] = resolver_;
 
-		resolverFunc(renderPipeline->vertexShader.base);
-		resolverFunc(renderPipeline->fragmentShader.base);
+		for(auto i = 0u; i < 5; ++i)
+		{
+			resolverFunc(renderPipeline->shaders[i].base);
+
+		}
 
 		return true;
 	};
@@ -78,36 +81,42 @@ auto ComputePipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_)
 auto RenderPipeline::Create(
 		std::shared_ptr<ResourceManager::ResourceMan> rm_,
 		ResourceManager::ResourceNameView const& name_,
-		RasterisationState const rasterisationState_,
 		Topology topology_,
-		uint8_t flags_,
+		RenderPipelineFlags flags_,
 		std::vector<BindingTableMemoryMapHandle> const& memoryMap_,
-		SPIRVShaderHandle vertexShader_,
-		SPIRVShaderHandle tesselationControlShader_,
-		SPIRVShaderHandle tesselationEvalShader_,
-		SPIRVShaderHandle geometryShader_,
-		SPIRVShaderHandle fragmentShader_,
+		std::vector<SPIRVShaderHandle> const& shaders_, // vertex, fragment, geometry, tess control, tess eval
+		RasterisationStateHandle rasterisationState_,
 		RenderPassHandle renderPass_,
 		ROPBlenderHandle ropBlender_,
 		ViewportHandle viewport_,
 		VertexInputHandle vertexInput_) -> RenderPipelineHandle
 {
+	assert(shaders_.size() > 0);
+
 	size_t const dataSize = sizeof(BindingTableMemoryMapHandle) * memoryMap_.size();
 	size_t const totalSize = sizeof(RenderPipeline) + dataSize;
 
 	auto obj = (RenderPipeline*) malloc(totalSize);
 	std::memset(obj, 0, totalSize);
 	obj->sizeAndStageCount = totalSize;
+	obj->numShaders = (uint8_t) shaders_.size();
 	obj->numBindingTableMemoryMaps = (uint8_t) memoryMap_.size();
-	obj->rasterisationState = rasterisationState_;
 	obj->inputTopology = topology_;
 	obj->flags = flags_;
 	std::memcpy(obj + 1, memoryMap_.data(), dataSize);
-	obj->vertexShader = vertexShader_;
-	obj->tesselationControlShader = tesselationControlShader_;
-	obj->tesselationEvalShader = tesselationEvalShader_;
-	obj->geometryShader = geometryShader_;
-	obj->fragmentShader = fragmentShader_;
+
+	for(auto i = 0u; i < 5; ++i)
+	{
+		if(i < shaders_.size())
+		{
+			obj->shaders[i] = shaders_[i];
+		} else
+		{
+			obj->shaders[i] = {};
+		}
+	}
+
+	obj->rasterisationState = rasterisationState_;
 	obj->renderPass = renderPass_;
 	obj->ropBlender = ropBlender_;
 	obj->viewport = viewport_;

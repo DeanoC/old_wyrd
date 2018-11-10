@@ -3,6 +3,7 @@
 #define WYRD_RENDER_DISPLAY_H
 
 #include "core/core.h"
+#include "render/resources.h"
 
 namespace Render
 {
@@ -20,7 +21,7 @@ struct Display
 	auto getWidth() const -> uint32_t { return width; }
 	auto getHeight() const -> uint32_t { return height; }
 
-	virtual auto present(std::shared_ptr<Render::Texture> const& src_) -> void = 0;
+	virtual auto present(Render::TextureConstPtr const& src_) -> void = 0;
 
 protected:
 	Display(uint32_t width_, uint32_t height_) : width(width_), height(height_) {}

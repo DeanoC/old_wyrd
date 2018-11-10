@@ -19,6 +19,20 @@ struct ResourceNameView;
 namespace Render {
 struct Encoder;
 
+enum class TextureFlags : uint32_t
+{
+	// should we keep a copy of the texture data after init?
+			KeepCpuCopy = Core::Bit(0),
+	NoInit = Core::Bit(1),
+	InitZero = Core::Bit(2),
+	CubeMap = Core::Bit(3),
+	ComputeMipMaps = Core::Bit(4),
+	Usage = UsageMask << 5
+};
+
+constexpr auto is_bitmask_enum(TextureFlags) -> bool { return true; }
+
+
 // resource stages of Texture have to implement IGpuTexture
 struct IGpuTexture
 {
@@ -38,7 +52,7 @@ public:
 	static auto Create(
 			std::shared_ptr<ResourceManager::ResourceMan> rm_,
 			ResourceManager::ResourceNameView const& name_,
-			TextureFlag flags_,
+			TextureFlags flags_,
 			uint32_t width_,
 			uint32_t height_,
 			uint32_t depth_,
@@ -55,39 +69,19 @@ public:
 
 	constexpr auto is3D() const { return depth != 1; }
 
-	constexpr auto isCubeMap() -> bool const { return Core::bitmask::test_equal(flags, TextureFlag::CubeMap); };
+	constexpr auto isCubeMap() -> bool const { return Core::bitmask::test_equal(flags, TextureFlags::CubeMap); };
 
-	constexpr auto canBeDMASrc() const -> bool
-	{
-		return Core::bitmask::test_equal(TextureFlagsToUsage(flags),
-										 Usage::DMASrc);
-	}
+	constexpr auto canBeDMASrc() const -> bool { return testUsageFlag(Usage::DMASrc); }
 
-	constexpr auto canBeDMADst() const { return Core::bitmask::test_equal(TextureFlagsToUsage(flags), Usage::DMADst); }
+	constexpr auto canBeDMADst() const { return testUsageFlag(Usage::DMADst); }
 
-	constexpr auto canBeShaderRead() const
-	{
-		return Core::bitmask::test_equal(TextureFlagsToUsage(flags),
-										 Usage::ShaderRead);
-	}
+	constexpr auto canBeReadByShader() const { return testUsageFlag(Usage::ShaderRead); }
 
-	constexpr auto canBeShaderWrite() const
-	{
-		return Core::bitmask::test_equal(TextureFlagsToUsage(flags),
-										 Usage::ShaderWrite);
-	}
+	constexpr auto canBeWrittenByShader() const { return testUsageFlag(Usage::ShaderWrite); }
 
-	constexpr auto canBeRopRead() const
-	{
-		return Core::bitmask::test_equal(TextureFlagsToUsage(flags),
-										 Usage::RopRead);
-	}
+	constexpr auto canBeReadByRop() const { return testUsageFlag(Usage::RopRead); }
 
-	constexpr auto canBeRopWrite() const
-	{
-		return Core::bitmask::test_equal(TextureFlagsToUsage(flags),
-										 Usage::RopWrite);
-	}
+	constexpr auto canBeWrittenByRop() const { return testUsageFlag(Usage::RopWrite); }
 
 	// if the ComputeMipMapsFlag flag is set, the mips aren't actually stored here
 	// the withComputedMipMaps param will return the size as if the were
@@ -95,7 +89,7 @@ public:
 	constexpr auto computeSize(bool withComputedMipMaps_) const -> size_t;
 
 #define INTERFACE_THUNK(name) \
-    template<typename... Args> auto name(Args... args) { \
+    template<typename... Args> auto name(Args... args) const { \
         for(auto i = 0u; i < getStageCount(); ++i) \
         { auto iptr = getStage<IGpuTexture>(i+1); \
             assert(iptr != nullptr); return iptr->name(args...);  } }
@@ -110,18 +104,34 @@ public:
 
 #undef INTERFACE_THUNK
 
-	TextureFlag flags;                    //!< flags for this texture
-	uint32_t width;                    //!< width of this texture
-	uint32_t height;                    //!< height of this texture
-	uint32_t depth;                    //!< 3D depth
+	TextureFlags flags;                        //!< flags for this texture
+	uint32_t width;                            //!< width of this texture
+	uint32_t height;                        //!< height of this texture
+	uint32_t depth;                            //!< 3D depth
 
-	uint32_t slices;                    //!< slice count of this texture
-	uint32_t mipLevels;                //!< number of mip levels
-	uint32_t samples;                //!< sample count (usually 1)
-	GenericTextureFormat format;                    //!< format of this texture
+	uint32_t slices;                        //!< slice count of this texture
+	uint32_t mipLevels;                        //!< number of mip levels
+	uint32_t samples;                        //!< sample count (usually 1)
+	GenericTextureFormat format;            //!< format of this texture
 
 	GenericImageHandle imageHandle;
 
+	constexpr auto testUsageFlag(Usage flag_) const -> bool
+	{
+		return Core::bitmask::test_equal(ToUsage(flags), flag_);
+	}
+
+	static constexpr auto ToUsage(TextureFlags flags_) -> Usage
+	{
+		using namespace Core::bitmask;
+		return from_uint<Usage>(to_uint(flags_ & TextureFlags::Usage) >> 5);
+	}
+
+	static constexpr auto FromUsage(Usage usage) -> TextureFlags
+	{
+		using namespace Core::bitmask;
+		return from_uint<TextureFlags>(to_uint(usage) << 5);
+	}
 protected:
 	Texture() = default;
 

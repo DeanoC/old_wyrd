@@ -16,14 +16,14 @@ struct RenderEncoder : public Render::IRenderEncoder
 	RenderEncoder(EncoderPool& owner_, VkCommandBuffer commandBuffer_, GraphicsCBVkVTable* graphicsCBVkVTable_) : owner(
 			owner_), commandBuffer(commandBuffer_), vtable(graphicsCBVkVTable_) {}
 
-	auto clearTexture(Render::TexturePtr const& texture_, std::array<float_t, 4> const& floats_) -> void final;
+	auto clearTexture(Render::TextureConstPtr const& texture_, std::array<float_t, 4> const& floats_) -> void final;
 	auto beginRenderPass(
-			Render::RenderPassPtr const& renderPass_,
-			Render::RenderTargetPtr const& renderTarget_
+			Render::RenderPassConstPtr const& renderPass_,
+			Render::RenderTargetConstPtr const& renderTarget_
 	) -> void final;
 	auto endRenderPass() -> void final;
-	auto blit(Render::TexturePtr const& src_, Render::TexturePtr const& dst_) -> void final;
-	auto bind(Render::RenderPipelinePtr const& pipeline_) -> void final;
+	auto blit(Render::TextureConstPtr const& src_, Render::TextureConstPtr const& dst_) -> void final;
+	auto bind(Render::RenderPipelineConstPtr const& pipeline_) -> void final;
 
 #define GENERAL_CB_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(commandBuffer, args...); }
 #define GENERAL_CB_VK_FUNC_EXT(name, extension) GENERAL_CB_VK_FUNC(name)
@@ -35,7 +35,7 @@ struct RenderEncoder : public Render::IRenderEncoder
 #include "functionlist.inl"
 
 	// special case for the vulkan swap chain
-	auto resolveForDisplay(std::shared_ptr<Render::Texture> const& src_,
+	auto resolveForDisplay(Render::TextureConstPtr const& src_,
 						   uint32_t width_, uint32_t height_,
 						   VkImage display_) -> void;
 

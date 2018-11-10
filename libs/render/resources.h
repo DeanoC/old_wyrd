@@ -27,6 +27,8 @@ struct Sampler;
 struct ROPBlender;
 struct Viewport;
 struct VertexInput;
+struct Buffer;
+struct RasterisationState;
 
 auto RegisterResourceHandlers(ResourceManager::ResourceMan& rm_) -> void;
 
@@ -46,6 +48,8 @@ static constexpr ResourceManager::ResourceId SamplerId = "SAMP"_resource_id;
 static constexpr ResourceManager::ResourceId ROPBlenderId = "ROPB"_resource_id;
 static constexpr ResourceManager::ResourceId ViewportId = "VIEW"_resource_id;
 static constexpr ResourceManager::ResourceId VertexInputId = "VINP"_resource_id;
+static constexpr ResourceManager::ResourceId BufferId = "BUFF"_resource_id;
+static constexpr ResourceManager::ResourceId RasterisationStateId = "RAST"_resource_id;
 
 using GenericImageHandle = ResourceManager::ResourceHandle<GenericImageId>;
 using RenderPassHandle = ResourceManager::ResourceHandle<RenderPassId>;
@@ -60,6 +64,8 @@ using SamplerHandle = ResourceManager::ResourceHandle<SamplerId>;
 using ROPBlenderHandle = ResourceManager::ResourceHandle<ROPBlenderId>;
 using ViewportHandle = ResourceManager::ResourceHandle<ViewportId>;
 using VertexInputHandle = ResourceManager::ResourceHandle<VertexInputId>;
+using BufferHandle = ResourceManager::ResourceHandle<BufferId>;
+using RasterisationStateHandle = ResourceManager::ResourceHandle<RasterisationStateId>;
 
 using GenericImagePtr = std::shared_ptr<GenericImage>;
 using RenderPassPtr = std::shared_ptr<RenderPass>;
@@ -74,6 +80,8 @@ using SamplerPtr = std::shared_ptr<Sampler>;
 using ROPBlenderPtr = std::shared_ptr<ROPBlender>;
 using ViewportPtr = std::shared_ptr<Viewport>;
 using VertexInputPtr = std::shared_ptr<VertexInput>;
+using BufferPtr = std::shared_ptr<Buffer>;
+using RasterisationStatePtr = std::shared_ptr<RasterisationState>;
 
 using GenericImageConstPtr = std::shared_ptr<GenericImage const>;
 using RenderPassConstPtr = std::shared_ptr<RenderPass const>;
@@ -88,6 +96,8 @@ using SamplerConstPtr = std::shared_ptr<Sampler const>;
 using ROPBlenderConstPtr = std::shared_ptr<ROPBlender const>;
 using ViewportConstPtr = std::shared_ptr<Viewport const>;
 using VertexInputConstPtr = std::shared_ptr<VertexInput const>;
+using BufferConstPtr = std::shared_ptr<Buffer const>;
+using RasterisationStateConstPtr = std::shared_ptr<RasterisationState const>;
 
 }
 

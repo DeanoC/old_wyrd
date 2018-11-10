@@ -41,8 +41,8 @@ struct ResourceHandleBase
 	uint16_t generation;
 
 protected:
-	auto tryAcquire() -> std::shared_ptr<ResourceBase>;
-	auto acquire() -> std::shared_ptr<ResourceBase>;
+	auto tryAcquire() const -> std::shared_ptr<ResourceBase const>;
+	auto acquire() const -> std::shared_ptr<ResourceBase const>;
 };
 
 static_assert(sizeof(ResourceHandleBase) == 16);
@@ -55,28 +55,28 @@ public:
 
 	auto isValid() const { return base.isValid(); }
 
-	auto acquire() -> typename Resource<id_>::Ptr
+	auto acquire() const -> typename Resource<id_>::ConstPtr
 	{
-		return std::static_pointer_cast<Resource<id_>>(base.acquire());
+		return std::static_pointer_cast<Resource<id_> const>(base.acquire());
 	}
 
-	auto tryAcquire() -> typename Resource<id_>::Ptr
+	auto tryAcquire() const -> typename Resource<id_>::ConstPtr
 	{
-		return std::static_pointer_cast<Resource<id_>>(base.tryAcquire());
-	}
-
-	template<typename T>
-	auto acquire() -> typename std::shared_ptr<T>
-	{
-		static_assert(T::Id == id_, "Ptr is of different type from the handle");
-		return std::static_pointer_cast<T>(base.acquire());
+		return std::static_pointer_cast<Resource<id_> const>(base.tryAcquire());
 	}
 
 	template<typename T>
-	auto tryAcquire() -> typename std::shared_ptr<T>
+	auto acquire() const -> typename std::shared_ptr<T const>
 	{
 		static_assert(T::Id == id_, "Ptr is of different type from the handle");
-		return std::static_pointer_cast<T>(base.tryAcquire());
+		return std::static_pointer_cast<T const>(base.acquire());
+	}
+
+	template<typename T>
+	auto tryAcquire() const -> typename std::shared_ptr<T const>
+	{
+		static_assert(T::Id == id_, "Ptr is of different type from the handle");
+		return std::static_pointer_cast<T const>(base.tryAcquire());
 	}
 
 	ResourceHandle() : base() {}

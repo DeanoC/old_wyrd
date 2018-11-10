@@ -31,12 +31,10 @@ struct Texture : public Render::IGpuTexture
 	auto transitionToShaderSrc(std::shared_ptr<Render::Encoder> const& encoder_) -> void final;
 	auto transitionToDMASrc(std::shared_ptr<Render::Encoder> const& encoder_) -> void final;
 
-	constexpr static ResourceManager::ResourceId Id = Render::Texture::Id;
-
-	Render::Texture* cpuTexture; // safe raw pointer its we are really a single memory block
 	VkImage image;
 	VmaAllocation allocation;
 
+	VkFormat format;
 	VkImageViewType imageViewType;
 	VkImageView imageView; // the default view same as when created
 	VkImageSubresourceRange entireRange;

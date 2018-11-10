@@ -10,7 +10,7 @@
 
 namespace Vulkan {
 
-auto RenderEncoder::clearTexture(std::shared_ptr<Render::Texture> const& texture_,
+auto RenderEncoder::clearTexture(Render::TextureConstPtr const& texture_,
 								 std::array<float_t, 4> const& floats_) -> void
 {
 	Texture* texture = texture_->getStage<Texture>(Texture::s_stage);
@@ -29,8 +29,8 @@ auto RenderEncoder::clearTexture(std::shared_ptr<Render::Texture> const& texture
 	}
 }
 
-auto RenderEncoder::blit(std::shared_ptr<Render::Texture> const& src_,
-						 std::shared_ptr<Render::Texture> const& dst_) -> void
+auto RenderEncoder::blit(Render::TextureConstPtr const& src_,
+						 Render::TextureConstPtr const& dst_) -> void
 {
 	auto src = src_->getStage<Texture>(Texture::s_stage);
 	auto dst = src_->getStage<Texture>(Texture::s_stage);
@@ -52,8 +52,8 @@ auto RenderEncoder::blit(std::shared_ptr<Render::Texture> const& src_,
 }
 
 auto RenderEncoder::beginRenderPass(
-		Render::RenderPassPtr const& renderPass_,
-		Render::RenderTargetPtr const& renderTarget_
+		Render::RenderPassConstPtr const& renderPass_,
+		Render::RenderTargetConstPtr const& renderTarget_
 ) -> void
 {
 	auto vulkanRenderPass = renderPass_->getStage<RenderPass>(Vulkan::RenderPass::s_stage);
@@ -96,7 +96,7 @@ auto RenderEncoder::endRenderPass() -> void
 }
 
 auto RenderEncoder::resolveForDisplay(
-		std::shared_ptr<Render::Texture> const& src_,
+		Render::TextureConstPtr const& src_,
 		uint32_t width_, uint32_t height_,
 		VkImage display_) -> void
 {
@@ -186,7 +186,7 @@ auto RenderEncoder::resolveForDisplay(
 	}
 }
 
-auto RenderEncoder::bind(Render::RenderPipelinePtr const& pipeline_) -> void
+auto RenderEncoder::bind(Render::RenderPipelineConstPtr const& pipeline_) -> void
 {
 	auto pipeline = pipeline_->getStage<RenderPipeline>(RenderPipeline::s_stage);
 	vkCmdBindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipeline);

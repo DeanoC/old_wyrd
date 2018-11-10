@@ -37,7 +37,7 @@ struct alignas(8) Viewport : public ResourceManager::Resource<ViewportId>
 			ResourceManager::ResourceNameView const& name_,
 			std::vector<ViewportAndScissor> const& viewports_) -> ViewportHandle;
 
-	ViewportAndScissor* getViewports() { return (ViewportAndScissor*) (this + 1); }
+	ViewportAndScissor const* getViewports() const { return (ViewportAndScissor const*) (this + 1); }
 
 	uint8_t numViewports;
 	uint8_t padd[7];

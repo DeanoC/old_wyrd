@@ -138,13 +138,13 @@ auto ResourceMan::GetNameFromHandleBase(ResourceHandleBase const& base_) -> Reso
 	return rm->indexToResourceName[base_.index].getName();
 }
 
-auto ResourceHandleBase::acquire() -> ResourceBase::Ptr
+auto ResourceHandleBase::acquire() const -> ResourceBase::ConstPtr
 {
 	auto resourceMan = ResourceMan::GetFromIndex(managerIndex);
 	return resourceMan->acquire(*this);
 }
 
-auto ResourceHandleBase::tryAcquire() -> ResourceBase::Ptr
+auto ResourceHandleBase::tryAcquire() const -> ResourceBase::ConstPtr
 {
 	auto resourceMan = ResourceMan::GetFromIndex(managerIndex);
 	return resourceMan->tryAcquire(*this);

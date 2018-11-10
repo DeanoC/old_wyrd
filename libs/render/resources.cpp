@@ -5,6 +5,7 @@
 #include "resourcemanager/writer.h"
 #include "render/resources.h"
 #include "render/bindingtable.h"
+#include "render/buffer.h"
 #include "render/image.h"
 #include "render/texture.h"
 #include "render/renderpass.h"
@@ -33,6 +34,7 @@ auto RegisterResourceHandlers(ResourceManager::ResourceMan& rm_) -> void
 	ROPBlender::RegisterResourceHandler(rm_);
 	Viewport::RegisterResourceHandler(rm_);
 	VertexInput::RegisterResourceHandler(rm_);
+	Buffer::RegisterResourceHandler(rm_);
 }
 
 } // end namespace

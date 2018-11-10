@@ -53,7 +53,7 @@ struct alignas(8) ROPBlender : public ResourceManager::Resource<ROPBlenderId>
 
 	auto isLogicBlender() const { return flags & LogicEnableFlag; }
 
-	ROPTargetBlender* targetBlenders() { return (ROPTargetBlender*) (this + 1); }
+	ROPTargetBlender const* targetBlenders() const { return (ROPTargetBlender const*) (this + 1); }
 
 	float constants[4];
 	uint8_t numTargets;

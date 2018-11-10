@@ -49,7 +49,8 @@ public:
 	virtual auto begin(std::shared_ptr<Semaphore> const& semaphore_ = {}) -> void = 0;
 	virtual auto end(std::shared_ptr<Semaphore> const& semaphore_ = {}) -> void = 0;
 	virtual auto reset() -> void = 0;
-	virtual auto copy(TexturePtr const& src_, TexturePtr const& dst_) -> void = 0;
+	virtual auto copy(TextureConstPtr const& src_, TextureConstPtr const& dst_) -> void = 0;
+	virtual auto fill(uint32_t fill_, BufferPtr const& dst_) -> void = 0;
 
 	//	virtual auto pipelineBarrier(
 	//			Render::DMAPipelineStages waitStages_,
@@ -58,9 +59,9 @@ public:
 	//	virtual auto memoryBarrier() -> void = 0;
 	//	virtual auto bufferBarrier() -> void = 0;
 	virtual auto textureBarrier(MemoryAccess waitAccess_, MemoryAccess stallAccess_,
-								TexturePtr const& texture_) -> void = 0;
+								TextureConstPtr const& texture_) -> void = 0;
 
-	virtual auto textureBarrier(TexturePtr const& texture_) -> void = 0;
+	virtual auto textureBarrier(TextureConstPtr const& texture_) -> void = 0;
 
 protected:
 	Encoder(EncoderFlag encoderFlags_) : encoderFlags(encoderFlags_) {};
@@ -69,12 +70,12 @@ protected:
 
 struct IRenderEncoder
 {
-	virtual auto
-	clearTexture(TexturePtr const& texture_, std::array<float_t, 4> const& floats_) -> void = 0;
-	virtual auto beginRenderPass(RenderPassPtr const& renderPass_, RenderTargetPtr const& renderTarget_) -> void = 0;
+	virtual auto clearTexture(TextureConstPtr const& texture_, std::array<float_t, 4> const& floats_) -> void = 0;
+	virtual auto beginRenderPass(RenderPassConstPtr const& renderPass_,
+								 RenderTargetConstPtr const& renderTarget_) -> void = 0;
 	virtual auto endRenderPass() -> void = 0;
-	virtual auto blit(TexturePtr const& src_, TexturePtr const& dst_) -> void = 0;
-	virtual auto bind(RenderPipelinePtr const& pipeline_) -> void = 0;
+	virtual auto blit(TextureConstPtr const& src_, TextureConstPtr const& dst_) -> void = 0;
+	virtual auto bind(RenderPipelineConstPtr const& pipeline_) -> void = 0;
 };
 
 struct IComputeEncoder
