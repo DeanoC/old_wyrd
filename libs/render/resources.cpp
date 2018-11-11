@@ -15,6 +15,7 @@
 #include "render/ropblender.h"
 #include "render/viewport.h"
 #include "render/vertexinput.h"
+#include "render/rasterisationstate.h"
 
 namespace Render {
 
@@ -35,6 +36,7 @@ auto RegisterResourceHandlers(ResourceManager::ResourceMan& rm_) -> void
 	Viewport::RegisterResourceHandler(rm_);
 	VertexInput::RegisterResourceHandler(rm_);
 	Buffer::RegisterResourceHandler(rm_);
+	RasterisationState::RegisterResourceHandler(rm_);
 }
 
 } // end namespace

@@ -1,18 +1,19 @@
 #include "core/core.h"
 #include "render/pipeline.h"
 #include "render/shader.h"
-#include "vulkan/shadermodule.h"
 #include "render/bindingtable.h"
-#include "vulkan/bindingtable.h"
 #include "render/renderpass.h"
 #include "render/ropblender.h"
 #include "render/vertexinput.h"
-#include "vulkan/renderpass.h"
 #include "render/viewport.h"
+#include "render/rasterisationstate.h"
+#include "vulkan/shadermodule.h"
+#include "vulkan/renderpass.h"
 #include "vulkan/device.h"
 #include "vulkan/types.h"
-#include "resourcemanager/resourceman.h"
+#include "vulkan/bindingtable.h"
 #include "vulkan/pipeline.h"
+#include "resourcemanager/resourceman.h"
 namespace Vulkan {
 namespace {
 
@@ -106,7 +107,8 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 		// TODO pipeline inheritance
 		VkGraphicsPipelineCreateInfo createInfo{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
 
-		std::vector<VkPipelineShaderStageCreateInfo> stages(renderPipeline->numShaders);
+		std::vector<VkPipelineShaderStageCreateInfo> stages;
+		stages.reserve(renderPipeline->numShaders);
 		for(auto& handle : renderPipeline->shaders)
 		{
 			if(handle.isValid())

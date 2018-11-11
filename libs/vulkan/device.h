@@ -140,7 +140,7 @@ public:
 
 	auto debugNameVkObject(uint64_t object_, VkDebugReportObjectTypeEXT type_, char const* name_) -> void
 	{
-		if(deviceVkVTable.vkDebugMarkerSetObjectNameEXT != nullptr)
+		if(vtable.vkDebugMarkerSetObjectNameEXT != nullptr)
 		{
 			VkDebugMarkerObjectNameInfoEXT createInfo{VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT};
 			createInfo.objectType = type_;
@@ -153,9 +153,9 @@ public:
 
 private:
 
-	DeviceVkVTable deviceVkVTable;
+	DeviceVkVTable vtable;
 
-#define DEVICE_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return deviceVkVTable. name(device, args...); }
+#define DEVICE_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable. name(device, args...); }
 #define DEVICE_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)
 #define FENCE_VK_FUNC(name) DEVICE_VK_FUNC(name)
 #define FENCE_VK_FUNC_EXT(name, extension) DEVICE_VK_FUNC(name)

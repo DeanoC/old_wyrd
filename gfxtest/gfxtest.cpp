@@ -12,6 +12,7 @@
 #include "render/viewport.h"
 #include "render/vertexinput.h"
 #include "render/ropblender.h"
+#include "render/rasterisationstate.h"
 
 static auto blankTex4x4Name = ResourceManager::ResourceNameView("mem$blankTex4x4");
 static auto colourRT0Name = ResourceManager::ResourceNameView("mem$colourRT0");
@@ -25,8 +26,8 @@ static auto defaultROPBlenderName = ResourceManager::ResourceNameView("mem$defau
 static auto defaultRasterStateName = ResourceManager::ResourceNameView("mem$defaultRasterState");
 static auto defaultRenderPipelineName = ResourceManager::ResourceNameView("mem$defaultRenderPipeline");
 
-static auto redOutVertexShaderName = ResourceManager::ResourceNameView("mem$redIytVertexShader");
-static auto redOutFragmentShaderName = ResourceManager::ResourceNameView("mem$redIytFragmentShader");
+static auto passthroughVertexShaderName = ResourceManager::ResourceNameView("mem$passthroughVertexShader");
+static auto redOutFragmentShaderName = ResourceManager::ResourceNameView("mem$redOutFragmentShader");
 
 struct App
 {
@@ -142,19 +143,32 @@ struct App
 							 {display->getWidth(), display->getHeight()}
 		);
 
-		auto const redShaderName = ResourceNameView("mem$redOutFragmentShaderSource"sv);
+		auto const redShaderSourceName = ResourceNameView("mem$redOutFragmentShaderSource"sv);
+		auto const passthroughSourceName = ResourceNameView("mem$passthroughShaderSource"sv);
 
 		TextResource::Create(rm,
-							 redShaderName,
+							 passthroughSourceName,
+							 "[[vk::location(0)]] float4 main([[vk::location(1)]] float3 pos)\n"
+							 "{\n"
+							 "		return float4(pos.x, pos.y, pos.z, 1.0f);\n"
+							 "}\n");
+		TextResource::Create(rm,
+							 redShaderSourceName,
 							 "[[vk::location(0)]] float4 main()\n"
 							 "{\n"
 							 "		return float4(1.0f, 0.0f, 0.0f, 1.0f);\n"
 							 "}\n");
 		SPIRVShader::Compile(rm,
 							 redOutFragmentShaderName,
-							 {rm->openByName<TextResourceId>(redShaderName)},
+							 {rm->openByName<TextResourceId>(redShaderSourceName)},
 							 ShaderSourceLanguage::HLSL,
 							 ShaderType::Fragment,
+							 0);
+		SPIRVShader::Compile(rm,
+							 passthroughVertexShaderName,
+							 {rm->openByName<TextResourceId>(passthroughSourceName)},
+							 ShaderSourceLanguage::HLSL,
+							 ShaderType::Vertex,
 							 0);
 
 		BindingTableMemoryMap::Create(rm,
@@ -196,7 +210,7 @@ struct App
 									   rm->openByName<BindingTableMemoryMapId>(defaultBindingTableMemoryMapName)
 							   },
 							   {
-									   rm->openByName<SPIRVShaderId>(redOutVertexShaderName),
+									   rm->openByName<SPIRVShaderId>(passthroughVertexShaderName),
 									   rm->openByName<SPIRVShaderId>(redOutFragmentShaderName),
 							   },
 							   rm->openByName<RasterisationStateId>(defaultRasterStateName),

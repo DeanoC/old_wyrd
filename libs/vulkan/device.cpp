@@ -60,7 +60,7 @@ Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
 		renderCapable(renderCapable_),
 		physicalDevice(physicalDevice_),
 		deviceCreateInfo(createInfo_),
-		deviceVkVTable{},
+		vtable{},
 		fenceVkVTable{},
 		semaphoreVkVTable{},
 		eventVkVTable{},
@@ -99,83 +99,83 @@ Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
 
 	{
 #define DEVICE_VULKAN_FUNC(name, level) \
-   { deviceVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   if( deviceVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+   { vtable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   if( vtable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define FENCE_VULKAN_FUNC(name, level) \
-   { deviceVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   fenceVkVTable. name = deviceVkVTable. name;       \
-   if( deviceVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+   { vtable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   fenceVkVTable. name = vtable. name;       \
+   if( vtable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define SEMAPHORE_VULKAN_FUNC(name, level) \
-   { deviceVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   semaphoreVkVTable. name = deviceVkVTable. name;       \
-   if( deviceVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+   { vtable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   semaphoreVkVTable. name = vtable. name;       \
+   if( vtable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define EVENT_VULKAN_FUNC(name, level) \
-   { deviceVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   eventVkVTable. name = deviceVkVTable. name;       \
-   if( deviceVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+   { vtable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   eventVkVTable. name = vtable. name;       \
+   if( vtable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define QUERYPOOL_VULKAN_FUNC(name, level) \
-   { deviceVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   queryPoolVkVTable. name = deviceVkVTable. name;       \
-   if( deviceVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+   { vtable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   queryPoolVkVTable. name = vtable. name;       \
+   if( vtable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define BUFFER_VULKAN_FUNC(name, level) \
-   { deviceVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   bufferVkVTable. name = deviceVkVTable. name;       \
-   if( deviceVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+   { vtable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   bufferVkVTable. name = vtable. name;       \
+   if( vtable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define BUFFERVIEW_VULKAN_FUNC(name, level) \
-   { deviceVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   bufferViewVkVTable. name = deviceVkVTable. name;       \
-   if( deviceVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+   { vtable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   bufferViewVkVTable. name = vtable. name;       \
+   if( vtable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define IMAGE_VULKAN_FUNC(name, level) \
-   { deviceVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   imageVkVTable. name = deviceVkVTable. name;       \
-   if( deviceVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+   { vtable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   imageVkVTable. name = vtable. name;       \
+   if( vtable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define IMAGEVIEW_VULKAN_FUNC(name, level) \
-   { deviceVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   imageViewVkVTable. name = deviceVkVTable. name;       \
-   if( deviceVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+   { vtable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   imageViewVkVTable. name = vtable. name;       \
+   if( vtable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define SHADERMODULE_VULKAN_FUNC(name, level) \
-   { deviceVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   shaderModuleVkVTable. name = deviceVkVTable. name;       \
-   if( deviceVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+   { vtable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   shaderModuleVkVTable. name = vtable. name;       \
+   if( vtable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define PIPELINE_VULKAN_FUNC(name, level) \
-   { deviceVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   pipelineVkVTable. name = deviceVkVTable. name;       \
-   if( deviceVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+   { vtable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   pipelineVkVTable. name = vtable. name;       \
+   if( vtable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define SAMPLER_VULKAN_FUNC(name, level) \
-   { deviceVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   samplerVkVTable. name = deviceVkVTable. name;       \
-   if( deviceVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+   { vtable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   samplerVkVTable. name = vtable. name;       \
+   if( vtable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define DESCRIPTORSET_VULKAN_FUNC(name, level) \
-   { deviceVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   descriptorSetVkVTable. name = deviceVkVTable. name;       \
-   if( deviceVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+   { vtable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   descriptorSetVkVTable. name = vtable. name;       \
+   if( vtable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define FRAMEBUFFER_VULKAN_FUNC(name, level) \
-   { deviceVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   framebufferVkVTable. name = deviceVkVTable. name;       \
-   if( deviceVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+   { vtable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   framebufferVkVTable. name = vtable. name;       \
+   if( vtable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define RENDERPASS_VULKAN_FUNC(name, level) \
-   { deviceVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   renderPassVkVTable. name = deviceVkVTable. name;       \
-   if( deviceVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+   { vtable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   renderPassVkVTable. name = vtable. name;       \
+   if( vtable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define COMMANDPOOL_VULKAN_FUNC(name, level) \
-   { deviceVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
-   commandPoolVkVTable. name = deviceVkVTable. name;       \
-   if( deviceVkVTable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
+   { vtable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
+   commandPoolVkVTable. name = vtable. name;       \
+   if( vtable. name == nullptr ) { LOG_S(ERROR) << "Could not load " << #level  << " vulkan function named: " << #name; } }
 
 #define QUEUE_VULKAN_FUNC(name, level) \
    { queueVkVTable. name = (PFN_##name)vkGetDeviceProcAddr( device, #name );       \
@@ -252,20 +252,20 @@ Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
 	}
 	vmaVulkanFunctions.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
 	vmaVulkanFunctions.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
-	vmaVulkanFunctions.vkAllocateMemory = deviceVkVTable.vkAllocateMemory;
-	vmaVulkanFunctions.vkFreeMemory = deviceVkVTable.vkFreeMemory;
-	vmaVulkanFunctions.vkMapMemory = deviceVkVTable.vkMapMemory;
-	vmaVulkanFunctions.vkUnmapMemory = deviceVkVTable.vkUnmapMemory;
-	vmaVulkanFunctions.vkFlushMappedMemoryRanges = deviceVkVTable.vkFlushMappedMemoryRanges;
-	vmaVulkanFunctions.vkInvalidateMappedMemoryRanges = deviceVkVTable.vkInvalidateMappedMemoryRanges;
-	vmaVulkanFunctions.vkBindBufferMemory = deviceVkVTable.vkBindBufferMemory;
-	vmaVulkanFunctions.vkBindImageMemory = deviceVkVTable.vkBindImageMemory;
-	vmaVulkanFunctions.vkGetBufferMemoryRequirements = deviceVkVTable.vkGetBufferMemoryRequirements;
-	vmaVulkanFunctions.vkGetImageMemoryRequirements = deviceVkVTable.vkGetImageMemoryRequirements;
-	vmaVulkanFunctions.vkCreateBuffer = deviceVkVTable.vkCreateBuffer;
-	vmaVulkanFunctions.vkDestroyBuffer = deviceVkVTable.vkDestroyBuffer;
-	vmaVulkanFunctions.vkCreateImage = deviceVkVTable.vkCreateImage;
-	vmaVulkanFunctions.vkDestroyImage = deviceVkVTable.vkDestroyImage;
+	vmaVulkanFunctions.vkAllocateMemory = vtable.vkAllocateMemory;
+	vmaVulkanFunctions.vkFreeMemory = vtable.vkFreeMemory;
+	vmaVulkanFunctions.vkMapMemory = vtable.vkMapMemory;
+	vmaVulkanFunctions.vkUnmapMemory = vtable.vkUnmapMemory;
+	vmaVulkanFunctions.vkFlushMappedMemoryRanges = vtable.vkFlushMappedMemoryRanges;
+	vmaVulkanFunctions.vkInvalidateMappedMemoryRanges = vtable.vkInvalidateMappedMemoryRanges;
+	vmaVulkanFunctions.vkBindBufferMemory = vtable.vkBindBufferMemory;
+	vmaVulkanFunctions.vkBindImageMemory = vtable.vkBindImageMemory;
+	vmaVulkanFunctions.vkGetBufferMemoryRequirements = vtable.vkGetBufferMemoryRequirements;
+	vmaVulkanFunctions.vkGetImageMemoryRequirements = vtable.vkGetImageMemoryRequirements;
+	vmaVulkanFunctions.vkCreateBuffer = vtable.vkCreateBuffer;
+	vmaVulkanFunctions.vkDestroyBuffer = vtable.vkDestroyBuffer;
+	vmaVulkanFunctions.vkCreateImage = vtable.vkCreateImage;
+	vmaVulkanFunctions.vkDestroyImage = vtable.vkDestroyImage;
 
 	VmaAllocatorCreateInfo create = {0, physicalDevice, device, 0,            // preferred block size default 256MB
 									 &allocationCallbacks,    // allocation callbacks

@@ -172,9 +172,8 @@ auto SPIRVShader::Compile(
 		shaderCompiledOkay = module.GetCompilationStatus() == shaderc_compilation_status_success;
 		if(!shaderCompiledOkay)
 		{
-			LOG_S(WARNING) << "Shader compile fail:\n " << module.GetErrorMessage();
-			LOG_S(WARNING) << "Source:\n" << source->getText();
-
+			LOG_S(WARNING) <<
+						   "Shader compile fail:\n" << source->getText() << module.GetErrorMessage();
 		} else
 		{
 			spirvCode.resize(module.cend() - module.cbegin());

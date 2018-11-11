@@ -7,7 +7,6 @@
 #include "render/types.h"
 #include "resourcemanager/resourcehandle.h"
 #include "resourcemanager/resource.h"
-#include "render/rasterisationstate.h"
 
 namespace ResourceManager {
 class ResourceMan;
