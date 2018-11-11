@@ -17,7 +17,8 @@ std::string_view const ResourceMan::DeletedString = {"**DELETED**"};
 std::vector<std::weak_ptr<ResourceMan>> s_resourceManagers;
 uint32_t s_curResourceManagerCount = 0; // TODO keep a free list
 
-ResourceMan::ResourceMan() {}
+ResourceMan::ResourceMan() :
+		indexToBase(1000000) {}
 
 ResourceMan::~ResourceMan()
 {

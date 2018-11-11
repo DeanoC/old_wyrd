@@ -300,11 +300,10 @@ struct App
 		auto renderQueue = device->getGeneralQueue();
 		auto rEncoderPool = device->makeEncoderPool(true, CommandQueueFlavour::Render);
 
-		Render::Encoder::Ptr encoder;
 		do
 		{
 			rEncoderPool->reset();
-			encoder = rEncoderPool->allocateEncoder(EncoderFlag::RenderEncoder);
+			auto encoder = rEncoderPool->allocateEncoder(EncoderFlag::RenderEncoder);
 			auto renderEncoder = encoder->asRenderEncoder();
 
 			encoder->begin();

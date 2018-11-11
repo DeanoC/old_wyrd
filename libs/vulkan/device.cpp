@@ -1,6 +1,7 @@
 #include "core/core.h"
 
 #include "render/buffer.h"
+#include "render/texture.h"
 #include "render/types.h"
 #include "render/gtfcracker.h"
 
@@ -13,6 +14,7 @@
 #include "vulkan/encoder.h"
 #include "vulkan/fence.h"
 #include "vulkan/semaphore.h"
+#include "vulkan/texture.h"
 #include "vulkan/renderpass.h"
 #include "vulkan/rendertarget.h"
 #include "vulkan/vkfcracker.h"
@@ -82,7 +84,8 @@ Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
 		commandPoolVkVTable{},
 		queueVkVTable{},
 		graphicsCBVkVTable{},
-		computeCBVkVTable{}
+		computeCBVkVTable{},
+		fenceFreeList(1000)
 {
 
 	allocationCallbacks.pfnAllocation = &VulkanAlloc;

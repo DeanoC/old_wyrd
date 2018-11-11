@@ -229,14 +229,11 @@ public:
 	using reference = typename tbb::concurrent_vector<Type>::reference;
 	using const_reference = typename tbb::concurrent_vector<Type>::const_reference;
 
-	MTFreeList()
-	{}
-
-	explicit MTFreeList( size_type _count ) : data( _count ), currentSize( _count )
+	explicit MTFreeList(size_type _count) : data(_count)
 	{
 		for(size_type i = 0; i < _count; ++i)
 		{
-			freelist.push( i );
+			freelist.push((IndexType) i);
 		}
 	}
 

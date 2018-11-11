@@ -5,6 +5,7 @@
 #include "vulkan/rendertarget.h"
 #include "vulkan/device.h"
 #include "vulkan/renderpass.h"
+#include "vulkan/texture.h"
 
 namespace Vulkan {
 
