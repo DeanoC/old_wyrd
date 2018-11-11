@@ -79,7 +79,7 @@ struct alignas(8) RasterisationState : public ResourceManager::Resource<Rasteris
 	static auto Create(std::shared_ptr<ResourceManager::ResourceMan> rm_,
 					   ResourceManager::ResourceNameView const& name_,
 					   RasterisationStateFlags flags_ = RasterisationStateFlags::None,
-					   CullMode cullMode_ = CullMode::Back,
+					   CullMode cullMode_ = CullMode::None,
 					   CompareOp depthCompare_ = CompareOp::GreaterOrEqual,
 					   FillMode fillMode_ = FillMode::Fill,
 					   FrontFace frontFace_ = FrontFace::CounterClockWise,

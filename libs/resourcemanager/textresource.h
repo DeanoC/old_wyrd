@@ -30,7 +30,7 @@ struct TextResource : public Resource<TextResourceId>
 
 	char const* const getText() const { return (char const* const) (this + 1); }
 
-	size_t const getTextSize() const { return (uint8_t*) getText() - (uint8_t*) (this); }
+	size_t const getTextSize() const { return getSize() - sizeof(TextResource); }
 };
 
 }

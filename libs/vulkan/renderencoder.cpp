@@ -1,11 +1,15 @@
 #include "core/core.h"
+
+#include "render/buffer.h"
 #include "render/commandqueue.h"
+#include "render/pipeline.h"
+
+#include "vulkan/buffer.h"
 #include "vulkan/texture.h"
 #include "vulkan/semaphore.h"
 #include "vulkan/renderencoder.h"
 #include "vulkan/renderpass.h"
 #include "vulkan/rendertarget.h"
-#include "render/pipeline.h"
 #include "vulkan/pipeline.h"
 
 namespace Vulkan {
@@ -190,6 +194,29 @@ auto RenderEncoder::bind(Render::RenderPipelineConstPtr const& pipeline_) -> voi
 {
 	auto pipeline = pipeline_->getStage<RenderPipeline>(RenderPipeline::s_stage);
 	vkCmdBindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipeline);
+}
+
+auto RenderEncoder::bindVertexBuffer(Render::BufferConstPtr const& buffer_, uint64_t offset_,
+									 uint32_t bindingIndex) -> void
+{
+	assert(buffer_->canBeReadByVertex());
+	auto buffer = buffer_->getStage<Buffer>(Buffer::s_stage);
+	vkCmdBindVertexBuffers(bindingIndex, 1, &buffer->buffer, &offset_);
+}
+
+auto RenderEncoder::bindIndexBuffer(Render::BufferConstPtr const& buffer_, uint64_t offset_, uint8_t bitSize_) -> void
+{
+	assert(buffer_->canBeReadByIndex());
+	assert(bitSize_ == 16 || bitSize_ == 32);
+
+	auto buffer = buffer_->getStage<Buffer>(Buffer::s_stage);
+	vkCmdBindIndexBuffer(buffer->buffer, offset_, VkIndexType(bitSize_ / 32));
+}
+
+auto RenderEncoder::draw(uint32_t vertexCount_, uint32_t vertexOffset_, uint32_t instanceCount_,
+						 uint32_t instanceOffset_) -> void
+{
+	vkCmdDraw(vertexCount_, instanceCount_, vertexOffset_, instanceOffset_);
 }
 
 }

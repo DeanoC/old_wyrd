@@ -2,6 +2,7 @@
 #include "shell/interface.h"
 #include "resourcemanager/resourceman.h"
 #include "resourcemanager/textresource.h"
+#include "render/buffer.h"
 #include "render/resources.h"
 #include "render/rendertarget.h"
 #include "render/shader.h"
@@ -15,6 +16,8 @@
 #include "render/rasterisationstate.h"
 
 static auto blankTex4x4Name = ResourceManager::ResourceNameView("mem$blankTex4x4");
+static auto basicTriVertexBufferName = ResourceManager::ResourceNameView("mem$basicTriVertexBuffer");
+
 static auto colourRT0Name = ResourceManager::ResourceNameView("mem$colourRT0");
 static auto defaultRenderPassName = ResourceManager::ResourceNameView("mem$defaultRenderPass");
 static auto defaultRenderTargetName = ResourceManager::ResourceNameView("mem$defaultRenderTarget");
@@ -118,6 +121,15 @@ struct App
 						1, 1,
 						GenericTextureFormat::R8G8B8A8_UNORM);
 
+		Buffer::Create(rm,
+					   basicTriVertexBufferName,
+					   Buffer::FromUsage(Usage::VertexRead | Usage::DMADst),
+					   {
+							   0.0f, 1.0f, 0.5f,
+							   1.0f, 1.0f, 0.5f,
+							   1.0f, 0.0f, 0.5f
+					   });
+
 		Texture::Create(rm,
 						colourRT0Name,
 						TextureFlags::NoInit |
@@ -143,37 +155,56 @@ struct App
 							 {display->getWidth(), display->getHeight()}
 		);
 
-		auto const redShaderSourceName = ResourceNameView("mem$redOutFragmentShaderSource"sv);
-		auto const passthroughSourceName = ResourceNameView("mem$passthroughShaderSource"sv);
+		auto const glslRedShaderSourceName = ResourceNameView("mem$glslRedOutFragmentShaderSource"sv);
+		auto const hlslRedShaderSourceName = ResourceNameView("mem$hlslRedOutFragmentShaderSource"sv);
+		auto const glslPassthroughSourceName = ResourceNameView("mem$glslPassthroughShaderSource"sv);
+		auto const hlslPassthroughSourceName = ResourceNameView("mem$hlslPassthroughShaderSource"sv);
 
 		TextResource::Create(rm,
-							 passthroughSourceName,
-							 "[[vk::location(0)]] float4 main([[vk::location(1)]] float3 pos)\n"
-							 "{\n"
-							 "		return float4(pos.x, pos.y, pos.z, 1.0f);\n"
+							 glslPassthroughSourceName,
+							 "#extension GL_ARB_separate_shader_objects : enable\n"
+							 "#extension GL_ARB_shading_language_420pack : enable\n"
+							 "layout (location = 0) in vec4 pos;\n"
+							 "void main() {\n"
+							 "   gl_Position = pos;\n"
 							 "}\n");
 		TextResource::Create(rm,
-							 redShaderSourceName,
+							 hlslPassthroughSourceName,
+							 "float4 main([[vk::location(0)]] float4 pos) : SV_Position\n"
+							 "{\n"
+							 "		return pos;\n"
+							 "}\n");
+		TextResource::Create(rm,
+							 glslRedShaderSourceName,
+							 "#extension GL_ARB_separate_shader_objects : enable\n"
+							 "#extension GL_ARB_shading_language_420pack : enable\n"
+							 "layout (location = 0) out vec4 outColor;\n"
+							 "void main() {\n"
+							 "   outColor = vec4(1.0, 0.0,0.0, 1.0);\n"
+							 "}\n");
+		TextResource::Create(rm,
+							 hlslRedShaderSourceName,
 							 "[[vk::location(0)]] float4 main()\n"
 							 "{\n"
 							 "		return float4(1.0f, 0.0f, 0.0f, 1.0f);\n"
 							 "}\n");
 		SPIRVShader::Compile(rm,
 							 redOutFragmentShaderName,
-							 {rm->openByName<TextResourceId>(redShaderSourceName)},
+							 {rm->openByName<TextResourceId>(hlslRedShaderSourceName)},
 							 ShaderSourceLanguage::HLSL,
 							 ShaderType::Fragment,
 							 0);
 		SPIRVShader::Compile(rm,
 							 passthroughVertexShaderName,
-							 {rm->openByName<TextResourceId>(passthroughSourceName)},
+							 {rm->openByName<TextResourceId>(hlslPassthroughSourceName)},
 							 ShaderSourceLanguage::HLSL,
 							 ShaderType::Vertex,
 							 0);
 
 		BindingTableMemoryMap::Create(rm,
 									  defaultBindingTableMemoryMapName,
-									  {});
+									  {}
+		);
 
 		BindingTable::Create(rm,
 							 defaultBindingTableName,
@@ -196,7 +227,18 @@ struct App
 							});
 		ROPBlender::Create(rm,
 						   defaultROPBlenderName,
-						   {{ROPTargetBlender::Disable}},
+						   {
+								   {
+										   ROPTargetBlender::EnableFlag,
+										   ROPBlendOps::Add,
+										   ROPBlendOps::Add,
+										   ColourComponents::All,
+										   ROPBlendFactor::SrcColour,
+										   ROPBlendFactor::Zero,
+										   ROPBlendFactor::SrcAlpha,
+										   ROPBlendFactor::Zero
+								   }
+						   },
 						   {0.0f, 0.0f, 0.0f, 0.0f}
 		);
 
@@ -228,12 +270,14 @@ struct App
 
 		// acquire the resources by name
 		auto& rm = resourceManager;
-		auto blankTex = rm->acquireByName<Texture>(blankTex4x4Name);
 		auto colourRT0 = rm->acquireByName<Texture>(colourRT0Name);
 		auto defaultRenderPass = rm->acquireByName<RenderPass>(defaultRenderPassName);
 		auto defaultRenderTarget = rm->acquireByName<RenderTarget>(defaultRenderTargetName);
 		auto fragShader = rm->acquireByName<SPIRVShader>(redOutFragmentShaderName);
 		auto renderPipeline = rm->acquireByName<RenderPipeline>(defaultRenderPipelineName);
+
+		auto blankTex = rm->acquireByName<Texture>(blankTex4x4Name);
+		auto vBuffer = rm->acquireByName<Buffer>(basicTriVertexBufferName);
 
 		auto renderQueue = device->getGeneralQueue();
 		auto rEncoderPool = device->makeEncoderPool(true, CommandQueueFlavour::Render);
@@ -252,6 +296,8 @@ struct App
 			colourRT0->transitionToRenderTarget(encoder);
 			renderEncoder->beginRenderPass(defaultRenderPass, defaultRenderTarget);
 			renderEncoder->bind(renderPipeline);
+			renderEncoder->bindVertexBuffer(vBuffer);
+			renderEncoder->draw(3);
 			renderEncoder->endRenderPass();
 			colourRT0->transitionToDMASrc(encoder);
 

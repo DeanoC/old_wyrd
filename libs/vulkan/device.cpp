@@ -1,7 +1,11 @@
 #include "core/core.h"
+
+#include "render/buffer.h"
 #include "render/types.h"
-#include "vulkan/types.h"
 #include "render/gtfcracker.h"
+
+#include "vulkan/types.h"
+#include "vulkan/buffer.h"
 #include "vulkan/device.h"
 #include "vulkan/bindingtable.h"
 #include "vulkan/commandqueue.h"
@@ -370,16 +374,23 @@ Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
 	descriptorPoolCreateInfo.maxSets = 2000;
 	CHKED(vkCreateDescriptorPool(&descriptorPoolCreateInfo, &allocationCallbacks, &descriptorPool));
 
+	dmaEncoderPool = std::static_pointer_cast<EncoderPool>(
+			makeEncoderPool(true, Render::CommandQueueFlavour::DMA));
+
 }
 
 Device::~Device()
 {
+	dmaEncoderPool.reset();
+
+	destroyDescriptorPool(descriptorPool);
+
 	allQueue.reset();
 	dmaOnlyQueue.reset();
 	computeSpecificQueue.reset();
 	renderSpecificQueue.reset();
 
-	dmaEncoderPool.reset();
+	vmaDestroyAllocator(allocator);
 	vkDestroyDevice(device, &allocationCallbacks);
 }
 
@@ -388,15 +399,9 @@ auto Device::getDisplay() const -> std::shared_ptr<Render::Display>
 	return std::static_pointer_cast<Render::Display>(display);
 };
 
-auto Device::upload(uint8_t* data_, uint32_t size_, VkImageCreateInfo const& createInfo_,
-					std::shared_ptr<Render::Texture> const& dst_) -> void
+auto Device::upload(uint8_t* data_, uint64_t size_, VkImageCreateInfo const& createInfo_,
+					Render::TextureConstPtr const& dst_) -> void
 {
-	if(!dmaEncoderPool)
-	{
-		using namespace Render;
-		dmaEncoderPool = std::static_pointer_cast<EncoderPool>(
-				makeEncoderPool(true, CommandQueueFlavour::DMA));
-	}
 	// create CPU side texture
 	VkImageCreateInfo cpuCreateInfo = createInfo_;
 	cpuCreateInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
@@ -415,16 +420,28 @@ auto Device::upload(uint8_t* data_, uint32_t size_, VkImageCreateInfo const& cre
 	destroyImage({cpuImage, cpuAlloc});
 }
 
-auto Device::fill(uint32_t value_, VkImageCreateInfo const& createInfo_,
-				  std::shared_ptr<Render::Texture> const& dst_) -> void
+auto Device::upload(uint8_t* data_, uint64_t size_, VkBufferCreateInfo const& createInfo_,
+					Render::BufferConstPtr const& dst_) -> void
 {
-	if(!dmaEncoderPool)
-	{
-		using namespace Render;
-		dmaEncoderPool = std::static_pointer_cast<EncoderPool>(
-				makeEncoderPool(true, CommandQueueFlavour::DMA));
-	}
+	// create CPU side buffer
+	VkBufferCreateInfo cpuCreateInfo = createInfo_;
+	cpuCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+	VmaAllocationCreateInfo cpuAllocInfo{};
+	cpuAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+	cpuAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+	VmaAllocationInfo cpuInfo;
+	auto[cpuImage, cpuAlloc] = createBuffer(cpuCreateInfo, cpuAllocInfo, cpuInfo);
 
+	std::memcpy(cpuInfo.pMappedData, data_, size_);
+
+	upload(cpuImage, dst_);
+
+	destroyBuffer({cpuImage, cpuAlloc});
+}
+
+auto Device::fill(uint32_t value_, VkImageCreateInfo const& createInfo_,
+				  Render::TextureConstPtr const& dst_) -> void
+{
 	// create CPU side texture
 	VkImageCreateInfo cpuCreateInfo = createInfo_;
 	cpuCreateInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
@@ -445,7 +462,20 @@ auto Device::fill(uint32_t value_, VkImageCreateInfo const& createInfo_,
 	destroyImage({cpuImage, cpuAlloc});
 }
 
-void Device::upload(VkImage cpuImage, std::shared_ptr<Render::Texture> const& dst_)
+auto Device::fill(uint32_t value_, VkBufferCreateInfo const& createInfo_,
+				  Render::BufferConstPtr const& dst_) -> void
+{
+	auto encoder = std::static_pointer_cast<Encoder>(dmaEncoderPool->allocateEncoder());
+	encoder->begin();
+	encoder->fill(value_, dst_);
+	encoder->end();
+
+	getDMASpecificQueue()->enqueue(encoder);
+	getDMASpecificQueue()->submit();
+}
+
+
+void Device::upload(VkImage cpuImage, Render::TextureConstPtr const& dst_)
 {
 	auto encoder = std::static_pointer_cast<Encoder>(dmaEncoderPool->allocateEncoder());
 	Texture* dst = dst_->getStage<Texture>(Texture::s_stage);
@@ -480,7 +510,7 @@ void Device::upload(VkImage cpuImage, std::shared_ptr<Render::Texture> const& ds
 	dstBarrier.subresourceRange.layerCount = dst->entireRange.layerCount;
 	dstBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
 	dstBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	encoder->textureBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, dstBarrier);
+	encoder->textureBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, dstBarrier);
 
 	VkImageSubresourceLayers srcLayers;
 	srcLayers.aspectMask = dst->entireRange.aspectMask;
@@ -503,12 +533,54 @@ void Device::upload(VkImage cpuImage, std::shared_ptr<Render::Texture> const& ds
 	copyBarrier.subresourceRange.layerCount = dst->entireRange.layerCount;
 	copyBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 	copyBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-	encoder->textureBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, copyBarrier);
+	encoder->textureBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, copyBarrier);
 	encoder->end();
 
 	getDMASpecificQueue()->enqueue(encoder);
 	getDMASpecificQueue()->submit();
-	getDMASpecificQueue()->stallTillIdle();
+}
+
+void Device::upload(VkBuffer cpuBuffer, Render::BufferConstPtr const& dst_)
+{
+	auto encoder = std::static_pointer_cast<Encoder>(dmaEncoderPool->allocateEncoder());
+	Buffer* dst = dst_->getStage<Buffer>(Buffer::s_stage);
+
+	encoder->begin();
+	VkBufferMemoryBarrier hostBarrier{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
+	hostBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	hostBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	hostBarrier.buffer = cpuBuffer;
+	hostBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+	hostBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+	hostBarrier.offset = 0;
+	hostBarrier.size = dst_->sizeInBytes;
+	encoder->bufferBarrier(VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, hostBarrier);
+
+	VkBufferMemoryBarrier dstBarrier{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
+	dstBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	dstBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	dstBarrier.buffer = dst->buffer;
+	dstBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	dstBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	hostBarrier.offset = 0;
+	hostBarrier.size = dst_->sizeInBytes;
+	encoder->bufferBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, dstBarrier);
+
+	encoder->copy(cpuBuffer, 0, dst_->sizeInBytes, dst_);
+
+	VkBufferMemoryBarrier copyBarrier{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
+	copyBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	copyBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	copyBarrier.buffer = dst->buffer;
+	copyBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	copyBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	hostBarrier.offset = 0;
+	hostBarrier.size = dst_->sizeInBytes;
+	encoder->bufferBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, copyBarrier);
+	encoder->end();
+
+	getDMASpecificQueue()->enqueue(encoder);
+	getDMASpecificQueue()->submit();
 }
 
 auto Device::destroyQueue(VkQueue const& queue_) -> void
@@ -713,6 +785,17 @@ auto Device::destroyPipelineLayout(VkPipelineLayout pipelineLayout_) -> void
 	vkDestroyPipelineLayout(pipelineLayout_, &allocationCallbacks);
 }
 
+auto Device::debugNameVkObject(uint64_t object_, VkDebugReportObjectTypeEXT type_, char const* name_) -> void
+{
+	if(vtable.vkDebugMarkerSetObjectNameEXT != nullptr)
+	{
+		VkDebugMarkerObjectNameInfoEXT createInfo{VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT};
+		createInfo.objectType = type_;
+		createInfo.pObjectName = name_;
+		createInfo.object = object_;
+		vkDebugMarkerSetObjectNameEXT(&createInfo);
+	}
+}
 auto Device::houseKeepTick() -> void
 {
 	dmaEncoderPool->reset();
@@ -746,7 +829,7 @@ auto Device::makeEncoderPool(bool frameLifetime_,
 	VkCommandPool commandPool = createCommandPool(createInfo);
 
 	auto encoderPool = std::make_shared<EncoderPool>(
-			this->shared_from_this(),
+			this,
 			commandPool,
 			&commandPoolVkVTable,
 			&generalCBVkVTable,

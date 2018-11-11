@@ -34,6 +34,10 @@ struct alignas(8) Buffer : public ResourceManager::Resource<BufferId>
 					   BufferFlags flags_,
 					   uint64_t sizeInBytes_,
 					   uint8_t* data_ = nullptr) -> BufferHandle;
+	static auto Create(std::shared_ptr<ResourceManager::ResourceMan> rm_,
+					   ResourceManager::ResourceNameView const& name_,
+					   BufferFlags flags_,
+					   std::vector<float> const& floats_) -> BufferHandle;
 
 	constexpr auto canBeDMASrc() const -> bool { return testUsageFlag(Usage::DMASrc); }
 
@@ -53,6 +57,7 @@ struct alignas(8) Buffer : public ResourceManager::Resource<BufferId>
 
 	constexpr auto canBeWrittenAsTexture() const { return testUsageFlag(Usage::TextureWrite); }
 
+	auto getData() const -> uint8_t* { return (uint8_t*) (this + 1); }
 	uint64_t sizeInBytes;
 	BufferFlags flags;
 	uint32_t padd;

@@ -5,16 +5,16 @@
 #include "core/core.h"
 #include "render/encoder.h"
 #include "vulkan/api.h"
-#include "vulkan/device.h"
 
 namespace Vulkan {
 
 struct Semaphore;
 struct Encoder;
+struct Device;
 
 struct EncoderPool : public Render::EncoderPool
 {
-	EncoderPool(Device::Ptr device_,
+	EncoderPool(Device* device_,
 				VkCommandPool commandPool_,
 				CommandPoolVkVTable* commandPoolVTable_,
 				GeneralCBVkVTable* generalCBVTable,
@@ -27,13 +27,12 @@ struct EncoderPool : public Render::EncoderPool
 	auto reset() -> void final;
 	auto destroyEncoder(Vulkan::Encoder* encoder_) -> void;
 
-#define COMMANDPOOL_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable->name(vulkanDevice, commandPool, args...); }
+#define COMMANDPOOL_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable->name(device->getVkDevice(), commandPool, args...); }
 #define COMMANDPOOL_VK_FUNC_EXT(name, extension) COMMANDPOOL_VK_FUNC(name)
 
 #include "functionlist.inl"
 
-	Device::WeakPtr weakDevice;
-	VkDevice vulkanDevice;
+	Device* device;
 	VkCommandPool commandPool;
 
 	GeneralCBVkVTable* generalCBVTable;

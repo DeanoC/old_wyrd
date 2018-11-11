@@ -50,14 +50,8 @@ public:
 	virtual auto end(std::shared_ptr<Semaphore> const& semaphore_ = {}) -> void = 0;
 	virtual auto reset() -> void = 0;
 	virtual auto copy(TextureConstPtr const& src_, TextureConstPtr const& dst_) -> void = 0;
-	virtual auto fill(uint32_t fill_, BufferPtr const& dst_) -> void = 0;
+	virtual auto fill(uint32_t fill_, BufferConstPtr const& dst_) -> void = 0;
 
-	//	virtual auto pipelineBarrier(
-	//			Render::DMAPipelineStages waitStages_,
-	//			Render::DMAPipelineStages stallStages_ ) -> void = 0;
-
-	//	virtual auto memoryBarrier() -> void = 0;
-	//	virtual auto bufferBarrier() -> void = 0;
 	virtual auto textureBarrier(MemoryAccess waitAccess_, MemoryAccess stallAccess_,
 								TextureConstPtr const& texture_) -> void = 0;
 
@@ -76,6 +70,13 @@ struct IRenderEncoder
 	virtual auto endRenderPass() -> void = 0;
 	virtual auto blit(TextureConstPtr const& src_, TextureConstPtr const& dst_) -> void = 0;
 	virtual auto bind(RenderPipelineConstPtr const& pipeline_) -> void = 0;
+	virtual auto bindVertexBuffer(Render::BufferConstPtr const& buffer_, uint64_t offset_ = 0,
+								  uint32_t bindingIndex = 0) -> void = 0;
+	virtual auto bindIndexBuffer(Render::BufferConstPtr const& buffer_, uint64_t offset_ = 0,
+								 uint8_t bitSize_ = 16u) -> void = 0;
+	virtual auto draw(uint32_t vertexCount_, uint32_t vertexOffset_ = 0, uint32_t instanceCount_ = 1,
+					  uint32_t instanceOffset_ = 0) -> void = 0;
+
 };
 
 struct IComputeEncoder

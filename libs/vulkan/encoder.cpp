@@ -82,7 +82,7 @@ auto Encoder::copy(Render::TextureConstPtr const& src_, Render::TextureConstPtr 
 
 }
 
-auto Encoder::fill(uint32_t fill_, Render::BufferPtr const& dst_) -> void
+auto Encoder::fill(uint32_t fill_, Render::BufferConstPtr const& dst_) -> void
 {
 	Buffer* dst = dst_->getStage<Buffer>(Buffer::s_stage);
 	vkCmdFillBuffer(dst->buffer, 0, VK_WHOLE_SIZE, fill_);
@@ -122,6 +122,18 @@ auto Encoder::copy(VkImage srcImage_,
 				   dst->image, dst->imageLayout,
 				   mipCount, mipCopy);
 
+}
+
+auto Encoder::copy(VkBuffer srcBuffer_,
+				   uint64_t srcOffset_,
+				   uint64_t srcBytes_,
+				   Render::BufferConstPtr const& dst_) -> void
+{
+	Buffer* dst = dst_->getStage<Buffer>(Buffer::s_stage);
+
+	VkBufferCopy region{srcOffset_, 0, srcBytes_};
+
+	vkCmdCopyBuffer(srcBuffer_, dst->buffer, 1, &region);
 }
 
 auto Encoder::textureBarrier(
@@ -173,4 +185,15 @@ auto Encoder::textureBarrier(VkPipelineStageFlagBits srcStage_, VkPipelineStageF
 			1, &barrier_);
 }
 
+auto Encoder::bufferBarrier(VkPipelineStageFlagBits srcStage_, VkPipelineStageFlagBits dstStage_,
+							VkBufferMemoryBarrier const& barrier_) -> void
+{
+	vkCmdPipelineBarrier(
+			srcStage_,
+			dstStage_,
+			0,
+			0, nullptr,
+			1, &barrier_,
+			0, nullptr);
+}
 }

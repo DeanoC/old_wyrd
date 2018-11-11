@@ -24,6 +24,12 @@ struct RenderEncoder : public Render::IRenderEncoder
 	auto endRenderPass() -> void final;
 	auto blit(Render::TextureConstPtr const& src_, Render::TextureConstPtr const& dst_) -> void final;
 	auto bind(Render::RenderPipelineConstPtr const& pipeline_) -> void final;
+	auto bindVertexBuffer(Render::BufferConstPtr const& buffer_, uint64_t offset_ = 0,
+						  uint32_t bindingIndex = 0) -> void final;
+	auto bindIndexBuffer(Render::BufferConstPtr const& buffer_, uint64_t offset_ = 0,
+						 uint8_t bitSize_ = 16u) -> void final;
+	auto draw(uint32_t vertexCount_, uint32_t vertexOffset_, uint32_t instanceCount_,
+			  uint32_t instanceOffset_) -> void final;
 
 #define GENERAL_CB_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(commandBuffer, args...); }
 #define GENERAL_CB_VK_FUNC_EXT(name, extension) GENERAL_CB_VK_FUNC(name)

@@ -94,7 +94,13 @@ auto VertexInput::getElementOffset(uint8_t const index_) const -> uint32_t
 
 auto VertexInput::getStride() const -> uint32_t
 {
-	return getElementOffset(numVertexInputs);
+
+	uint32_t stride = 0;
+	for(auto i = 0u; i < numVertexInputs; ++i)
+	{
+		stride += getElementSize(i);
+	}
+	return stride;
 }
 
 

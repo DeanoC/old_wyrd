@@ -38,10 +38,13 @@ public:
 
 	auto getVkDevice() -> VkDevice { return device; }
 
-	auto upload(uint8_t* data_, uint32_t size_, VkImageCreateInfo const& createInfo_,
-				std::shared_ptr<Render::Texture> const& dst_) -> void;
-	auto fill(uint32_t value_, VkImageCreateInfo const& createInfo_,
-			  std::shared_ptr<Render::Texture> const& dst_) -> void;
+	auto upload(uint8_t* data_, uint64_t size_, VkImageCreateInfo const& createInfo_,
+				Render::TextureConstPtr const& dst_) -> void;
+	auto fill(uint32_t value_, VkImageCreateInfo const& createInfo_, Render::TextureConstPtr const& dst_) -> void;
+
+	auto upload(uint8_t* data_, uint64_t size_, VkBufferCreateInfo const& createInfo_,
+				Render::BufferConstPtr const& dst_) -> void;
+	auto fill(uint32_t value_, VkBufferCreateInfo const& createInfo_, Render::BufferConstPtr const& dst_) -> void;
 
 	// Render::Device interface
 	auto getDisplay() const -> std::shared_ptr<Render::Display> final;
@@ -138,20 +141,11 @@ public:
 	ComputeCBVkVTable computeCBVkVTable;
 	GeneralCBVkVTable generalCBVkVTable;
 
-	auto debugNameVkObject(uint64_t object_, VkDebugReportObjectTypeEXT type_, char const* name_) -> void
-	{
-		if(vtable.vkDebugMarkerSetObjectNameEXT != nullptr)
-		{
-			VkDebugMarkerObjectNameInfoEXT createInfo{VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT};
-			createInfo.objectType = type_;
-			createInfo.pObjectName = name_;
-			createInfo.object = object_;
-			vkDebugMarkerSetObjectNameEXT(&createInfo);
-		}
-	}
-
+	auto debugNameVkObject(uint64_t object_, VkDebugReportObjectTypeEXT type_, char const* name_) -> void;
 
 private:
+	void upload(VkImage cpuImage, Render::TextureConstPtr const& dst_);
+	void upload(VkBuffer cpuImage, Render::BufferConstPtr const& dst_);
 
 	DeviceVkVTable vtable;
 
@@ -218,8 +212,6 @@ private:
 
 	// for now we have a single pool
 	VkDescriptorPool descriptorPool;
-
-	void upload(VkImage cpuImage, std::shared_ptr<Render::Texture> const& dst_);
 };
 
 }

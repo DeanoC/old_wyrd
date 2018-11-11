@@ -44,6 +44,17 @@ auto Buffer::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device::
 		vulkanBuffer->buffer = vkbuffer;
 		vulkanBuffer->allocation = alloc;
 
+		if(!test_equal(buffer->flags, Render::BufferFlags::NoInit))
+		{
+			if(test_equal(buffer->flags, Render::BufferFlags::InitZero))
+			{
+				device->fill(0x0, createInfo, buffer);
+			} else
+			{
+				device->upload(buffer->getData(), buffer->sizeInBytes, createInfo, buffer);
+			}
+		}
+
 		return true;
 	};
 

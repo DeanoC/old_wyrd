@@ -61,6 +61,7 @@ auto RenderTarget::Create(
 	RenderTarget* rt = (RenderTarget*) malloc(totalSize);
 	rt->sizeAndStageCount = totalSize;
 	rt->renderPassHandle = renderPassHandle_;
+	rt->numTargetTextures = (uint8_t) targetTextures_.size();
 	std::memcpy(rt->renderOffset, renderOffset_.data(), sizeof(int32_t) * 2);
 	std::memcpy(rt->renderExtent, renderExtent_.data(), sizeof(uint32_t) * 2);
 	uint8_t* dataPtr = (uint8_t*) (rt + 1);

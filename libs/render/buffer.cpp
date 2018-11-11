@@ -73,4 +73,13 @@ auto Buffer::Create(
 	return rm_->openByName<Id>(name_);
 }
 
+auto Buffer::Create(
+		std::shared_ptr<ResourceManager::ResourceMan> rm_,
+		ResourceManager::ResourceNameView const& name_,
+		BufferFlags flags_,
+		std::vector<float> const& floats_) -> BufferHandle
+{
+	return Create(rm_, name_, flags_, floats_.size() * sizeof(float), (uint8_t*) floats_.data());
+}
+
 } // end namespace

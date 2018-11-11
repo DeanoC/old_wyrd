@@ -34,20 +34,25 @@ struct Encoder : public Render::Encoder
 	auto end(std::shared_ptr<Render::Semaphore> const& semaphore_ = {}) -> void final;
 	auto reset() -> void final;
 	auto copy(Render::TextureConstPtr const& src_, Render::TextureConstPtr const& dst_) -> void final;
-	auto fill(uint32_t fill_, Render::BufferPtr const& dst_) -> void final;
+	auto fill(uint32_t fill_, Render::BufferConstPtr const& dst_) -> void final;
 
 	auto textureBarrier(Render::TextureConstPtr const& texture_) -> void final;
-	auto textureBarrier(
-			Render::MemoryAccess waitAccess_,
-			Render::MemoryAccess stallAccess_,
-			Render::TextureConstPtr const& texture_) -> void final;
+	auto textureBarrier(Render::MemoryAccess waitAccess_, Render::MemoryAccess stallAccess_,
+						Render::TextureConstPtr const& texture_) -> void final;
 
 	auto copy(VkImage srcImage_,
 			  VkImageLayout srcLayout_,
 			  VkImageSubresourceLayers const& srcExtents_,
 			  Render::TextureConstPtr const& dst_) -> void;
+	auto copy(VkBuffer srcBuffer_,
+			  uint64_t srcOffset_,
+			  uint64_t srcBytes_,
+			  Render::BufferConstPtr const& dst_) -> void;
+
 	auto textureBarrier(VkPipelineStageFlagBits srcStage_, VkPipelineStageFlagBits dstStage_,
 						VkImageMemoryBarrier const& barrier_) -> void;
+	auto bufferBarrier(VkPipelineStageFlagBits srcStage_, VkPipelineStageFlagBits dstStage_,
+					   VkBufferMemoryBarrier const& barrier_) -> void;
 
 
 #define GENERAL_CB_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(commandBuffer, args...); }

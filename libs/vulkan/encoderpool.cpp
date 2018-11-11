@@ -9,14 +9,13 @@
 
 namespace Vulkan {
 
-EncoderPool::EncoderPool(Device::Ptr device_,
+EncoderPool::EncoderPool(Device* device_,
 						 VkCommandPool commandPool_,
 						 CommandPoolVkVTable* commandPoolVkVTable_,
 						 GeneralCBVkVTable* generalCBVTable_,
 						 GraphicsCBVkVTable* graphicsCBVTable_,
 						 ComputeCBVkVTable* computeCBVTable_) :
-		weakDevice(device_),
-		vulkanDevice(device_->getVkDevice()),
+		device(device_),
 		commandPool(commandPool_),
 		vtable(commandPoolVkVTable_),
 		generalCBVTable(generalCBVTable_),
@@ -27,27 +26,21 @@ EncoderPool::EncoderPool(Device::Ptr device_,
 
 EncoderPool::~EncoderPool()
 {
-	auto device = weakDevice.lock();
-	if(device)
-	{
-		device->destroyCommandPool(commandPool);
-	}
+	device->destroyCommandPool(commandPool);
 }
 
 auto EncoderPool::allocateEncoder(Render::EncoderFlag encoderFlags_) -> Render::Encoder::Ptr
 {
 	using namespace Core::bitmask;
 
-	VkCommandBufferAllocateInfo allocateInfo;
-	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocateInfo.pNext = nullptr;
+	VkCommandBufferAllocateInfo allocateInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
 	allocateInfo.commandPool = commandPool;
 	allocateInfo.commandBufferCount = 1;
 	allocateInfo.level = bool(encoderFlags_ & Render::EncoderFlag::Callable) ?
 						 VK_COMMAND_BUFFER_LEVEL_SECONDARY : VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
 	VkCommandBuffer cb = VK_NULL_HANDLE;
-	vtable->vkAllocateCommandBuffers(vulkanDevice, &allocateInfo, &cb);
+	vtable->vkAllocateCommandBuffers(device->getVkDevice(), &allocateInfo, &cb);
 
 	GraphicsCBVkVTable* gvt = bool(encoderFlags_ & Render::EncoderFlag::RenderEncoder) ? graphicsCBVTable : nullptr;
 	ComputeCBVkVTable* cvt = bool(encoderFlags_ & Render::EncoderFlag::ComputeEncoder) ? computeCBVTable : nullptr;

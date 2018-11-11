@@ -119,7 +119,7 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 				stage.module = vulkanShader->shaderModule;
 				stage.stage = fromSingle(shader->shaderType);
 				stage.pName = "main"; // TODO
-				stage.pSpecializationInfo = nullptr; // TODO
+				stage.pSpecializationInfo = nullptr; // TODO 
 				stages.push_back(stage);
 			}
 		}

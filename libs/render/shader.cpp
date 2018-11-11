@@ -161,9 +161,13 @@ auto SPIRVShader::Compile(
 	{
 		auto source = sourceHandle_.acquire<ResourceManager::TextResource>();
 
+		// compiler non null terminated strings, so we have to count
+		size_t const srcLen = strlen(source->getText());
+		assert(srcLen <= source->getTextSize() - 1);
+
 		auto module = compiler.CompileGlslToSpv(
 				source->getText(),
-				source->getTextSize() - 1,
+				srcLen,
 				kind,
 				sourceName.c_str(),
 				"main",
