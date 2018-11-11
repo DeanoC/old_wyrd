@@ -3,14 +3,13 @@
 #define WYRD_VULKAN_DEVICE_H
 
 #include "core/core.h"
+#include "core/freelist.h"
 #include "render/device.h"
 #include "render/commandqueue.h"
 
 #include "vulkan/api.h"
 #include "vulkan/vk_mem_alloc.h"
-#include "texture.h"
 #include <array>
-#include <tbb/src/old/concurrent_vector_v2.h>
 
 namespace Vulkan {
 struct CommandQueue;
@@ -212,6 +211,7 @@ private:
 
 	// for now we have a single pool
 	VkDescriptorPool descriptorPool;
+	Core::MTFreeList<VkFence, uint32_t> fenceFreeList;
 };
 
 }

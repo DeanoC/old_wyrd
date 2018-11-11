@@ -214,8 +214,7 @@ protected:
 #endif
 };
 
-// MTFreeList are mostly the same as FreeList but don't have manual resize and are MT safe
-// it will grow in a safe manner but will lock during resize
+// MTFreeList are mostly the same as FreeList but don't have resize and are MT safe
 template<typename Type, typename IndexType = uintptr_t>
 class MTFreeList
 {
@@ -254,8 +253,7 @@ public:
 		bool space = freelist.try_pop( index );
 		while(space == false)
 		{
-			resize( currentSize );
-			space = freelist.try_pop( index );
+			assert(false);
 		}
 
 		return index;
@@ -285,26 +283,8 @@ public:
 	{ return data[index_]; }
 
 protected:
-	void resize( size_type oldSize )
-	{
-		std::lock_guard guard( stopTheWorldMutex );
-		if(data.size() > oldSize) return;
-		auto size = oldSize * 2 + 1;
-		data.grow_to_at_least( size );
-		for(auto i = oldSize; i < size; ++i)
-		{
-			freelist.push( i );
-		}
-
-		currentSize = size;
-	}
-
 	tbb::concurrent_vector<Type> data;
 	tbb::concurrent_queue<IndexType> freelist;
-	std::atomic<size_type> currentSize;
-
-	// for resize we use a mutex for simplicity, otherwise operations are lock free
-	std::mutex stopTheWorldMutex;
 };
 
 template<typename Type, typename IndexType = uintptr_t, class Enable = void>
