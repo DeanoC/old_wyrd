@@ -23,15 +23,15 @@ struct ROPTargetBlender
 
 	auto isEnabled() const -> bool { return flags & EnableFlag; }
 
-	uint8_t flags;
-	ROPBlendOps colourBlendOp;
-	ROPBlendOps alphaBlendOp;
-	ColourComponents writeMask;
+	uint8_t flags = EnableFlag;
+	ROPBlendOps colourBlendOp = ROPBlendOps::Add;
+	ROPBlendOps alphaBlendOp = ROPBlendOps::Add;
+	ColourComponents writeMask = ColourComponents::All;
 
-	ROPBlendFactor srcColourFactor;
-	ROPBlendFactor dstColourFactor;
-	ROPBlendFactor srcAlphaFactor;
-	ROPBlendFactor dstAlphaFactor;
+	ROPBlendFactor srcColourFactor = ROPBlendFactor::SrcColour;
+	ROPBlendFactor dstColourFactor = ROPBlendFactor::Zero;
+	ROPBlendFactor srcAlphaFactor = ROPBlendFactor::SrcAlpha;
+	ROPBlendFactor dstAlphaFactor = ROPBlendFactor::Zero;
 };
 
 struct alignas(8) ROPBlender : public ResourceManager::Resource<ROPBlenderId>

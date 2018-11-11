@@ -204,7 +204,7 @@ auto RenderEncoder::bindVertexBuffer(Render::BufferConstPtr const& buffer_, uint
 	vkCmdBindVertexBuffers(bindingIndex, 1, &buffer->buffer, &offset_);
 }
 
-auto RenderEncoder::bindIndexBuffer(Render::BufferConstPtr const& buffer_, uint64_t offset_, uint8_t bitSize_) -> void
+auto RenderEncoder::bindIndexBuffer(Render::BufferConstPtr const& buffer_, uint8_t bitSize_, uint64_t offset_) -> void
 {
 	assert(buffer_->canBeReadByIndex());
 	assert(bitSize_ == 16 || bitSize_ == 32);
@@ -217,6 +217,12 @@ auto RenderEncoder::draw(uint32_t vertexCount_, uint32_t vertexOffset_, uint32_t
 						 uint32_t instanceOffset_) -> void
 {
 	vkCmdDraw(vertexCount_, instanceCount_, vertexOffset_, instanceOffset_);
+}
+
+auto RenderEncoder::drawIndexed(uint32_t indexCount_, uint32_t indexOffset_, uint32_t vertexOffset,
+								uint32_t instanceCount_, uint32_t instanceOffset_) -> void
+{
+	vkCmdDrawIndexed(indexCount_, instanceCount_, indexOffset_, vertexOffset, instanceOffset_);
 }
 
 }

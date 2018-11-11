@@ -472,6 +472,7 @@ auto Device::fill(uint32_t value_, VkBufferCreateInfo const& createInfo_,
 
 	getDMASpecificQueue()->enqueue(encoder);
 	getDMASpecificQueue()->submit();
+	getDMASpecificQueue()->stallTillIdle();
 }
 
 
@@ -538,6 +539,8 @@ void Device::upload(VkImage cpuImage, Render::TextureConstPtr const& dst_)
 
 	getDMASpecificQueue()->enqueue(encoder);
 	getDMASpecificQueue()->submit();
+	getDMASpecificQueue()->stallTillIdle();
+
 }
 
 void Device::upload(VkBuffer cpuBuffer, Render::BufferConstPtr const& dst_)
@@ -581,6 +584,8 @@ void Device::upload(VkBuffer cpuBuffer, Render::BufferConstPtr const& dst_)
 
 	getDMASpecificQueue()->enqueue(encoder);
 	getDMASpecificQueue()->submit();
+	getDMASpecificQueue()->stallTillIdle();
+
 }
 
 auto Device::destroyQueue(VkQueue const& queue_) -> void

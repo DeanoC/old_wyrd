@@ -15,10 +15,6 @@
 #include "render/ropblender.h"
 #include "render/rasterisationstate.h"
 
-static auto blankTex4x4Name = ResourceManager::ResourceNameView("mem$blankTex4x4");
-static auto basicTriVertexBufferName = ResourceManager::ResourceNameView("mem$basicTriVertexBuffer");
-
-static auto colourRT0Name = ResourceManager::ResourceNameView("mem$colourRT0");
 static auto defaultRenderPassName = ResourceManager::ResourceNameView("mem$defaultRenderPass");
 static auto defaultRenderTargetName = ResourceManager::ResourceNameView("mem$defaultRenderTarget");
 static auto defaultBindingTableMemoryMapName = ResourceManager::ResourceNameView("mem$defaultBindingTableMemoryMap");
@@ -29,6 +25,11 @@ static auto defaultROPBlenderName = ResourceManager::ResourceNameView("mem$defau
 static auto defaultRasterStateName = ResourceManager::ResourceNameView("mem$defaultRasterState");
 static auto defaultRenderPipelineName = ResourceManager::ResourceNameView("mem$defaultRenderPipeline");
 
+static auto blankTex4x4Name = ResourceManager::ResourceNameView("mem$blankTex4x4");
+static auto basicTriVertexBufferName = ResourceManager::ResourceNameView("mem$basicTriVertexBuffer");
+static auto basicTriVertexBuffer2Name = ResourceManager::ResourceNameView("mem$basicTriVertexBuffer2");
+static auto basicTriIndexBufferName = ResourceManager::ResourceNameView("mem$basicTriIndexBuffer");
+static auto colourRT0Name = ResourceManager::ResourceNameView("mem$colourRT0");
 static auto passthroughVertexShaderName = ResourceManager::ResourceNameView("mem$passthroughVertexShader");
 static auto redOutFragmentShaderName = ResourceManager::ResourceNameView("mem$redOutFragmentShader");
 
@@ -121,15 +122,30 @@ struct App
 						1, 1,
 						GenericTextureFormat::R8G8B8A8_UNORM);
 
-		Buffer::Create(rm,
-					   basicTriVertexBufferName,
-					   Buffer::FromUsage(Usage::VertexRead | Usage::DMADst),
-					   {
+		Buffer::Create<float>(rm,
+							  basicTriVertexBufferName,
+							  Buffer::FromUsage(Usage::VertexRead | Usage::DMADst),
+							  {
 							   0.0f, 1.0f, 0.5f,
 							   1.0f, 1.0f, 0.5f,
 							   1.0f, 0.0f, 0.5f
 					   });
 
+		Buffer::Create<float>(rm,
+							  basicTriVertexBuffer2Name,
+							  Buffer::FromUsage(Usage::VertexRead | Usage::DMADst),
+							  {
+									  0.0f, 0.0f, 0.5f,
+									  1.0f, 1.0f, 0.5f,
+									  0.0f, 1.0f, 0.5f
+							  });
+
+		Buffer::Create<uint16_t>(rm,
+								 basicTriIndexBufferName,
+								 Buffer::FromUsage(Usage::IndexRead | Usage::DMADst),
+								 {
+										 0, 1, 2
+								 });
 		Texture::Create(rm,
 						colourRT0Name,
 						TextureFlags::NoInit |
@@ -278,6 +294,8 @@ struct App
 
 		auto blankTex = rm->acquireByName<Texture>(blankTex4x4Name);
 		auto vBuffer = rm->acquireByName<Buffer>(basicTriVertexBufferName);
+		auto vBuffer2 = rm->acquireByName<Buffer>(basicTriVertexBuffer2Name);
+		auto iBuffer = rm->acquireByName<Buffer>(basicTriIndexBufferName);
 
 		auto renderQueue = device->getGeneralQueue();
 		auto rEncoderPool = device->makeEncoderPool(true, CommandQueueFlavour::Render);
@@ -298,6 +316,9 @@ struct App
 			renderEncoder->bind(renderPipeline);
 			renderEncoder->bindVertexBuffer(vBuffer);
 			renderEncoder->draw(3);
+			renderEncoder->bindVertexBuffer(vBuffer2);
+			renderEncoder->bindIndexBuffer(iBuffer);
+			renderEncoder->drawIndexed(3);
 			renderEncoder->endRenderPass();
 			colourRT0->transitionToDMASrc(encoder);
 
