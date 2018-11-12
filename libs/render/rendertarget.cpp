@@ -58,21 +58,22 @@ auto RenderTarget::Create(
 {
 	size_t const dataSize = sizeof(TextureHandle) * targetTextures_.size();
 	size_t const totalSize = Core::alignTo(sizeof(RenderTarget) + dataSize, 8);
-	RenderTarget* rt = (RenderTarget*) malloc(totalSize);
-	rt->sizeAndStageCount = totalSize;
-	rt->renderPassHandle = renderPassHandle_;
-	rt->numTargetTextures = (uint8_t) targetTextures_.size();
-	std::memcpy(rt->renderOffset, renderOffset_.data(), sizeof(int32_t) * 2);
-	std::memcpy(rt->renderExtent, renderExtent_.data(), sizeof(uint32_t) * 2);
-	uint8_t* dataPtr = (uint8_t*) (rt + 1);
-	TextureHandle* targetTextures = (TextureHandle*) dataPtr;
+	RenderTarget* obj = (RenderTarget*) malloc(totalSize);
+	std::memset(obj, 0, totalSize);
+
+	obj->sizeAndStageCount = totalSize;
+	obj->renderPassHandle = renderPassHandle_;
+	obj->numTargetTextures = (uint8_t) targetTextures_.size();
+	std::memcpy(obj->renderOffset, renderOffset_.data(), sizeof(int32_t) * 2);
+	std::memcpy(obj->renderExtent, renderExtent_.data(), sizeof(uint32_t) * 2);
+	TextureHandle* targetTextures = (TextureHandle*)(obj + 1);
 	for(auto i = 0u; i < targetTextures_.size(); ++i)
 	{
 		targetTextures[i] = targetTextures_[i];
 	}
 
-	rm_->placeInStorage(name_, *rt);
-	free(rt);
+	rm_->placeInStorage(name_, *obj);
+	free(obj);
 	return rm_->openByName<Id>(name_);
 }
 

@@ -162,7 +162,15 @@ auto ResourceMan::acquire(ResourceHandleBase const& base_) -> ResourceBase::Ptr
 		ptr = tryAcquire(base_);
 		if(!ptr)
 		{
-			LOG_S(INFO) << "tryAcquire failed during acquire";
+			using namespace std::literals;
+			std::string resourceName = "**UNKNOWN**"s;
+			auto const it = indexToResourceName.find(base_.index);
+			if(it != indexToResourceName.end())
+			{
+				resourceName = std::string(it->second.getResourceName());
+			}
+			LOG_S(INFO) << "tryAcquire failed acquiring " << resourceName << " retrying...";
+			// TODO back off and sleep a bit here
 		}
 	}
 	return ptr;

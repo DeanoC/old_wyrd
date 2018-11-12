@@ -19,18 +19,16 @@ auto RenderTarget::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 		auto renderTarget = std::static_pointer_cast<Render::RenderTarget const>(ptr_);
 		Vulkan::RenderTarget* vulkanRenderTarget = renderTarget->getStage<Vulkan::RenderTarget, false>(stage_);
 
-		auto renderPass = renderTarget->renderPassHandle.acquire < Render::RenderPass const>();
-
-		std::vector<VkImageView> images(renderPass->numTargets);
-		std::vector<Render::TextureConstPtr> targets(renderPass->numTargets);
-		for(auto j = 0u; j < renderPass->numTargets; ++j)
+		std::vector<VkImageView> images(renderTarget->numTargetTextures);
+		std::vector<Render::TextureConstPtr> targets(renderTarget->numTargetTextures);
+		for(auto j = 0u; j < renderTarget->numTargetTextures; ++j)
 		{
 			targets[j] = renderTarget->getTargetTextures()[j].acquire<Render::Texture>();
 		}
 
 		uint32_t const width = targets[0]->width;
 		uint32_t const height = targets[0]->height;
-		for(auto i = 0u; i < renderPass->numTargets; ++i)
+		for(auto i = 0u; i < renderTarget->numTargetTextures; ++i)
 		{
 			auto& rtarget = targets[i];
 			assert(rtarget->width == width);
@@ -39,6 +37,9 @@ auto RenderTarget::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 			auto target = rtarget->getStage<Texture>(Texture::s_stage);
 			images[i] = target->imageView;
 		}
+
+		auto renderPass = renderTarget->renderPassHandle.acquire < Render::RenderPass const>();
+		assert(renderPass->numTargets <= renderTarget->numTargetTextures);
 		auto vulkanRenderPass = renderPass->getStage<Vulkan::RenderPass>(stage_);
 
 		VkFramebufferCreateInfo createInfo{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};

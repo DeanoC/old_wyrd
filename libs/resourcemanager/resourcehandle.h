@@ -79,6 +79,19 @@ public:
 		return std::static_pointer_cast<T const>(base.tryAcquire());
 	}
 
+	template<typename T>
+	auto mutableAcquire() const -> typename std::shared_ptr<T>
+	{
+		static_assert(T::Id == id_, "Ptr is of different type from the handle");
+		return std::static_pointer_cast<T>(base.acquire());
+	}
+
+	template<typename T>
+	auto mutableTryAcquire() const -> typename std::shared_ptr<T>
+	{
+		static_assert(T::Id == id_, "Ptr is of different type from the handle");
+		return std::static_pointer_cast<T>(base.tryAcquire());
+	}
 	ResourceHandle() : base() {}
 
 	explicit ResourceHandle(ResourceHandleBase base_) : base(base_) {}

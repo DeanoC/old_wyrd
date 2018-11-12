@@ -22,7 +22,7 @@ auto ImageTester(size_t w_, size_t h_, size_t d_, size_t s_, Render::GenericText
 	ResourceManager::ResourceName rname(name);
 
 	auto imgHandle = GenericImage::Create(rm, rname.getView(), w_, h_, d_, s_, fmt_);
-	auto img = imgHandle.acquire<GenericImage>();
+	auto img = imgHandle.mutableAcquire<GenericImage>();
 	if(doLog_)
 	{
 		LOG_S(INFO) << "Testing " << name;

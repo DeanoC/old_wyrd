@@ -68,13 +68,26 @@ auto RenderEncoder::beginRenderPass(
 	beginInfo.renderPass = vulkanRenderPass->renderpass;
 
 	// TODO pick correct clear type based on target format
-	VkClearValue clearValue;
-	clearValue.color.float32[0] = renderPass_->byteClearValues[0] * (1.f / 255.f);
-	clearValue.color.float32[1] = renderPass_->byteClearValues[1] * (1.f / 255.f);
-	clearValue.color.float32[2] = renderPass_->byteClearValues[2] * (1.f / 255.f);
-	clearValue.color.float32[3] = renderPass_->byteClearValues[3] * (1.f / 255.f);
-	beginInfo.clearValueCount = 1;
-	beginInfo.pClearValues = &clearValue;
+	std::vector<VkClearValue> clearValues(renderPass_->numTargets);
+	for(auto i = 0u; i < renderPass_->numTargets; ++i)
+	{
+		auto const& target = renderPass_->getTargets()[i];
+		auto const& clearVal = renderPass_->getClearValues()[i];
+		auto& clearValue = clearValues[i];
+		if(!Render::GtfCracker::isDepthStencil(target.format))
+		{
+			clearValue.color.float32[0] = clearVal.x;
+			clearValue.color.float32[1] = clearVal.y;
+			clearValue.color.float32[2] = clearVal.z;
+			clearValue.color.float32[3] = clearVal.w;
+		} else
+		{
+			clearValue.depthStencil.depth = clearVal.x;
+			clearValue.depthStencil.stencil = (uint8_t)(clearVal.y * 255.0f);
+		}
+	}
+	beginInfo.clearValueCount = (uint32_t)clearValues.size();
+	beginInfo.pClearValues = clearValues.data();
 
 	beginInfo.framebuffer = vulkanRenderTarget->framebuffer;
 	beginInfo.renderArea.offset = {renderTarget_->renderOffset[0], renderTarget_->renderOffset[1]};

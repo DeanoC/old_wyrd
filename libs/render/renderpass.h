@@ -7,6 +7,7 @@
 #include "render/types.h"
 #include "render/generictextureformat.h"
 #include "resourcemanager/resource.h"
+#include "math/vector_math.h"
 
 namespace ResourceManager {
 class ResourceMan;
@@ -35,15 +36,13 @@ struct alignas(8) RenderPass : public ResourceManager::Resource<RenderPassId>
 			std::shared_ptr<ResourceManager::ResourceMan> rm_,
 			ResourceManager::ResourceNameView const& name_,
 			std::vector<Target> const& targets_,
-			std::array<uint8_t, 4> const& byteClearColours) -> RenderPassHandle;
+			std::vector<Math::Vector4> const& clearValues_) -> RenderPassHandle;
 
-	Target* getTargets() { return (Target*) (this + 1); }
+	Target const* getTargets() const { return (Target const*) (this + 1); }
+	Math::Vector4 const* getClearValues() const { return (Math::Vector4 const*)(getTargets() + numTargets); }
 
 	uint8_t numTargets;
 	uint8_t padd[3];
-	// if load op is clear these will be used for all targets
-	// TODO better clear support
-	uint8_t byteClearValues[4];
 
 };
 

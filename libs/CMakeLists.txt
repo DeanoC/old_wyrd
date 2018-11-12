@@ -114,11 +114,16 @@ set( GEOMETRY_SRC
 		geometry/watertightray.h
 		)
 
-set(INPUT_SRC
+set( INPUT_SRC
 		input/input.h
 		input/keylist.h
 		input/keyboard.h
 		input/windows.cpp)
+
+set( MIDRENDER_SRC
+		midrender/stocks.h
+		midrender/stocks.cpp
+)
 
 set( RENDER_SRC
 		render/generictextureformat.h
@@ -262,16 +267,17 @@ set(wryd_srcs
 		${CRC32C_SRC}
 		${CX_SRC}
 		${FMT_SRC}
-		${LZ4_SRC}
 		${IMGUI_SRC}
+		${LZ4_SRC}
 
 		${CORE_SRC}
 		${BINNY_SRC}
+		${GEOMETRY_SRC}
+		${INPUT_SRC}
 		${MATH_SRC}
 		${MESHMOD_SRC}
 		${MESHOPS_SRC}
-		${GEOMETRY_SRC}
-		${INPUT_SRC}
+		${MIDRENDER_SRC}
 		${RENDER_SRC}
 		${RESOURCEMAN_SRC}
 		${SHELL_SRC}
