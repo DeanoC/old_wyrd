@@ -1,3 +1,4 @@
+#include <input/keyboard.h>
 #include "core/core.h"
 #include "shell/interface.h"
 #include "resourcemanager/resourceman.h"
@@ -78,6 +79,7 @@ struct App
 		windowConfig.height = 720;
 		windowConfig.windowName = "GfxTest"s;
 		windowConfig.fullscreen = false;
+		windowConfig.directInput = true;
 		auto window = shell.createPresentableWindow(windowConfig);
 		DeviceConfig config = {
 				true,    // presentable
@@ -127,10 +129,10 @@ struct App
 							  basicTriVertexBufferName,
 							  Buffer::FromUsage(Usage::VertexRead | Usage::DMADst),
 							  {
-							   0.0f, 1.0f, 0.5f,
-							   1.0f, 1.0f, 0.5f,
-							   1.0f, 0.0f, 0.5f
-					   });
+									  0.0f, 1.0f, 0.5f,
+									  1.0f, 1.0f, 0.5f,
+									  1.0f, 0.0f, 0.5f
+							  });
 
 		Buffer::Create<float>(rm,
 							  basicTriVertexBuffer2Name,
@@ -363,6 +365,11 @@ struct App
 			renderQueue->stallTillIdle();
 			device->houseKeepTick();
 			display->present(colourRT0);
+			if(Input::g_Keyboard)
+			{
+				using namespace Input;
+				if(Input::g_Keyboard->keyDown(Key::KT_ESCAPE)) return true;
+			}
 		} while(shell.update());
 
 		return true;
@@ -376,10 +383,6 @@ struct App
 
 int Main(Shell::ShellInterface& shell_)
 {
-	using namespace Render;
-	using namespace std::string_literals;
-	using namespace std::string_view_literals;
-
 	App app(shell_);
 
 	if(!app.init()) return 10;

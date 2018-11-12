@@ -62,6 +62,15 @@ set( LZ4_SRC
 		lz4/xxhash.h
 		)
 
+set(IMGUI_SRC
+		imgui/imconfig.h
+		imgui/imgui.h
+		imgui/imgui.cpp
+		imgui/imgui_demo.cpp
+		imgui/imgui_draw.cpp
+		imgui/imgui_widgets.cpp
+		)
+
 #------------ Wyrd's own sources ------------
 set( BINNY_SRC
 		binny/bundle.cpp
@@ -105,6 +114,12 @@ set( GEOMETRY_SRC
 		geometry/watertightray.h
 		)
 
+set(INPUT_SRC
+		input/input.h
+		input/keylist.h
+		input/keyboard.h
+		input/windows.cpp)
+
 set( RENDER_SRC
 		render/generictextureformat.h
 		render/gtfcracker.h
@@ -128,7 +143,23 @@ set( RENDER_SRC
 		render/types.h
 		render/renderpass.cpp
 		render/image.cpp
-		render/rendertarget.cpp render/shader.cpp render/shader.h render/pipeline.cpp render/pipeline.h render/bindingtable.cpp render/bindingtable.h render/ropblender.cpp render/ropblender.h render/viewport.cpp render/viewport.h render/rasterisationstate.cpp render/rasterisationstate.h render/vertexinput.cpp render/vertexinput.h render/buffer.cpp render/buffer.h)
+		render/rendertarget.cpp
+		render/shader.cpp
+		render/shader.h
+		render/pipeline.cpp
+		render/pipeline.h
+		render/bindingtable.cpp
+		render/bindingtable.h
+		render/ropblender.cpp
+		render/ropblender.h
+		render/viewport.cpp
+		render/viewport.h
+		render/rasterisationstate.cpp
+		render/rasterisationstate.h
+		render/vertexinput.cpp
+		render/vertexinput.h
+		render/buffer.cpp
+		render/buffer.h)
 
 set( MATH_SRC
 		math/vector_math.cpp
@@ -215,7 +246,15 @@ set( VULKAN_SRC
 		vulkan/resources.cpp
 		vulkan/resources.h
 		vulkan/semaphore.cpp
-		vulkan/semaphore.h vulkan/pipeline.cpp vulkan/pipeline.h vulkan/shadermodule.cpp vulkan/shadermodule.h vulkan/bindingtable.cpp vulkan/bindingtable.h vulkan/buffer.cpp vulkan/buffer.h)
+		vulkan/semaphore.h
+		vulkan/pipeline.cpp
+		vulkan/pipeline.h
+		vulkan/shadermodule.cpp
+		vulkan/shadermodule.h
+		vulkan/bindingtable.cpp
+		vulkan/bindingtable.h
+		vulkan/buffer.cpp
+		vulkan/buffer.h)
 
 #-----------
 set(wryd_srcs
@@ -224,6 +263,7 @@ set(wryd_srcs
 		${CX_SRC}
 		${FMT_SRC}
 		${LZ4_SRC}
+		${IMGUI_SRC}
 
 		${CORE_SRC}
 		${BINNY_SRC}
@@ -231,6 +271,7 @@ set(wryd_srcs
 		${MESHMOD_SRC}
 		${MESHOPS_SRC}
 		${GEOMETRY_SRC}
+		${INPUT_SRC}
 		${RENDER_SRC}
 		${RESOURCEMAN_SRC}
 		${SHELL_SRC}

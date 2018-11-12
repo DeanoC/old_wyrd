@@ -1,10 +1,17 @@
 
 #include "core/core.h"
 #include "shell/winshell.h"
-#include <fcntl.h>
-#include <io.h>
 
 #if PLATFORM == WINDOWS
+
+#include <fcntl.h>
+#include <io.h>
+#include "input/keyboard.h"
+
+namespace Input {
+extern bool KeyboardWinProcessKeyMessages(uint32_t message, uint16_t wParam, uint32_t lParam);
+Keyboard* g_Keyboard = nullptr;
+}
 
 namespace Shell {
 static bool g_windowsQuit = false;
@@ -15,8 +22,10 @@ struct Win32PresentationWindow
 	HWND hwnd;
 };
 
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	if(Input::KeyboardWinProcessKeyMessages(message, wParam, lParam)) return 0;
 
 	switch(message)
 	{
@@ -242,6 +251,11 @@ auto WinShell::update() -> bool
 
 auto WinShell::createPresentableWindow(PresentableWindowConfig const& config_) -> PresentableWindow*
 {
+	if(config_.directInput)
+	{
+		assert(Input::g_Keyboard == nullptr);
+		Input::g_Keyboard = new Input::Keyboard();
+	}
 	// Create window
 	RECT rc = {0, 0, (LONG) config_.width, (LONG) config_.height};
 	DWORD style = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
