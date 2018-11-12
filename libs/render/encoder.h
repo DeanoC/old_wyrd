@@ -74,6 +74,8 @@ struct IRenderEncoder
 								  uint32_t bindingIndex = 0) -> void = 0;
 	virtual auto bindIndexBuffer(Render::BufferConstPtr const& buffer_, uint8_t bitSize_ = 16u,
 								 uint64_t offset_ = 0) -> void = 0;
+	virtual auto pushConstants(Render::RenderPipelineConstPtr const& pipeline_, PushConstantRange const& range_,
+							   void const* data_) -> void = 0;
 	virtual auto draw(uint32_t vertexCount_, uint32_t vertexOffset_ = 0, uint32_t instanceCount_ = 1,
 					  uint32_t instanceOffset_ = 0) -> void = 0;
 	virtual auto drawIndexed(uint32_t indexCount_, uint32_t indexOffset_ = 0, uint32_t vertexOffset = 0,

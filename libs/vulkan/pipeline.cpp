@@ -106,11 +106,33 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 
 		// TODO pipeline inheritance
 		VkGraphicsPipelineCreateInfo createInfo{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
+		VkPipelineLayoutCreateInfo layoutCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+
+		layoutCreateInfo.setLayoutCount = renderPipeline->numBindingTableMemoryMaps;
+		std::vector<VkDescriptorSetLayout> layouts(renderPipeline->numBindingTableMemoryMaps);
+		for(auto i = 0u; i < renderPipeline->numBindingTableMemoryMaps; ++i)
+		{
+			auto memmap = renderPipeline->getBindingTableMemoryMapHandles()[i].acquire<Render::BindingTableMemoryMap>();
+			auto bindingLayout = memmap->getStage<Vulkan::BindingTableMemoryMap>(BindingTableMemoryMap::s_stage);
+			layouts[i] = bindingLayout->layout;
+		}
+		layoutCreateInfo.pSetLayouts = layouts.data();
+		layoutCreateInfo.pushConstantRangeCount = renderPipeline->numPushConstantRanges;
+		std::vector<VkPushConstantRange> pushConstants(renderPipeline->numPushConstantRanges);
+		for(auto i = 0u; i < renderPipeline->numPushConstantRanges; ++i)
+		{
+			auto const& pushC = renderPipeline->getPushConstantRanges()[i];
+			pushConstants[i].stageFlags = from(pushC.shaderAccess);
+			pushConstants[i].offset = pushC.offset;
+			pushConstants[i].size = pushC.sizeInBytes;
+		}
+		layoutCreateInfo.pPushConstantRanges = pushConstants.data();
 
 		std::vector<VkPipelineShaderStageCreateInfo> stages;
 		stages.reserve(renderPipeline->numShaders);
-		for(auto& handle : renderPipeline->shaders)
+		for(auto m = 0u; m < renderPipeline->numShaders; ++m)
 		{
+			auto const& handle = renderPipeline->getSPIRVShaderHandles()[m];
 			if(handle.isValid())
 			{
 				auto shader = handle.acquire<Render::SPIRVShader>();
@@ -267,17 +289,6 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 		viewportCreateInfo.pScissors = vkscissors.data();
 		createInfo.pViewportState = &viewportCreateInfo;
 
-		VkPipelineLayoutCreateInfo layoutCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
-		layoutCreateInfo.setLayoutCount = renderPipeline->numBindingTableMemoryMaps;
-		std::vector<VkDescriptorSetLayout> layouts(renderPipeline->numBindingTableMemoryMaps);
-		for(auto i = 0u; i < renderPipeline->numBindingTableMemoryMaps; ++i)
-		{
-			auto memmap = renderPipeline->getBindingTableMemoryMaps()[i].acquire<Render::BindingTableMemoryMap>();
-			auto bindingLayout = memmap->getStage<Vulkan::BindingTableMemoryMap>(BindingTableMemoryMap::s_stage);
-			layouts[i] = bindingLayout->layout;
-		}
-		layoutCreateInfo.pSetLayouts = layouts.data();
-		layoutCreateInfo.pushConstantRangeCount = 0; // TODO push constant API
 		vulkanRenderPipeline->layout = device->createPipelineLayout(layoutCreateInfo);
 		createInfo.layout = vulkanRenderPipeline->layout;
 

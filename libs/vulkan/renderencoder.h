@@ -28,6 +28,9 @@ struct RenderEncoder : public Render::IRenderEncoder
 						  uint32_t bindingIndex = 0) -> void final;
 	auto bindIndexBuffer(Render::BufferConstPtr const& buffer_,
 						 uint8_t bitSize_ = 16u, uint64_t offset_ = 0) -> void final;
+	auto pushConstants(Render::RenderPipelineConstPtr const& pipeline_, Render::PushConstantRange const& range,
+					   void const* data_) -> void final;
+
 	auto draw(uint32_t vertexCount_, uint32_t vertexOffset_, uint32_t instanceCount_,
 			  uint32_t instanceOffset_) -> void final;
 	auto drawIndexed(uint32_t indexCount_, uint32_t indexOffset_, uint32_t vertexOffset,

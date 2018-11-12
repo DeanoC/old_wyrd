@@ -34,7 +34,7 @@ struct ISaver
 	virtual auto setWriterFunction(std::function<void( Writer& writer_ )>) -> void = 0;
 };
 using ResolveGetResourceMan = std::function<ResourceMan*()>;
-using ResolveLinkFunc = std::function<void(ResourceHandleBase&)>;
+using ResolveLinkFunc = std::function<void(ResourceHandleBase const&)>;
 using ResolveNameFunc = std::function<ResourceNameView const()>;
 
 using ResolverInterface = std::tuple<ResolveGetResourceMan, ResolveLinkFunc, ResolveNameFunc>;

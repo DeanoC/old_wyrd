@@ -43,6 +43,7 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 			Topology topology_,
 			RenderPipelineFlags flags_,
 			std::vector<BindingTableMemoryMapHandle> const& memoryMap_,
+			std::vector<PushConstantRange> const& pushConstantRanges_,
 			std::vector<SPIRVShaderHandle> const& shaders_,
 			RasterisationStateHandle rasterisationState_,
 			RenderPassHandle renderPass_,
@@ -55,18 +56,30 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 		return Core::bitmask::test_equal(flags, RenderPipelineFlags::EnablePrimitiveRestart);
 	}
 
-	BindingTableMemoryMapHandle const* getBindingTableMemoryMaps() const
+	BindingTableMemoryMapHandle const* getBindingTableMemoryMapHandles() const
 	{
 		return (BindingTableMemoryMapHandle*) (this + 1);
 	}
 
+	PushConstantRange const* getPushConstantRanges() const
+	{
+		return (PushConstantRange*) (getBindingTableMemoryMapHandles() + numBindingTableMemoryMaps);
+	}
+
+	SPIRVShaderHandle const* getSPIRVShaderHandles() const
+	{
+		return (SPIRVShaderHandle*) (getPushConstantRanges() + numPushConstantRanges);
+	}
 
 	Topology inputTopology;
 	RenderPipelineFlags flags;
-	uint8_t numBindingTableMemoryMaps;
-	uint8_t numShaders;
+	uint8_t padda[2];
 
-	SPIRVShaderHandle shaders[5];
+	uint8_t numBindingTableMemoryMaps;
+	uint8_t numPushConstantRanges;
+	uint8_t numShaders;
+	uint8_t paddb;
+
 	RasterisationStateHandle rasterisationState;
 	RenderPassHandle renderPass;
 	ROPBlenderHandle ropBlender;

@@ -79,18 +79,20 @@ auto BindingTable::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) ->
 auto BindingTableMemoryMap::Create(
 		std::shared_ptr<ResourceManager::ResourceMan> rm_,
 		ResourceManager::ResourceNameView const& name_,
-		std::vector<BindingLayout> const& bindingLayouts) -> BindingTableMemoryMapHandle
+		std::vector<BindingLayout> const& bindingLayouts_) -> BindingTableMemoryMapHandle
 {
-	assert(bindingLayouts.size() < (1 << (sizeof(BindingTableMemoryMap::numBindings) * 8)));
+	assert(bindingLayouts_.size() < (1 << (sizeof(BindingTableMemoryMap::numBindings) * 8)));
 
-	size_t const dataSize = sizeof(Binding) * bindingLayouts.size();
+	size_t const bindSize = sizeof(Binding) * bindingLayouts_.size();
+	size_t const dataSize = bindSize;
+
 	size_t const totalSize = Core::alignTo(sizeof(BindingTableMemoryMap) + dataSize, 8);
 	auto obj = (BindingTableMemoryMap*) malloc(totalSize);
 	obj->sizeAndStageCount = totalSize;
-	obj->numBindings = (uint8_t) bindingLayouts.size();
+	obj->numBindings = (uint8_t) bindingLayouts_.size();
 
-	uint8_t* dataPtr = ((uint8_t*) (obj + 1));
-	std::memcpy(dataPtr, bindingLayouts.data(), dataSize);
+	auto bindPtr = obj->getBindingLayouts();
+	std::memcpy(const_cast<BindingLayout*>(bindPtr), bindingLayouts_.data(), bindSize);
 
 	rm_->placeInStorage(name_, *obj);
 	free(obj);

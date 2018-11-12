@@ -34,9 +34,10 @@ struct alignas(8) BindingTableMemoryMap : public ResourceManager::Resource<Bindi
 
 	static auto Create(std::shared_ptr<ResourceManager::ResourceMan> rm_,
 					   ResourceManager::ResourceNameView const& name_,
-					   std::vector<BindingLayout> const& bindingLayouts) -> BindingTableMemoryMapHandle;
+					   std::vector<BindingLayout> const& bindingLayouts_
+	) -> BindingTableMemoryMapHandle;
 
-	BindingLayout* getBindingLayouts() { return (BindingLayout*) (this + 1); }
+	BindingLayout const* getBindingLayouts() const { return (BindingLayout*) (this + 1); }
 	uint8_t numBindings;
 };
 
@@ -48,7 +49,7 @@ struct BindingTable : public ResourceManager::Resource<BindingTableId>
 
 	static auto Create(std::shared_ptr<ResourceManager::ResourceMan> rm_,
 					   ResourceManager::ResourceNameView const& name_,
-					   std::vector<BindingTableMemoryMapHandle> const& bindingTables) -> BindingTableHandle;
+					   std::vector<BindingTableMemoryMapHandle> const& bindingTables_) -> BindingTableHandle;
 
 	BindingTableMemoryMapHandle* getMemoryMaps() { return (BindingTableMemoryMapHandle*) (this + 1); }
 

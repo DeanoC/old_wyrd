@@ -193,9 +193,9 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::P
 	ResolverInterface resolver{
 			[this]() -> ResourceMan*
 			{ return this; },
-			[this, resourceName](ResourceHandleBase& base_) -> void
+			[this, resourceName](ResourceHandleBase const& base_) -> void
 			{
-				this->resolveLink(base_, resourceName);
+				this->resolveLink(const_cast<ResourceHandleBase&>(base_), resourceName);
 			},
 			[&resourceName]()
 			{ return resourceName; }

@@ -34,8 +34,8 @@ auto BindingTableMemoryMap::RegisterResourceHandler(ResourceManager::ResourceMan
 			vkbinding.stageFlags = from(binding[i].shaderAccess);
 			vkbinding.pImmutableSamplers = nullptr; // not sure to support yet
 		}
-		vulkanBindingtableMM->layout = device->createDescriptorSetLayout(createInfo);
 
+		vulkanBindingtableMM->layout = device->createDescriptorSetLayout(createInfo);
 		return true;
 	};
 

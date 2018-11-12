@@ -32,6 +32,7 @@ static auto basicTriIndexBufferName = ResourceManager::ResourceNameView("mem$bas
 static auto colourRT0Name = ResourceManager::ResourceNameView("mem$colourRT0");
 static auto passthroughVertexShaderName = ResourceManager::ResourceNameView("mem$passthroughVertexShader");
 static auto redOutFragmentShaderName = ResourceManager::ResourceNameView("mem$redOutFragmentShader");
+static auto pushColourFragmentShaderName = ResourceManager::ResourceNameView("mem$pushColourOutFragmentShader");
 
 struct App
 {
@@ -176,6 +177,9 @@ struct App
 		auto const glslPassthroughSourceName = ResourceNameView("mem$glslPassthroughShaderSource"sv);
 		auto const hlslPassthroughSourceName = ResourceNameView("mem$hlslPassthroughShaderSource"sv);
 
+		auto const hlslPushColourShaderSourceName = ResourceNameView("mem$hlslPushColourOutFragmentShaderSource"sv);
+		auto const glslPushColourShaderSourceName = ResourceNameView("mem$glslPushColourOutFragmentShaderSource"sv);
+
 		TextResource::Create(rm,
 							 glslPassthroughSourceName,
 							 "#extension GL_ARB_separate_shader_objects : enable\n"
@@ -198,24 +202,45 @@ struct App
 							 "void main() {\n"
 							 "   outColor = vec4(1.0, 0.0,0.0, 1.0);\n"
 							 "}\n");
+
 		TextResource::Create(rm,
 							 hlslRedShaderSourceName,
 							 "[[vk::location(0)]] float4 main()\n"
 							 "{\n"
 							 "		return float4(1.0f, 0.0f, 0.0f, 1.0f);\n"
 							 "}\n");
-		SPIRVShader::Compile(rm,
-							 redOutFragmentShaderName,
-							 {rm->openByName<TextResourceId>(hlslRedShaderSourceName)},
-							 ShaderSourceLanguage::HLSL,
-							 ShaderType::Fragment,
-							 0);
+
+		TextResource::Create(rm,
+							 hlslPushColourShaderSourceName,
+							 "[[vk::push_constant]] cbuffer S { [[vk::offset(64)]] float4 colour; };\n"
+							 "[[vk::location(0)]] float4 main()\n"
+							 "{\n"
+							 "		return colour;\n"
+							 "}\n");
+
+		TextResource::Create(rm,
+							 glslPushColourShaderSourceName,
+							 "#extension GL_ARB_separate_shader_objects : enable\n"
+							 "#extension GL_ARB_shading_language_420pack : enable\n"
+							 "layout(push_constant) uniform pushConstants_t { layout(offset = 64) vec4 colour; } pushConstants;\n"
+							 "layout (location = 0) out vec4 outColor;\n"
+							 "void main() {\n"
+							 "   outColor = pushConstants.colour;\n"
+							 "}\n");
 		SPIRVShader::Compile(rm,
 							 passthroughVertexShaderName,
-							 {rm->openByName<TextResourceId>(hlslPassthroughSourceName)},
-							 ShaderSourceLanguage::HLSL,
+							 {rm->openByName<TextResourceId>(glslPassthroughSourceName)},
+							 ShaderSourceLanguage::GLSL,
 							 ShaderType::Vertex,
 							 0);
+
+		SPIRVShader::Compile(rm,
+							 pushColourFragmentShaderName,
+							 {rm->openByName<TextResourceId>(glslPushColourShaderSourceName)},
+							 ShaderSourceLanguage::GLSL,
+							 ShaderType::Fragment,
+							 0);
+
 
 		BindingTableMemoryMap::Create(rm,
 									  defaultBindingTableMemoryMapName,
@@ -268,8 +293,12 @@ struct App
 									   rm->openByName<BindingTableMemoryMapId>(defaultBindingTableMemoryMapName)
 							   },
 							   {
+									   {0,  sizeof(float) * 16, ShaderType::Vertex}, // world matrix
+									   {64, sizeof(float) * 4,  ShaderType::Fragment}, // colour
+							   },
+							   {
 									   rm->openByName<SPIRVShaderId>(passthroughVertexShaderName),
-									   rm->openByName<SPIRVShaderId>(redOutFragmentShaderName),
+									   rm->openByName<SPIRVShaderId>(pushColourFragmentShaderName),
 							   },
 							   rm->openByName<RasterisationStateId>(defaultRasterStateName),
 							   rm->openByName<RenderPassId>(defaultRenderPassName),
@@ -289,7 +318,6 @@ struct App
 		auto colourRT0 = rm->acquireByName<Texture>(colourRT0Name);
 		auto defaultRenderPass = rm->acquireByName<RenderPass>(defaultRenderPassName);
 		auto defaultRenderTarget = rm->acquireByName<RenderTarget>(defaultRenderTargetName);
-		auto fragShader = rm->acquireByName<SPIRVShader>(redOutFragmentShaderName);
 		auto renderPipeline = rm->acquireByName<RenderPipeline>(defaultRenderPipelineName);
 
 		auto blankTex = rm->acquireByName<Texture>(blankTex4x4Name);
@@ -299,6 +327,11 @@ struct App
 
 		auto renderQueue = device->getGeneralQueue();
 		auto rEncoderPool = device->makeEncoderPool(true, CommandQueueFlavour::Render);
+
+		std::array<float, 4> const black{0.0f, 0.0f, 0.0f, 1.0f};
+		std::array<float, 4> const white{1.0f, 1.0f, 1.0f, 1.0f};
+
+		using namespace Core::bitmask;
 
 		do
 		{
@@ -314,9 +347,11 @@ struct App
 			renderEncoder->beginRenderPass(defaultRenderPass, defaultRenderTarget);
 			renderEncoder->bind(renderPipeline);
 			renderEncoder->bindVertexBuffer(vBuffer);
+			renderEncoder->pushConstants(renderPipeline, PushConstantRange{64, 16, ShaderType::Fragment,}, &white);
 			renderEncoder->draw(3);
 			renderEncoder->bindVertexBuffer(vBuffer2);
 			renderEncoder->bindIndexBuffer(iBuffer);
+			renderEncoder->pushConstants(renderPipeline, PushConstantRange{64, 16, ShaderType::Fragment,}, &black);
 			renderEncoder->drawIndexed(3);
 			renderEncoder->endRenderPass();
 			colourRT0->transitionToDMASrc(encoder);

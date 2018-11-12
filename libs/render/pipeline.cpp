@@ -17,10 +17,14 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) 
 		auto renderPipeline = std::static_pointer_cast<RenderPipeline>(ptr_);
 		auto[getRMFunc, resolverFunc, resourceNameFunc] = resolver_;
 
-		for(auto i = 0u; i < 5; ++i)
+		for(auto i = 0u; i < renderPipeline->numBindingTableMemoryMaps; ++i)
 		{
-			resolverFunc(renderPipeline->shaders[i].base);
+			resolverFunc(renderPipeline->getBindingTableMemoryMapHandles()[i].base);
+		}
 
+		for(auto i = 0u; i < renderPipeline->numShaders; ++i)
+		{
+			resolverFunc(renderPipeline->getSPIRVShaderHandles()[i].base);
 		}
 
 		return true;
@@ -84,6 +88,7 @@ auto RenderPipeline::Create(
 		Topology topology_,
 		RenderPipelineFlags flags_,
 		std::vector<BindingTableMemoryMapHandle> const& memoryMap_,
+		std::vector<PushConstantRange> const& pushConstantRanges_,
 		std::vector<SPIRVShaderHandle> const& shaders_, // vertex, fragment, geometry, tess control, tess eval
 		RasterisationStateHandle rasterisationState_,
 		RenderPassHandle renderPass_,
@@ -93,28 +98,28 @@ auto RenderPipeline::Create(
 {
 	assert(shaders_.size() > 0);
 
-	size_t const dataSize = sizeof(BindingTableMemoryMapHandle) * memoryMap_.size();
+	size_t const memoryMapSize = sizeof(BindingTableMemoryMapHandle) * memoryMap_.size();
+	size_t const pushSize = sizeof(PushConstantRange) * pushConstantRanges_.size();
+	size_t const shaderSize = sizeof(SPIRVShaderHandle) * shaders_.size();
+	size_t const dataSize = memoryMapSize + pushSize + shaderSize;
+
 	size_t const totalSize = sizeof(RenderPipeline) + dataSize;
 
 	auto obj = (RenderPipeline*) malloc(totalSize);
 	std::memset(obj, 0, totalSize);
 	obj->sizeAndStageCount = totalSize;
-	obj->numShaders = (uint8_t) shaders_.size();
 	obj->numBindingTableMemoryMaps = (uint8_t) memoryMap_.size();
+	obj->numPushConstantRanges = (uint8_t) pushConstantRanges_.size();
+	obj->numShaders = (uint8_t) shaders_.size();
 	obj->inputTopology = topology_;
 	obj->flags = flags_;
-	std::memcpy(obj + 1, memoryMap_.data(), dataSize);
 
-	for(auto i = 0u; i < 5; ++i)
-	{
-		if(i < shaders_.size())
-		{
-			obj->shaders[i] = shaders_[i];
-		} else
-		{
-			obj->shaders[i] = {};
-		}
-	}
+	auto memorymapPtr = obj->getBindingTableMemoryMapHandles();
+	std::memcpy(const_cast<BindingTableMemoryMapHandle*>(memorymapPtr), memoryMap_.data(), memoryMapSize);
+	auto pushPtr = obj->getPushConstantRanges();
+	std::memcpy(const_cast<PushConstantRange*>(pushPtr), pushConstantRanges_.data(), pushSize);
+	auto shaderPtr = obj->getSPIRVShaderHandles();
+	std::memcpy(const_cast<SPIRVShaderHandle*>(shaderPtr), shaders_.data(), shaderSize);
 
 	obj->rasterisationState = rasterisationState_;
 	obj->renderPass = renderPass_;

@@ -291,6 +291,13 @@ enum class SampleCounts : uint8_t
 	SixtyFour = Core::Bit(7),
 };
 
+struct PushConstantRange
+{
+	uint32_t offset = 0;
+	uint32_t sizeInBytes;
+	ShaderType shaderAccess;
+};
+
 constexpr auto is_bitmask_enum(RenderPipelineStages) -> bool { return true; }
 
 constexpr auto is_bitmask_enum(ComputePipelineStages) -> bool { return true; }

@@ -11,6 +11,7 @@
 #include "vulkan/renderpass.h"
 #include "vulkan/rendertarget.h"
 #include "vulkan/pipeline.h"
+#include "types.h"
 
 namespace Vulkan {
 
@@ -211,6 +212,13 @@ auto RenderEncoder::bindIndexBuffer(Render::BufferConstPtr const& buffer_, uint8
 
 	auto buffer = buffer_->getStage<Buffer>(Buffer::s_stage);
 	vkCmdBindIndexBuffer(buffer->buffer, offset_, VkIndexType(bitSize_ / 32));
+}
+
+auto RenderEncoder::pushConstants(Render::RenderPipelineConstPtr const& pipeline_,
+								  Render::PushConstantRange const& range_, void const* data_) -> void
+{
+	auto pipeline = pipeline_->getStage<RenderPipeline>(RenderPipeline::s_stage);
+	vkCmdPushConstants(pipeline->layout, from(range_.shaderAccess), range_.offset, range_.sizeInBytes, data_);
 }
 
 auto RenderEncoder::draw(uint32_t vertexCount_, uint32_t vertexOffset_, uint32_t instanceCount_,
