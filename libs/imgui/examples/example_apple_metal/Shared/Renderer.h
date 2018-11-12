@@ -3,9 +3,7 @@
 
 @interface Renderer : NSObject <MTKViewDelegate>
 
-- (nonnull instancetype)initWithView:(nonnull MTKView
-*)
-view;
+-(nonnull instancetype)initWithView:(nonnull MTKView *)view;
 
 @end
 
