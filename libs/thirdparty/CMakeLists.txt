@@ -50,6 +50,8 @@ set(IMGUI_SRC
 		imgui/imgui_draw.cpp
 		imgui/imgui_widgets.cpp
 		)
+add_definitions(${wyrd_DEFINITIONS})
+include_directories(${wyrd_INCLUDES})
 
 set( THIRDPARTY_LIBS enkiTS shaderc)
 foreach(LIB ${THIRDPARTY_LIBS})
@@ -58,8 +60,7 @@ endforeach(LIB)
 add_subdirectory(tbb)
 set( THIRDPARTY_LIBS ${THIRDPARTY_LIBS} tbb_static tbbmalloc_static)
 
-add_definitions(${wyrd_DEFINITIONS})
-include_directories(${wyrd_INCLUDES})
+
 
 add_library( thirdparty STATIC
 		${CRC32C_SRC}

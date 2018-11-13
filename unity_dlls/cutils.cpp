@@ -36,10 +36,10 @@ CAPI uint32_t ComputeCRC32COfString(uint32_t crc, char const* input, uint64_t le
 CAPI uint64_t FetchBundleUserData(char const* bundlePath)
 {
 	using namespace Binny;
-	Bundle bundle(&malloc, &free);
-
 	std::ifstream in(bundlePath, std::ifstream::in | std::ifstream::binary);
-	auto const ret = bundle.peekAtHeader(in);
+	Bundle bundle(&malloc, &free, &malloc, &free, in);
+
+	auto const ret = bundle.peekAtHeader();
 
 	if (ret.first == Bundle::ErrorCode::Okay)
 	{

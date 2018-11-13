@@ -1,7 +1,5 @@
 #if !defined(USING_STATIC_LIBS)
 #define STB_IMAGE_IMPLEMENTATION
-#define LOGURU_IMPLEMENTATION 1
-#define CX_ERROR_IMPLEMENTATION 1
 #endif
 
 #include "core/core.h"
@@ -128,7 +126,7 @@ CAPI auto CTM_DamageStructure(TacticalMapHandle ctmHandle, float const* center, 
 	Math::Vector3 vCenter(center);
 	Math::Vector3 vHalfLength(extent);
 	vHalfLength *= 0.5f;
-	Core::AABB box = Core::AABB::fromCenterAndHalfLength(vCenter, vHalfLength);
+	Geometry::AABB box = Geometry::AABB::fromCenterAndHalfLength(vCenter, vHalfLength);
 	tm->damageStructure(box);
 }
 
@@ -147,7 +145,9 @@ CAPI auto CTMB_CreateBuilder(float* bounds2D) -> TacticalMapBuilderHandle
 	g_EnkiTS.Initialize();
 #endif
 
-	std::shared_ptr<ITacticalMapBuilder> builder = TacticalMap::allocateBuilder(&bounds2D[0], width, height);
+	Math::Vector2 bounds(bounds2D[0], bounds2D[1]);
+
+	std::shared_ptr<ITacticalMapBuilder> builder = TacticalMap::allocateBuilder(bounds, width, height);
 
 	return unityOwnedTacticalMapBuilders.push(builder);
 }
@@ -191,7 +191,7 @@ CAPI auto CTMB_ExportToGLTF(TacticalMapBuilderHandle tmHandle, char const* fileN
 	std::unordered_map<MeshMod::Mesh*, MeshPolygons> meshPolygons;
 
 	std::vector<MeshMod::MeshPtr> boxes;
-	std::unordered_map<uint64_t, std::vector<Core::AABB>> mortonBoxesAABBs;
+	std::unordered_map<uint64_t, std::vector<Geometry::AABB>> mortonBoxesAABBs;
 
 	Math::Vector3 const mortonMax(	(float)builder->getWidth(),
 									(float)builder->getHeight(),
@@ -315,7 +315,7 @@ CAPI auto CTMB_AddBoxAt(TacticalMapBuilderHandle handle, TacticalMapLevelDataHea
 	Math::Vector3 vCenter(center);
 	Math::Vector3 vHalfLength(extent);
 	vHalfLength *= 0.5f;
-	Core::AABB box = Core::AABB::fromCenterAndHalfLength(vCenter, vHalfLength);
+	Geometry::AABB box = Geometry::AABB::fromCenterAndHalfLength(vCenter, vHalfLength);
 	Math::Matrix4x4 transform(matrix);
 	tmb->addBoxAt(box, levelData, transform);
 }

@@ -1,12 +1,9 @@
 #if !defined(USING_STATIC_LIBS)
 #define STB_IMAGE_IMPLEMENTATION
-#define LOGURU_IMPLEMENTATION 1
 #endif
 
 #include "core/core.h"
 #include "crc32c/crc32c.h"
-#include <meshops/basicmeshops.h>
-#include <meshops/convexhullcomputer.h>
 #include "core/quick_hash.h"
 #include "meshmod/meshmod.h"
 #include "cgeometryengine.h"
@@ -20,6 +17,8 @@
 #include "meshmod/vertexdata/colourvertex.h"
 #include "meshmod/vertexdata/normalvertex.h"
 #include "meshops/gltf.h"
+#include "meshops/basicmeshops.h"
+#include "meshops/convexhullcomputer.h"
 
 
 #include "tinygltf/stb_image.h"
