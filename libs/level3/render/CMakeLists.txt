@@ -37,7 +37,7 @@ set( RENDER_SRC
 		vertexinput.cpp
 		vertexinput.h
 		buffer.cpp
-		buffer.h)
+		buffer.h sampler.cpp sampler.h)
 
 add_definitions(${wyrd_DEFINITIONS})
 include_directories( ${wyrd_INCLUDES})

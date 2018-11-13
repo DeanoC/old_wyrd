@@ -76,9 +76,9 @@ auto GenericImage::Create(
 	size_t const dataSize = computeDataSize(width_, height_, depth_, slices_, fmt_);
 	size_t const totalSize = Core::alignTo(sizeof(Image) + dataSize, 8);
 	auto* obj = (GenericImage*) malloc(totalSize);
+	std::memset(obj, 0, totalSize);
 
 	uint8_t* dataPtr = ((uint8_t*) (obj + 1));
-	std::memset(dataPtr, 0, dataSize);
 	obj->sizeAndStageCount = totalSize;
 	obj->dataSize = dataSize;
 	obj->width = width_;
@@ -86,6 +86,37 @@ auto GenericImage::Create(
 	obj->depth = depth_;
 	obj->slices = slices_;
 	obj->format = fmt_;
+
+	rm_->placeInStorage(name_, *obj);
+	free(obj);
+
+	return rm_->openByName<Id>(name_);
+}
+
+auto GenericImage::Create(
+		ResourceManager::ResourceMan::Ptr rm_,
+		ResourceManager::ResourceNameView const& name_,
+		uint32_t width_,
+		uint32_t height_,
+		uint32_t depth_,
+		uint32_t slices_,
+		GenericTextureFormat fmt_,
+		void const* data_) -> GenericImageHandle
+{
+	size_t const dataSize = computeDataSize(width_, height_, depth_, slices_, fmt_);
+	size_t const totalSize = Core::alignTo(sizeof(Image) + dataSize, 8);
+	auto* obj = (GenericImage*) malloc(totalSize);
+	std::memset(obj, 0, sizeof(Image));
+
+	uint8_t* dataPtr = ((uint8_t*) (obj + 1));
+	obj->sizeAndStageCount = totalSize;
+	obj->dataSize = dataSize;
+	obj->width = width_;
+	obj->height = height_;
+	obj->depth = depth_;
+	obj->slices = slices_;
+	obj->format = fmt_;
+	std::memcpy(dataPtr, data_, dataSize);
 
 	rm_->placeInStorage(name_, *obj);
 	free(obj);

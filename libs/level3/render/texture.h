@@ -21,8 +21,7 @@ struct Encoder;
 
 enum class TextureFlags : uint32_t
 {
-	// should we keep a copy of the texture data after init?
-			KeepCpuCopy = Core::Bit(0),
+	KeepCpuCopy = Core::Bit(0),
 	NoInit = Core::Bit(1),
 	InitZero = Core::Bit(2),
 	CubeMap = Core::Bit(3),
@@ -132,6 +131,7 @@ public:
 		using namespace Core::bitmask;
 		return from_uint<TextureFlags>(to_uint(usage) << 5);
 	}
+
 protected:
 	Texture() = default;
 

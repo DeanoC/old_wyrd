@@ -174,6 +174,7 @@ struct App
 							   defaultRenderPipelineName,
 							   Topology::Triangles,
 							   RenderPipelineFlags::None,
+								DynamicPipelineState::None,
 							   {
 									   rm->openByName<BindingTableMemoryMapId>(defaultBindingTableMemoryMapName)
 							   },
@@ -187,9 +188,9 @@ struct App
 							   },
 							   rm->openByName<RasterisationStateId>(Stock::simpleForwardRendererDefaultPipeline),
 							   rm->openByName<RenderPassId>(Stock::simpleForwardRendererRenderPass),
-							   rm->openByName<ROPBlenderId>(Stock::defaultROPBlender),
-							   rm->openByName<ViewportId>(Stock::simpleForwardRendererViewport),
-							   rm->openByName<VertexInputId>(Stock::positionOnlyVertexInput)
+							   rm->openByName<ROPBlenderId>(Stock::singleOpaqueROPBlender),
+							   rm->openByName<VertexInputId>(Stock::positionOnlyVertexInput),
+							   rm->openByName<ViewportId>(Stock::simpleForwardRendererViewport)
 		);
 	}
 

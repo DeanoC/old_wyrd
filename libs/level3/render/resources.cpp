@@ -10,6 +10,7 @@
 #include "render/texture.h"
 #include "render/renderpass.h"
 #include "render/rendertarget.h"
+#include "render/sampler.h"
 #include "render/shader.h"
 #include "render/pipeline.h"
 #include "render/ropblender.h"

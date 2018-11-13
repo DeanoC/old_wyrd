@@ -107,11 +107,14 @@ public:
 	auto createDescriptorSetLayout(VkDescriptorSetLayoutCreateInfo const& createInfo_) -> VkDescriptorSetLayout;
 	auto destroyDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout_) -> void;
 
-	auto allocDescriptorSet(VkDescriptorSetAllocateInfo const& allocInfo) -> VkDescriptorSet;
-	auto freeDescriptorSet(VkDescriptorSet descriptorSet_) -> void;
+	auto allocDescriptorSet(VkDescriptorSetAllocateInfo const& allocInfo, std::vector<VkDescriptorSet>& out_) -> void;
+	auto freeDescriptorSet(std::vector<VkDescriptorSet> const& descriptorSets_) -> void;
 
 	auto createPipelineLayout(VkPipelineLayoutCreateInfo const& createInfo) -> VkPipelineLayout;
 	auto destroyPipelineLayout(VkPipelineLayout pipelineLayout_) -> void;
+
+	auto createSampler(VkSamplerCreateInfo const& createInfo) -> VkSampler;
+	auto destroySampler(VkSampler sampler_) -> void;
 
 	auto getDescriptorPool() -> VkDescriptorPool { return descriptorPool; }
 

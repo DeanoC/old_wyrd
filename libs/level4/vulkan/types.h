@@ -183,6 +183,8 @@ constexpr auto from(Render::BindingTableType const& in_)
 			return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
 		case BindingTableType::Sampler:
 			return VK_DESCRIPTOR_TYPE_SAMPLER;
+		case BindingTableType::CombinedTextureSampler:
+			return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		default:
 			assert(false);
 			return VK_DESCRIPTOR_TYPE_SAMPLER;
@@ -455,6 +457,29 @@ constexpr auto from(Render::SampleCounts const in_) -> uint8_t
 	ret |= test_equal(in_, SampleCounts::ThirtyTwo) ? VK_SAMPLE_COUNT_32_BIT : 0;
 	ret |= test_equal(in_, SampleCounts::SixtyFour) ? VK_SAMPLE_COUNT_64_BIT : 0;
 	return ret;
+}
+constexpr auto from(Render::Filter const& in_)
+{
+	using namespace Render;
+	switch(in_)
+	{
+		case Filter::Nearest: return VK_FILTER_NEAREST;
+		case Filter::Linear: return VK_FILTER_LINEAR;
+		default: assert(false); return VK_FILTER_NEAREST;
+	}
+}
+
+constexpr auto from(Render::SamplerAddressMode const& in_)
+{
+	using namespace Render;
+	switch(in_)
+	{
+		case SamplerAddressMode::Repeat: return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		case SamplerAddressMode::MirroredRepeat: return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+		case SamplerAddressMode::ClampToEdge: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		case SamplerAddressMode::MirroredClampToEdge: return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+		default: assert(false); return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	}
 }
 
 } // end namespace Vulkan

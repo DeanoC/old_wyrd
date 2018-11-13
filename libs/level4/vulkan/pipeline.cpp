@@ -292,6 +292,30 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 		vulkanRenderPipeline->layout = device->createPipelineLayout(layoutCreateInfo);
 		createInfo.layout = vulkanRenderPipeline->layout;
 
+		constexpr auto MaxDynamicPipelineStates = sizeof(renderPipeline->dynamicPipelineState) * 8;
+		std::vector<VkDynamicState> dynamicState;
+		dynamicState.reserve(MaxDynamicPipelineStates);
+		for(auto n = 0u; n < MaxDynamicPipelineStates; ++n)
+		{
+			using namespace Core::bitmask;
+			if(test_equal(renderPipeline->dynamicPipelineState, (Render::DynamicPipelineState)(1u<<n)))
+			{
+				dynamicState.push_back((VkDynamicState)n);
+			}
+		}
+
+		VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
+		if (dynamicState.size() > 0)
+		{
+			dynamicStateCreateInfo.dynamicStateCount = (uint32_t)dynamicState.size();
+			dynamicStateCreateInfo.pDynamicStates = dynamicState.data();
+			createInfo.pDynamicState = &dynamicStateCreateInfo;
+		}
+		else
+		{
+			createInfo.pDynamicState = nullptr;
+		}
+
 		auto renderPass = renderPipeline->renderPass.acquire<Render::RenderPass>();
 		auto vulkanRenderPass = renderPass->getStage<RenderPass>(RenderPass::s_stage);
 		createInfo.renderPass = vulkanRenderPass->renderpass;

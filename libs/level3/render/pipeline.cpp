@@ -87,14 +87,15 @@ auto RenderPipeline::Create(
 		ResourceManager::ResourceNameView const& name_,
 		Topology topology_,
 		RenderPipelineFlags flags_,
+		DynamicPipelineState dynamicPipelineState_,
 		std::vector<BindingTableMemoryMapHandle> const& memoryMap_,
 		std::vector<PushConstantRange> const& pushConstantRanges_,
 		std::vector<SPIRVShaderHandle> const& shaders_, // vertex, fragment, geometry, tess control, tess eval
 		RasterisationStateHandle rasterisationState_,
 		RenderPassHandle renderPass_,
 		ROPBlenderHandle ropBlender_,
-		ViewportHandle viewport_,
-		VertexInputHandle vertexInput_) -> RenderPipelineHandle
+		VertexInputHandle vertexInput_,
+		ViewportHandle viewport_) -> RenderPipelineHandle
 {
 	assert(shaders_.size() > 0);
 
@@ -108,11 +109,14 @@ auto RenderPipeline::Create(
 	auto obj = (RenderPipeline*) malloc(totalSize);
 	std::memset(obj, 0, totalSize);
 	obj->sizeAndStageCount = totalSize;
+
+	obj->dynamicPipelineState = dynamicPipelineState_;
+	obj->inputTopology = topology_;
+	obj->flags = flags_;
+
 	obj->numBindingTableMemoryMaps = (uint8_t) memoryMap_.size();
 	obj->numPushConstantRanges = (uint8_t) pushConstantRanges_.size();
 	obj->numShaders = (uint8_t) shaders_.size();
-	obj->inputTopology = topology_;
-	obj->flags = flags_;
 
 	auto memorymapPtr = obj->getBindingTableMemoryMapHandles();
 	std::memcpy(const_cast<BindingTableMemoryMapHandle*>(memorymapPtr), memoryMap_.data(), memoryMapSize);

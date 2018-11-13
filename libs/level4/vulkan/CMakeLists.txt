@@ -41,7 +41,7 @@ set( VULKAN_SRC
 		bindingtable.cpp
 		bindingtable.h
 		buffer.cpp
-		buffer.h)
+		buffer.h sampler.cpp sampler.h)
 
 add_definitions(${wyrd_DEFINITIONS})
 include_directories( ${wyrd_INCLUDES})

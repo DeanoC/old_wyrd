@@ -16,6 +16,7 @@
 #include "render/ropblender.h"
 #include "render/rasterisationstate.h"
 #include "midrender/stocks.h"
+#include "midrender/imguibindings.h"
 
 static auto defaultBindingTableMemoryMapName = ResourceManager::ResourceNameView("mem$defaultBindingTableMemoryMap");
 static auto defaultBindingTableName = ResourceManager::ResourceNameView("mem$defaultBindingTable");
@@ -143,54 +144,66 @@ struct App
 		auto const hlslPushColourShaderSourceName = ResourceNameView("mem$hlslPushColourOutFragmentShaderSource"sv);
 		auto const glslPushColourShaderSourceName = ResourceNameView("mem$glslPushColourOutFragmentShaderSource"sv);
 
-		TextResource::Create(rm,
-							 hlslPushColourShaderSourceName,
-							 "[[vk::push_constant]] cbuffer S { [[vk::offset(64)]] float4 colour; };\n"
-							 "[[vk::location(0)]] float4 main()\n"
-							 "{\n"
-							 "		return colour;\n"
-							 "}\n");
+		TextResource::Create(
+				rm,
+				hlslPushColourShaderSourceName,
+				"[[vk::push_constant]] cbuffer S { [[vk::offset(64)]] float4 colour; };\n"
+				"[[vk::location(0)]] float4 main()\n"
+				"{\n"
+				"		return colour;\n"
+				"}\n");
 
-		TextResource::CreateFromFile(rm, glslPushColourShaderSourceName, "text/shaders/pushcolourout_frag.glsl");
+		TextResource::CreateFromFile(
+				rm,
+				glslPushColourShaderSourceName,
+				"text/shaders/pushcolourout_frag.glsl");
 
-		SPIRVShader::Compile(rm,
-							 pushColourFragmentShaderName,
-							 {rm->openByName<TextResourceId>(glslPushColourShaderSourceName)},
-							 ShaderSourceLanguage::GLSL,
-							 ShaderType::Fragment,
-							 0);
+		SPIRVShader::Compile(
+				rm,
+				pushColourFragmentShaderName,
+				{rm->openByName<TextResourceId>(glslPushColourShaderSourceName)},
+				ShaderSourceLanguage::GLSL,
+				ShaderType::Fragment,
+				0);
 
-		BindingTableMemoryMap::Create(rm,
-									  defaultBindingTableMemoryMapName,
-									  {}
+		BindingTableMemoryMap::Create(
+				rm,
+				defaultBindingTableMemoryMapName,
+				{}
 		);
 
-		BindingTable::Create(rm,
-							 defaultBindingTableName,
-							 {rm->openByName<BindingTableMemoryMapId>(defaultBindingTableMemoryMapName)});
+		BindingTable::Create(
+				rm,
+				defaultBindingTableName,
+				{rm->openByName<BindingTableMemoryMapId>(defaultBindingTableMemoryMapName)});
 
 
-		RenderPipeline::Create(rm,
-							   defaultRenderPipelineName,
-							   Topology::Triangles,
-							   RenderPipelineFlags::None,
-							   {
-									   rm->openByName<BindingTableMemoryMapId>(defaultBindingTableMemoryMapName)
-							   },
-							   {
-									   {0,  sizeof(float) * 16, ShaderType::Vertex}, // world matrix
-									   {64, sizeof(float) * 4,  ShaderType::Fragment}, // colour
-							   },
-							   {
-									   rm->openByName<SPIRVShaderId>(Stock::passthroughVertexShader),
-									   rm->openByName<SPIRVShaderId>(pushColourFragmentShaderName),
-							   },
-							   rm->openByName<RasterisationStateId>(Stock::simpleForwardRendererDefaultPipeline),
-							   rm->openByName<RenderPassId>(Stock::simpleForwardRendererRenderPass),
-							   rm->openByName<ROPBlenderId>(Stock::defaultROPBlender),
-							   rm->openByName<ViewportId>(Stock::simpleForwardRendererViewport),
-							   rm->openByName<VertexInputId>(Stock::positionOnlyVertexInput)
+		RenderPipeline::Create(
+				rm,
+				defaultRenderPipelineName,
+				Topology::Triangles,
+				RenderPipelineFlags::None,
+				DynamicPipelineState::None,
+				{
+						rm->openByName<BindingTableMemoryMapId>(defaultBindingTableMemoryMapName)
+				},
+				{
+						{0,  sizeof(float) * 16, ShaderType::Vertex}, // world matrix
+						{64, sizeof(float) * 4,  ShaderType::Fragment}, // colour
+				},
+				{
+						rm->openByName<SPIRVShaderId>(Stock::passthroughVertexShader),
+						rm->openByName<SPIRVShaderId>(pushColourFragmentShaderName),
+				},
+				rm->openByName<RasterisationStateId>(Stock::simpleForwardRendererDefaultPipeline),
+				rm->openByName<RenderPassId>(Stock::simpleForwardRendererRenderPass),
+				rm->openByName<ROPBlenderId>(Stock::singleOpaqueROPBlender),
+				rm->openByName<VertexInputId>(Stock::positionOnlyVertexInput),
+				rm->openByName<ViewportId>(Stock::simpleForwardRendererViewport)
 		);
+
+		imguiBindings.reset( new MidRender::ImguiBindings() );
+		imguiBindings->init(rm);
 	}
 
 	auto body() -> bool
@@ -262,6 +275,8 @@ struct App
 	Shell::ShellInterface& shell;
 	Render::Device::Ptr device;
 	Render::Display::Ptr display;
+
+	std::unique_ptr<MidRender::ImguiBindings> imguiBindings;
 };
 
 int Main(Shell::ShellInterface& shell_)

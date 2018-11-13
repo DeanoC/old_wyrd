@@ -18,7 +18,10 @@ namespace Render {
 // old skool but simple vertex input.
 // assumes packed single stream all vertex (no instance) data
 // TODO add a modern one or just use arbitary fetch for complex cases
-enum class VertexInputElement : uint8_t
+// these names are just suggestion, the actual location etc. is whatever binding
+// you choose, so feel free to ignore tham an use any old uint8 that fits your
+// shaders..
+enum VertexInputLocation : uint8_t
 {
 	Position = 0,
 	Normal,
@@ -50,9 +53,9 @@ struct alignas(8) VertexInput : public ResourceManager::Resource<VertexInputId>
 	using Input = struct
 	{
 		uint32_t shaderIndex;
-		uint32_t binding;
-		VertexInputElement element;
+		VertexInputLocation binding;
 		VertexInputType type;
+		uint8_t padd[2];
 	};
 
 	static auto Create(

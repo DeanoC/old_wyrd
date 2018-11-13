@@ -358,7 +358,7 @@ Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
 		dmaOnlyQueue = dmaOnlyQueue ? dmaOnlyQueue : computeSpecificQueue;
 	}
 
-	std::array<VkDescriptorPoolSize, 9> poolSizes{
+	std::array<VkDescriptorPoolSize, 10> poolSizes{
 			from(Render::BindingTableType::Texture), 2000,
 			from(Render::BindingTableType::RWTexture), 500,
 			from(Render::BindingTableType::Buffer), 2000,
@@ -367,7 +367,8 @@ Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
 			from(Render::BindingTableType::RWTextureBuffer), 50,
 			from(Render::BindingTableType::DynamicBuffer), 100,
 			from(Render::BindingTableType::DynamicRWBuffer), 100,
-			from(Render::BindingTableType::Sampler), 32
+			from(Render::BindingTableType::Sampler), 32,
+			from(Render::BindingTableType::CombinedTextureSampler), 16
 	};
 
 	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
@@ -769,16 +770,15 @@ auto Device::destroyDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayou
 	vkDestroyDescriptorSetLayout(descriptorSetLayout_, &allocationCallbacks);
 }
 
-auto Device::allocDescriptorSet(VkDescriptorSetAllocateInfo const& allocInfo) -> VkDescriptorSet
+auto Device::allocDescriptorSet(VkDescriptorSetAllocateInfo const& allocInfo, std::vector<VkDescriptorSet>& out_) -> void
 {
-	VkDescriptorSet descriptorSet;
-	vkAllocateDescriptorSets(&allocInfo, &descriptorSet);
-	return descriptorSet;
+	assert(allocInfo.descriptorSetCount == out_.size());
+	vkAllocateDescriptorSets(&allocInfo, out_.data());
 }
 
-auto Device::freeDescriptorSet(VkDescriptorSet descriptorSet_) -> void
+auto Device::freeDescriptorSet(std::vector<VkDescriptorSet> const& descriptorSets_) -> void
 {
-	vkFreeDescriptorSets(getDescriptorPool(), 1, &descriptorSet_);
+	vkFreeDescriptorSets(getDescriptorPool(), (uint32_t) descriptorSets_.size(), descriptorSets_.data());
 }
 
 auto Device::createPipelineLayout(VkPipelineLayoutCreateInfo const& createInfo) -> VkPipelineLayout
@@ -793,6 +793,17 @@ auto Device::destroyPipelineLayout(VkPipelineLayout pipelineLayout_) -> void
 	vkDestroyPipelineLayout(pipelineLayout_, &allocationCallbacks);
 }
 
+auto Device::createSampler(VkSamplerCreateInfo const& createInfo) -> VkSampler
+{
+	VkSampler sampler;
+	CHKED(vkCreateSampler(&createInfo, &allocationCallbacks, &sampler));
+	return sampler;
+}
+
+auto Device::destroySampler(VkSampler  sampler_) -> void
+{
+	vkDestroySampler(sampler_, &allocationCallbacks);
+}
 auto Device::debugNameVkObject(uint64_t object_, VkDebugReportObjectTypeEXT type_, char const* name_) -> void
 {
 	if(vtable.vkDebugMarkerSetObjectNameEXT != nullptr)

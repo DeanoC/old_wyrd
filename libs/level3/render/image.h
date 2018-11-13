@@ -216,6 +216,15 @@ struct alignas(8) GenericImage : public Image<>
 			uint32_t depth_,
 			uint32_t slices_,
 			GenericTextureFormat fmt_) -> GenericImageHandle;
+	static auto Create(
+			std::shared_ptr<ResourceManager::ResourceMan> rm_,
+			ResourceManager::ResourceNameView const& name_,
+			uint32_t width_,
+			uint32_t height_,
+			uint32_t depth_,
+			uint32_t slices_,
+			GenericTextureFormat fmt_,
+			void const* data_) -> GenericImageHandle;
 
 };
 

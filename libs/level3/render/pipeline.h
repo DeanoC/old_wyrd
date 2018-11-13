@@ -42,14 +42,16 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 			ResourceManager::ResourceNameView const& name_,
 			Topology topology_,
 			RenderPipelineFlags flags_,
+			DynamicPipelineState dynamicPipelineState_,
 			std::vector<BindingTableMemoryMapHandle> const& memoryMap_,
 			std::vector<PushConstantRange> const& pushConstantRanges_,
 			std::vector<SPIRVShaderHandle> const& shaders_,
 			RasterisationStateHandle rasterisationState_,
 			RenderPassHandle renderPass_,
 			ROPBlenderHandle ropBlender_,
-			ViewportHandle viewport_,
-			VertexInputHandle vertexInput_) -> RenderPipelineHandle;
+			VertexInputHandle vertexInput_,
+			ViewportHandle viewport_ = {}
+			) -> RenderPipelineHandle;
 
 	auto isPrimitiveRestartEnabled() const
 	{
@@ -61,6 +63,44 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 		return (BindingTableMemoryMapHandle*) (this + 1);
 	}
 
+	auto hasDynamicViewportState() const
+	{
+		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::Viewport);
+	}
+	auto hasDynamicScissorState() const
+	{
+		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::Scissor);
+	}
+	auto hasDynamicLineWidthState() const
+	{
+		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::LineWidth);
+	}
+	auto hasDynamicDepthBiasState() const
+	{
+		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::DepthBias);
+	}
+	auto hasDynamicBlendConstantState() const
+	{
+		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::BlendConstants);
+	}
+	auto hasDynamicDepthBoundsState() const
+	{
+		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::DepthBounds);
+	}
+	auto hasDynamicStencilCompareMaskState() const
+	{
+		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::StencilCompareMask);
+	}
+	auto hasDynamicStencilWriteMaskState() const
+	{
+		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::StencilWriteMask);
+	}
+	auto hasDynamicStencilReferenceState() const
+	{
+		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::StencilReference);
+	}
+
+
 	PushConstantRange const* getPushConstantRanges() const
 	{
 		return (PushConstantRange*) (getBindingTableMemoryMapHandles() + numBindingTableMemoryMaps);
@@ -71,9 +111,9 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 		return (SPIRVShaderHandle*) (getPushConstantRanges() + numPushConstantRanges);
 	}
 
+	DynamicPipelineState dynamicPipelineState;
 	Topology inputTopology;
 	RenderPipelineFlags flags;
-	uint8_t padda[2];
 
 	uint8_t numBindingTableMemoryMaps;
 	uint8_t numPushConstantRanges;

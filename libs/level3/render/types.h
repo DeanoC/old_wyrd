@@ -168,6 +168,7 @@ enum class BindingTableType : uint8_t
 	DynamicBuffer,
 	DynamicRWBuffer,
 	Sampler,
+	CombinedTextureSampler
 };
 
 enum class ROPLogicOps : uint8_t
@@ -211,7 +212,7 @@ enum class ROPBlendFactor : uint8_t
 };
 
 // most blend ops can be inverted (AKA 1 - Op)
-constexpr auto invert(ROPBlendFactor op_) -> ROPBlendFactor
+constexpr auto Invert(ROPBlendFactor op_) -> ROPBlendFactor
 {
 	return (ROPBlendFactor) (((uint8_t) op_) | (uint8_t) ROPBlendFactor::InvertedBit);
 }
@@ -291,9 +292,37 @@ enum class SampleCounts : uint8_t
 	SixtyFour = Core::Bit(7),
 };
 
+enum class Filter : uint8_t
+{
+	Nearest,
+	Linear,
+};
+
+enum class SamplerAddressMode : uint8_t
+{
+	Repeat,
+	MirroredRepeat,
+	ClampToEdge,
+	MirroredClampToEdge
+};
+
+enum class DynamicPipelineState : uint16_t
+{
+	None = 0,
+	Viewport = Core::Bit(0),
+	Scissor = Core::Bit(1),
+	LineWidth = Core::Bit(2),
+	DepthBias = Core::Bit(3),
+	BlendConstants = Core::Bit(4),
+	DepthBounds = Core::Bit(5),
+	StencilCompareMask = Core::Bit(6),
+	StencilWriteMask = Core::Bit(7),
+	StencilReference = Core::Bit(8),
+};
+
 struct PushConstantRange
 {
-	uint32_t offset = 0;
+	uint32_t offset;
 	uint32_t sizeInBytes;
 	ShaderType shaderAccess;
 };
@@ -319,6 +348,8 @@ constexpr auto is_bitmask_enum(MemoryAccess) -> bool { return true; }
 constexpr auto is_bitmask_enum(ColourComponents) -> bool { return true; }
 
 constexpr auto is_bitmask_enum(SampleCounts) -> bool { return true; }
+
+constexpr auto is_bitmask_enum(DynamicPipelineState) -> bool { return true; }
 
 }
 
