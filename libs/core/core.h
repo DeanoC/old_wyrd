@@ -23,9 +23,13 @@
 
 #if PLATFORM == WINDOWS && !defined(USING_STATIC_LIBS)
 #define EXPORT extern "C" __declspec(dllexport)
+#define IMPORT extern "C" __declspec(dllimport)
+#define CAPI __declspec(cdecl)
 #define EXPORT_CPP __declspec(dllexport)
 #else
 #define EXPORT extern "C"
+#define IMPORT extern "C"
+#define CAPI
 #define EXPORT_CPP
 #endif
 

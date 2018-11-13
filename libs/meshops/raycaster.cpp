@@ -1,23 +1,9 @@
-///-------------------------------------------------------------------------------------------------
-/// \file	meshops\raycaster.cpp
-///
-/// \brief	Implements the raycaster class.
-///
-/// \details	
-///		raycaster description goes here
-///
-/// \remark	Copyright (c) 2011 Dean Calver. All rights reserved.
-/// \remark	mailto://deano@cloudpixies.com
-///
-/// \todo	Fill in detailed file description.
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#include <meshmod/vertexdata/normalvertex.h>
 #include "meshops.h"
 #include "raycaster.h"
 #include "geometry/rasteriser.h"
 #include "geometry/ray.h"
 #include "geometry/kdtree.h"
+#include "meshmod/vertexdata/normalvertex.h"
 
 namespace MeshOps {
 
@@ -33,7 +19,7 @@ void Raycaster::addTargetVertexSource(	const std::string& elementName,
 	targetVertexSources[ elementName + subElementName ] = transformType;
 
 }
-void Raycaster::setTargetMesh( MeshMod::MeshPtr _targetMesh, bool doAllVertexSources ) {
+void Raycaster::setTargetMesh( MeshMod::Mesh::Ptr _targetMesh, bool doAllVertexSources ) {
 	using namespace MeshMod;
 	if( doAllVertexSources ) {
 		// iterate through mesh adding all vertex sources
@@ -73,12 +59,12 @@ void Raycaster::setTargetMesh( MeshMod::MeshPtr _targetMesh, bool doAllVertexSou
 	targetTree.reset( new Geometry::KDTree( targetPositionData.data(), targetIndexData.data(), indexCount ) );
 }
 
-void Raycaster::setBaseMesh( MeshMod::MeshPtr _baseMesh, const std::string& uvSetName ) {
+void Raycaster::setBaseMesh( MeshMod::Mesh::Ptr _baseMesh, const std::string& uvSetName ) {
 	baseMesh = _baseMesh;
 	traceUVSetName = uvSetName;
 }
 
-void Raycaster::transferTo( LayeredFloatTexture& image ) {
+void Raycaster::transferTo( LayeredTexture& image ) {
 	using namespace Geometry;
 	using namespace MeshMod;
 	using namespace Math;
@@ -104,8 +90,8 @@ void Raycaster::transferTo( LayeredFloatTexture& image ) {
 	// create an image channel for displacement
 	float* displacement = 0;
 	{
-		FloatTextureLayer& dl = image.addLayer( "displacement", 1 );
-		displacement = dl.getData();
+		ITextureLayer& dl = image.addLayer<float>( "displacement", 1 );
+		displacement = dl.getData<float>();
 		memset( displacement, 0, sizeof( float ) * imageSize );
 	}
 
@@ -227,8 +213,8 @@ void Raycaster::transferTo( LayeredFloatTexture& image ) {
 	float* resultSampleWeights = 0;
 
 	{
-		FloatTextureLayer& rwl = image.addLayer( "weight", 1 );
-		resultSampleWeights = rwl.getData();
+		ITextureLayer& rwl = image.addLayer<float>( "weight", 1 );
+		resultSampleWeights = rwl.getData<float>();
 		memset( resultSampleWeights, 0, sizeof( float ) * imageSize );
 	}
 

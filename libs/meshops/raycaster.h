@@ -1,16 +1,3 @@
-///-------------------------------------------------------------------------------------------------
-/// \file	meshops\raycaster.h
-///
-/// \brief	Declares the raycaster class.
-///
-/// \details	
-///		raycaster description goes here
-///
-/// \remark	Copyright (c) 2011 Dean Calver. All rights reserved.
-/// \remark	mailto://deano@cloudpixies.com
-///
-/// \todo	Fill in detailed file description.
-////////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 #if !defined( MESHOPS_RAYCASTER_H_ )
 #define MESHOPS_RAYCASTER_H_
@@ -72,18 +59,18 @@ public:
 	/// \param	_targetMesh		  	The transfer mesh. 
 	/// \param	doAllVertexSources	(optional) do all target mesh vertex sources. 
 	////////////////////////////////////////////////////////////////////////////////////////////////////
-	void setTargetMesh( const MeshMod::MeshPtr _targetMesh, bool doAllVertexSources = true );
+	void setTargetMesh( const MeshMod::Mesh::Ptr _targetMesh, bool doAllVertexSources = true );
 
 	// base mesh API
-	void setBaseMesh( MeshMod::MeshPtr _baseMesh, std::string const& uvSetName );
+	void setBaseMesh( MeshMod::Mesh::Ptr _baseMesh, std::string const& uvSetName );
 	void setMaxDisplacement( float _maxDisplacement ) { maxDisplacement = _maxDisplacement; }
 	void setSubSampleCount( unsigned int _subSampleCount ) { subSampleCount = _subSampleCount; }
 
-	void transferTo( LayeredFloatTexture& image );
+	void transferTo( LayeredTexture& image );
 private:
 	std::map<std::string, TRANSFORM_TYPE> targetVertexSources;
-	MeshMod::MeshPtr	targetMesh;
-	MeshMod::MeshPtr	baseMesh;
+	MeshMod::Mesh::Ptr	targetMesh;
+	MeshMod::Mesh::Ptr	baseMesh;
 	std::string			traceUVSetName;
 	unsigned int		subSampleCount;
 	float				maxDisplacement;

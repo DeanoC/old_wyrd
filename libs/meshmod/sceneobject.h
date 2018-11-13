@@ -35,6 +35,10 @@ namespace MeshMod
 	class SceneObject : public std::enable_shared_from_this<SceneObject>
 	{
 	public:
+		using Ptr = std::shared_ptr<SceneObject>;
+		using ConstPtr = std::shared_ptr<SceneObject const>;
+		using WeakPtr = std::weak_ptr<SceneObject>;
+
 		virtual ~SceneObject(){}
 		SceneObject( const std::string& _type, const std::string& _name ) :
 		  type( _type ), name( _name ){}
@@ -50,8 +54,6 @@ namespace MeshMod
 		std::string name; //!< name of this scene object
 	};
 	
-	typedef std::shared_ptr<SceneObject> SceneObjectPtr;
-	typedef std::shared_ptr<SceneObject const> ConstSceneObjectPtr;
 
 } // end namespace
 //---------------------------------------------------------------------------

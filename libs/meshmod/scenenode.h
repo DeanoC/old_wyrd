@@ -27,24 +27,25 @@
 namespace MeshMod {
 	class SceneNode;
 
-	typedef std::shared_ptr<SceneNode> SceneNodePtr;
-	typedef std::shared_ptr<SceneNode const> ConstSceneNodePtr;
-
 	class SceneNode : public std::enable_shared_from_this<SceneNode> {
 	public:
-		void addChild( const SceneNodePtr child ) {
+		using Ptr = std::shared_ptr<SceneNode>;
+		using ConstPtr = std::shared_ptr<SceneNode const>;
+		using WeakPtr = std::weak_ptr<SceneNode>;
+
+		void addChild( const SceneNode::Ptr child ) {
 			// check for duplicates
 			assert( std::find( children.begin(), children.end(), child ) == children.end() );
 			children.push_back( child );
 		}
-		void removeChild( SceneNodePtr child ) {
+		void removeChild( SceneNode::Ptr child ) {
 			SceneNodeContainer::iterator chIt = 
 				std::find( children.begin(), children.end(), child );
 			assert( chIt != children.end() );
 			children.erase( chIt );
 		}
 
-		uint32_t findChildIndex( const SceneNodePtr child ) const {
+		uint32_t findChildIndex( const SceneNode::Ptr child ) const {
 			SceneNodeContainer::const_iterator chIt = std::find( children.begin(), children.end(), child );
 			return (uint32_t) std::distance( children.begin(), chIt );
 		}
@@ -52,17 +53,17 @@ namespace MeshMod {
 		unsigned int getChildCount() const {
 			return (unsigned int) children.size();
 		}
-		SceneNodePtr getChild( SceneNodeIndex index ) {
+		Ptr getChild( SceneNodeIndex index ) {
 			return children[index];
 		}
-		ConstSceneNodePtr getChild(SceneNodeIndex index) const {
+		ConstPtr getChild(SceneNodeIndex index) const {
 			return children[index];
 		}
-		void addObject( SceneObjectPtr obj ) {
+		void addObject( SceneObject::Ptr obj ) {
 			assert( std::find( objects.begin(), objects.end(), obj ) == objects.end() );
 			objects.push_back( obj );
 		}
-		void removeObject( SceneObjectPtr obj ) {
+		void removeObject( SceneObject::Ptr obj ) {
 			SceneObjectContainer::iterator obIt = 
 				std::find( objects.begin(), objects.end(), obj );
 			assert( obIt != objects.end() );
@@ -72,14 +73,14 @@ namespace MeshMod {
 		unsigned int getObjectCount() const {
 			return (unsigned int) objects.size();
 		}
-		SceneObjectPtr getObject(unsigned int index) {
+		SceneObject::Ptr getObject(unsigned int index) {
 			return objects[index];
 		}
 
 		void visitDescendents(Math::Matrix4x4 const& rootMatrix, std::function<void(SceneNode const&, Math::Matrix4x4 const&)> func) const;
 		void mutateDescendents(Math::Matrix4x4 const& rootMatrix, std::function<void(SceneNode&, Math::Matrix4x4 const&)> func);
-		void visitObjects(std::function<void(ConstSceneObjectPtr)> func) const;
-		void mutateObjects(std::function<void(SceneObjectPtr)> func);
+		void visitObjects(std::function<void(SceneObject::ConstPtr)> func) const;
+		void mutateObjects(std::function<void(SceneObject::Ptr)> func);
 
 		// embedded transform TODO animation
 		Transform										transform;
@@ -88,8 +89,8 @@ namespace MeshMod {
 		std::vector< PropertyPtr > 						properties;
 
 	protected:
-		typedef std::vector< SceneNodePtr >				SceneNodeContainer;
-		typedef std::vector< SceneObjectPtr >			SceneObjectContainer;
+		typedef std::vector< SceneNode::Ptr >			SceneNodeContainer;
+		typedef std::vector< SceneObject::Ptr >			SceneObjectContainer;
 		SceneNodeContainer								children;
 		SceneObjectContainer							objects;
 

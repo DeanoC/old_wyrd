@@ -32,7 +32,7 @@ namespace MeshMod {
 	**/
 	class Scene {
 	public:
-		std::vector< SceneNodePtr > sceneNodes;
+		std::vector< SceneNode::Ptr > sceneNodes;
 		std::vector< PropertyPtr > 	properties;
 	};
 

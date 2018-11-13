@@ -1,9 +1,4 @@
-//
-// Created by Dean Calver on 21/09/2018.
-//
-
 #include "core/core.h"
-
 #include "resourcemanager/resourcecache.h"
 
 namespace ResourceManager

@@ -3,12 +3,12 @@
 #define WYRD_RESOURCEMANANAGER_DISKSTORAGE_H
 
 #include "core/core.h"
+#include "resourcemanager/istorage.h"
+#include "binny/bundle.h"
 #include <string_view>
 #include <iostream>
 #include <fstream>
 #include <ios>
-#include "resourcemanager/istorage.h"
-#include "binny/bundle.h"
 
 namespace ResourceManager {
 

@@ -57,7 +57,7 @@ public:
 		IndexType index;
 		if(currentFree == 0)
 		{
-			resize((data.size() * 2) + 1 );
+			resize(IndexType((data.size() * 2) + 1));
 		}
 		assert( currentFree != 0 );
 		index = freelist[--currentFree];
@@ -67,7 +67,7 @@ public:
 		return index;
 	}
 
-	void resize( const size_type _count )
+	void resize( const IndexType _count )
 	{
 		size_type oldcount = data.size();
 		assert( _count > oldcount );
@@ -76,7 +76,7 @@ public:
 		for(size_type i = oldcount; i < _count; ++i)
 		{
 			freelist[i] = InvalidIndex;
-			freelist[currentFree++] = i;
+			freelist[currentFree++] = (IndexType)i;
 		}
 	}
 

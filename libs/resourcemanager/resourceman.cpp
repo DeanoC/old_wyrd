@@ -3,9 +3,9 @@
 //
 
 #include "core/core.h"
-#include "resourceman.h"
-#include <array>
+#include "resourcemanager/resourceman.h"
 #include "resourcemanager/textresource.h"
+#include <array>
 
 namespace ResourceManager {
 

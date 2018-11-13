@@ -32,11 +32,6 @@ namespace MeshOps {
 
 DECLARE_EXCEPTION( BasicMeshOp, "Cannot process mesh with this op" );
 
-BasicMeshOps::BasicMeshOps( MeshMod::MeshPtr& _mesh ) :
-		mesh( _mesh )
-{
-}
-
 /**
 Compute and stores triangle plane equations.
 Add a face element with each faces plane equation, will work for polygons but non-planar 
@@ -44,7 +39,7 @@ polygons may produce incorrect plane equations.
 
 If any lines or point faces are in the mesh the planeequation for that face will be the default
 */
-void BasicMeshOps::computeFacePlaneEquations( bool replaceExisting, bool zeroBad, bool fixBad )
+auto BasicMeshOps::computeFacePlaneEquations(MeshMod::Mesh::Ptr const& mesh, bool replaceExisting, bool zeroBad, bool fixBad ) -> void
 {
 	using namespace MeshMod;
 	using namespace Math;
@@ -140,11 +135,11 @@ void BasicMeshOps::computeFacePlaneEquations( bool replaceExisting, bool zeroBad
 /**
 Computes and returns the axis aligned box from the meshes position
 */
-void BasicMeshOps::computeAABB(MeshMod::Mesh const& mesh, Geometry::AABB& aabb )
+auto BasicMeshOps::computeAABB(MeshMod::Mesh::ConstPtr const& mesh, Geometry::AABB& aabb ) -> void
 {
 	using namespace MeshMod;
 
-	auto const& positions = mesh.getVertices().positions();
+	auto const& positions = mesh->getVertices().positions();
 
 	aabb = Geometry::AABB(); // reset aabb
 	for(auto const& pos : positions)
@@ -154,7 +149,7 @@ void BasicMeshOps::computeAABB(MeshMod::Mesh const& mesh, Geometry::AABB& aabb )
 }
 
 template<size_t n>
-void BasicMeshOps::ngulate()
+auto BasicMeshOps::ngulate(MeshMod::Mesh::Ptr const& mesh) -> void
 {
 	using namespace MeshMod;
 
@@ -258,17 +253,17 @@ void BasicMeshOps::ngulate()
 Triangulates all faces into triangles. points and lines will be untouched
 All faces must be simple convex polygons (no complex polygons yet), post this call all faces will have <= 3 vertices
 */
-void BasicMeshOps::triangulate()
+auto BasicMeshOps::triangulate(MeshMod::Mesh::Ptr const& mesh) -> void
 {
-	ngulate<3>();
+	ngulate<3>(mesh);
 }
 
 // post will have no n-gons, points, lines, triangles and quads will remain
 // TODO restitch planar triangle pairs to quads
 // TODO non-planar quads decompose to triangles
-void BasicMeshOps::quadOrTriangulate()
+auto BasicMeshOps::quadOrTriangulate(MeshMod::Mesh::Ptr const& mesh) -> void
 {
-	ngulate<4>();
+	ngulate<4>(mesh);
 }
 
 /**
@@ -276,7 +271,7 @@ Computes and store per vertex normals.
 If the object already has vertex normals they will be kept if replaceExising == false.
 Simple average lighting normal.
 */
-void BasicMeshOps::computeVertexNormals( bool replaceExisting )
+auto BasicMeshOps::computeVertexNormals(MeshMod::Mesh::Ptr const& mesh, bool replaceExisting ) -> void
 {
 	using namespace MeshMod;
 
@@ -300,7 +295,7 @@ void BasicMeshOps::computeVertexNormals( bool replaceExisting )
 	// clear normals
 	std::fill( normEle->begin(), normEle->end(), VertexData::Normal( 0, 0, 0 ));
 
-	computeFacePlaneEquations( replaceExisting );
+	computeFacePlaneEquations( mesh, replaceExisting );
 
 	auto planeEle = polyCon.getElements<PolygonData::PlaneEquations>();
 	assert( planeEle );
@@ -357,7 +352,7 @@ void BasicMeshOps::computeVertexNormals( bool replaceExisting )
 Computes and store per vertex normals.
 Based on mesh libs version with fixing and handling of slivers
 */
-void BasicMeshOps::computeVertexNormalsEx( bool replaceExisting, bool zeroBad, bool fixBad )
+auto BasicMeshOps::computeVertexNormalsEx(MeshMod::Mesh::Ptr const& mesh, bool replaceExisting, bool zeroBad, bool fixBad ) -> void
 {
 	if(zeroBad && fixBad)
 	{
@@ -387,7 +382,7 @@ void BasicMeshOps::computeVertexNormalsEx( bool replaceExisting, bool zeroBad, b
 	// clear normals
 	std::fill( normEle->elements.begin(), normEle->elements.end(), VertexData::Normal( 0, 0, 0 ));
 
-	computeFacePlaneEquations( replaceExisting, zeroBad, fixBad );
+	computeFacePlaneEquations( mesh, replaceExisting, zeroBad, fixBad );
 
 	auto const& hes = halfEdges.halfEdges();
 	auto const& planeEqs = polygons.getAttributes<PolygonData::PlaneEquations>();
@@ -476,7 +471,7 @@ void BasicMeshOps::computeVertexNormalsEx( bool replaceExisting, bool zeroBad, b
 
 }
 
-void BasicMeshOps::transform( Math::Matrix4x4 const& transform )
+auto BasicMeshOps::transform(MeshMod::Mesh::Ptr const& mesh, Math::Matrix4x4 const& transform ) -> void
 {
 	auto& vertices = mesh->getVertices();
 	for(auto& vertex : vertices.positions())

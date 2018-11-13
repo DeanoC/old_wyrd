@@ -94,30 +94,31 @@ TEST_CASE( "MTFreeList<uint64_t, uint64_t>", "[core/freelist]" )
 	freeList.erase( i0 );
 	REQUIRE( freeList[i1] == 20 );
 
-/* fails!
+
 	// MT threaded tests
-	std::thread threads[1000];
+	constexpr int ThreadCount = 100;
+	std::thread threads[ThreadCount];
 	// spawn 1000 threads: push, pop etc. to try and break things
-	for(int i = 0; i < 1000; ++i)
+	for(int i = 0; i < ThreadCount; ++i)
 	{
 		threads[i] = std::thread( [&freeList]( int thread_id )
 								  {
 									  if(thread_id & 0x1)
 									  {
-										  auto i0 = freeList.push( thread_id );
-										  CHECK( freeList[i0] == thread_id );
-										  auto i1 = freeList.push( thread_id );
-										  CHECK( freeList[i0] == thread_id );
-										  CHECK( freeList[i1] == thread_id );
+										  auto it0 = freeList.push( thread_id );
+										  REQUIRE( freeList[it0] == thread_id );
+										  auto it1 = freeList.push( thread_id );
+										  REQUIRE( freeList[it0] == thread_id );
+										  REQUIRE( freeList[it1] == thread_id );
 									  } else
 									  {
-										  auto i0 = freeList.push( thread_id );
-										  CHECK( freeList[i0] == thread_id );
-										  freeList.erase( i0 );
+										  auto it0 = freeList.push( thread_id );
+										  REQUIRE( freeList[it0] == thread_id );
+										  freeList.erase( it0 );
 									  }
 								  }, i );
 	}
 
 	for(auto& th : threads) th.join();
-*/
+
 }

@@ -9,7 +9,7 @@
 #include "meshmod/meshmod.h"
 #include "meshmod/mesh.h"
 
-namespace Core {
+namespace Geometry {
 class AABB;
 }
 namespace MeshOps {
@@ -19,34 +19,31 @@ namespace MeshOps {
 class BasicMeshOps
 {
 public:
-	BasicMeshOps( MeshMod::MeshPtr& _mesh );
 
 	//! compute a per-polygon plane equation
-	void computeFacePlaneEquations( bool replaceExisting = true, bool zeroBad = false, bool fixBad = true );
+	static auto computeFacePlaneEquations(MeshMod::Mesh::Ptr const& mesh, bool replaceExisting = true, bool zeroBad = false, bool fixBad = true ) -> void;
 
 	//! generates a basic vertex normal set. optionally replace any existing normals
-	void computeVertexNormals( bool replaceExisting = true );
+	static auto computeVertexNormals(MeshMod::Mesh::Ptr const& mesh, bool replaceExisting = true ) -> void;
 
 	//! conpute vertex normals handling bad cases better
-	void computeVertexNormalsEx( bool replaceExisting = true, bool zeroBad = false, bool fixBad = true );
+	static auto computeVertexNormalsEx(MeshMod::Mesh::Ptr const& mesh, bool replaceExisting = true, bool zeroBad = false, bool fixBad = true ) -> void;
 
 	//! turns simple convex n-gon to triangles, leaving points and lines along
-	void triangulate();
+	static auto triangulate(MeshMod::Mesh::Ptr const& mesh) -> void;
 
 	//! turns simple convex n-gon to triangles, leaving others (inlcuding quads) alone
-	void quadOrTriangulate();
+	static auto quadOrTriangulate(MeshMod::Mesh::Ptr const& mesh) -> void;
 
 	//! computes and returns the axis aligned bounding box from the meshes positions
-	static void computeAABB(MeshMod::Mesh const& mesh, Geometry::AABB& aabb );
+	static auto computeAABB(MeshMod::Mesh::ConstPtr const& mesh, Geometry::AABB& aabb ) -> void;
 
 	//! transform the mesh by a matrix
-	void transform( Math::Matrix4x4 const& transform );
+	static auto transform(MeshMod::Mesh::Ptr const& mesh, Math::Matrix4x4 const& transform ) -> void;
 
 private:
-	MeshMod::MeshPtr mesh;
-
 	template<size_t n>
-	void ngulate();
+	static auto ngulate(MeshMod::Mesh::Ptr const& mesh) -> void;
 
 };
 };

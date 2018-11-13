@@ -1,5 +1,4 @@
-
-#--------- Wyrd's third party sources
+# global packages and options (mostly for thirdparties)
 find_package(vulkan REQUIRED)
 
 option(ENKITS_BUILD_C_INTERFACE "" OFF )
@@ -13,11 +12,30 @@ option(SHADERC_SKIP_INSTALL "" ON)
 option(SHADERC_SKIP_TESTS "" ON)
 option(SHADERC_ENABLE_NV_EXTENSIONS "" ON)
 
-add_subdirectory(enkiTS)
-add_subdirectory(binify)
-add_subdirectory(tbb)
-add_subdirectory(shaderc)
+#--------- Global defination and include
+set( wyrd_DEFINITIONS
+		-D__TBB_NO_IMPLICIT_LINKAGE=1
+		-D__TBBMALLOC_NO_IMPLICIT_LINKAGE=1
+		-D_CRT_SECURE_NO_WARNINGS -D__STDC_FORMAT_MACROS
+		-DCRC32C_STATIC
+		)
+set( wyrd_DEFINITIONS ${wyrd_DEFINITIONS} PARENT_SCOPE )
 
+set( wyrd_INCLUDES
+		${Vulkan_INCLUDE_DIRS}
+		${CMAKE_CURRENT_SOURCE_DIR}
+		${CMAKE_CURRENT_SOURCE_DIR}/tbb/include
+		${CMAKE_CURRENT_SOURCE_DIR}/fmt/include
+		${CMAKE_CURRENT_SOURCE_DIR}/shaderc/libshaderc/include
+		${CMAKE_CURRENT_SOURCE_DIR}/meshops/VHACD_Lib/inc
+		)
+
+set( wyrd_INCLUDES ${wyrd_INCLUDES} PARENT_SCOPE )
+add_definitions(${wyrd_DEFINITIONS})
+include_directories( ${wyrd_INCLUDES})
+
+#--------- Wyrd's third party sources
+# TODO move to seperate cmakelist
 set( CRC32C_SRC
 		crc32c/crc32c.cpp
 		crc32c/crc32c.h)
@@ -26,7 +44,6 @@ set( CITYHASH_SRC
 		cityhash/city.cc
 		cityhash/city.h
 		)
-
 set( CX_SRC
 		cx/cx_algorithm.h
 		cx/cx_array.h
@@ -71,243 +88,70 @@ set(IMGUI_SRC
 		imgui/imgui_widgets.cpp
 		)
 
-#------------ Wyrd's own sources ------------
-set( BINNY_SRC
-		binny/bundle.cpp
-		binny/bundle.h
-		binny/bundlewriter.cpp
-		binny/bundlewriter.h
-		binny/ibundle.h
-		binny/inmembundle.h
-		binny/writehelper.cpp
-		binny/writehelper.h
-		)
+set( THIRDPARTY_LIBS enkiTS shaderc)
+foreach(LIB ${THIRDPARTY_LIBS})
+	add_subdirectory(${LIB})
+endforeach(LIB)
+add_subdirectory(tbb)
+set( THIRDPARTY_LIBS ${THIRDPARTY_LIBS} tbb_static tbbmalloc_static)
 
-set( CORE_SRC
-		core/any.h
-		core/core.h
-		core/exception.h
-		core/filesystem.h
-		core/freelist.h
-		core/linear_allocator.h
-		core/loguru.hpp
-		core/platform.h
-		core/platform_cuda.h
-		core/platform_linux.h
-		core/platform_osx.h
-		core/platform_posix.h
-		core/platform_win.h
-		core/quick_hash.h
-		core/utils.h
-		)
-set( GEOMETRY_SRC
-		geometry/aabb.cpp
-		geometry/aabb.h
-		geometry/aabb.inl
-		geometry/kdtree.cpp
-		geometry/kdtree.h
-		geometry/rasteriser.cpp
-		geometry/rasteriser.h
-		geometry/ray.cpp
-		geometry/ray.h
-		geometry/watertightray.cpp
-		geometry/watertightray.h
-		)
-
-set( INPUT_SRC
-		input/input.h
-		input/keylist.h
-		input/keyboard.h
-		input/windows.cpp)
-
-set( MIDRENDER_SRC
-		midrender/stocks.h
-		midrender/stocks.cpp
-)
-
-set( RENDER_SRC
-		render/generictextureformat.h
-		render/gtfcracker.h
-		render/stable.h
-		render/device.h
-		render/display.h
-		render/texture.cpp
-		render/texture.h
-		render/image.inl
-		render/image_fetch.inl
-		render/image_put.inl
-		render/image.h
-		render/resources.cpp
-		render/resources.h
-		render/commandqueue.h
-		render/encoder.h
-		render/renderpass.h
-		render/rendertarget.h
-		render/semaphore.h
-		render/fence.h
-		render/types.h
-		render/renderpass.cpp
-		render/image.cpp
-		render/rendertarget.cpp
-		render/shader.cpp
-		render/shader.h
-		render/pipeline.cpp
-		render/pipeline.h
-		render/bindingtable.cpp
-		render/bindingtable.h
-		render/ropblender.cpp
-		render/ropblender.h
-		render/viewport.cpp
-		render/viewport.h
-		render/rasterisationstate.cpp
-		render/rasterisationstate.h
-		render/vertexinput.cpp
-		render/vertexinput.h
-		render/buffer.cpp
-		render/buffer.h)
-
-set( MATH_SRC
-		math/vector_math.cpp
-		math/vector_math.h
-		math/vector_math_c.h
-		math/colourspace.h)
-
-file( GLOB MESHMOD_SRC  meshmod/*.cpp
-		meshmod/*.c
-		meshmod/*.h
-		meshmod/*.inl
-		meshmod/vertexdata/*.h
-		meshmod/halfedgedata/*.h
-		meshmod/polygonsdata/*.h
-		meshmod/meshdata/*.h
-		meshmod/materialparameterdata/*.h )
-
-file( GLOB MESHOPS_SRC  meshops/*.cpp
-		meshops/*.c
-		meshops/*.h
-		meshops/*.inl
-		meshops/VHACD_Lib/public/*.h
-		meshops/VHACD_Lib/inc/*.h
-		meshops/VHACD_Lib/src/*.cpp )
-
-set( RESOURCEMAN_SRC
-		resourcemanager/resource.h
-		resourcemanager/diskstorage.h
-		resourcemanager/istorage.h
-		resourcemanager/memstorage.h
-		resourcemanager/resourcecache.cpp
-		resourcemanager/resourcecache.h
-		resourcemanager/resourceman.cpp
-		resourcemanager/resourceman.h
-		resourcemanager/resourcename.h
-		resourcemanager/textresource.h
-		resourcemanager/textresource.cpp
-		resourcemanager/writer.h
-		resourcemanager/resourcehandle.h
-		resourcemanager/resourceid.h)
-
-set( SHELL_SRC
-		shell/interface.h
-		shell/consoleapp.cpp
-		shell/consoleapp.h
-		shell/interface.cpp
-		shell/posixshell.cpp
-		shell/posixshell.h
-		shell/winshell.cpp
-		shell/winshell.h)
-
-set( VULKAN_SRC
-		vulkan/vkfcracker.h
-		vulkan/system.h
-		vulkan/system.cpp
-		vulkan/functionlist.inl
-		vulkan/api.cpp
-		vulkan/api.h
-		vulkan/display.h
-		vulkan/device.cpp
-		vulkan/device.h
-		vulkan/vk_mem_alloc.h
-		vulkan/vk_mem_alloc.cpp
-		vulkan/texture.cpp
-		vulkan/texture.h
-		vulkan/display.cpp
-		vulkan/commandqueue.cpp
-		vulkan/commandqueue.h
-		vulkan/encoder.cpp
-		vulkan/encoder.h
-		vulkan/rendertarget.cpp
-		vulkan/rendertarget.h
-		vulkan/fence.cpp
-		vulkan/fence.h
-		vulkan/renderpass.cpp
-		vulkan/renderpass.h
-		vulkan/encoderpool.cpp
-		vulkan/encoderpool.h
-		vulkan/renderencoder.cpp
-		vulkan/renderencoder.h
-		vulkan/computeencoder.cpp
-		vulkan/computeencoder.h
-		vulkan/types.h
-		vulkan/resources.cpp
-		vulkan/resources.h
-		vulkan/semaphore.cpp
-		vulkan/semaphore.h
-		vulkan/pipeline.cpp
-		vulkan/pipeline.h
-		vulkan/shadermodule.cpp
-		vulkan/shadermodule.h
-		vulkan/bindingtable.cpp
-		vulkan/bindingtable.h
-		vulkan/buffer.cpp
-		vulkan/buffer.h)
-
-#-----------
-set(wryd_srcs
-		${CITYHASH_SRC}
+add_library( thirdparty STATIC
 		${CRC32C_SRC}
+		${CITYHASH_SRC}
 		${CX_SRC}
 		${FMT_SRC}
-		${IMGUI_SRC}
 		${LZ4_SRC}
-
-		${CORE_SRC}
-		${BINNY_SRC}
-		${GEOMETRY_SRC}
-		${INPUT_SRC}
-		${MATH_SRC}
-		${MESHMOD_SRC}
-		${MESHOPS_SRC}
-		${MIDRENDER_SRC}
-		${RENDER_SRC}
-		${RESOURCEMAN_SRC}
-		${SHELL_SRC}
-		${VULKAN_SRC}
+		${IMGUI_SRC}
 		)
+target_link_libraries(thirdparty ${THIRDPARTY_LIBS})
 
-set( wyrd_LIBRARIES enkiTS
-					binify
-					tbb_static
-					tbbmalloc_static
-		shaderc
-					)
+#------------ Wyrd's own sources ------------
+# TODO enforce library level strictness for includes
+# No library should access any other library at its level or above
+# strict levels (i.e. level 1 library can only access librarys of level 0 and so on)
 
-set( wyrd_DEFINITIONS
-	-D__TBB_NO_IMPLICIT_LINKAGE=1 
-	-D__TBBMALLOC_NO_IMPLICIT_LINKAGE=1
-	-D_CRT_SECURE_NO_WARNINGS -D__STDC_FORMAT_MACROS
-	-DCRC32C_STATIC
-	)
-set( wyrd_DEFINITIONS ${wyrd_DEFINITIONS} PARENT_SCOPE )
+set( LEVEL0_LIBS core binify)
+foreach(LIB ${LEVEL0_LIBS})
+	add_subdirectory(${LIB})
+endforeach(LIB)
 
-set( wyrd_INCLUDES
-	${CMAKE_CURRENT_SOURCE_DIR}
-		${Vulkan_INCLUDE_DIRS}
-	${CMAKE_CURRENT_SOURCE_DIR}/tbb/include
-	${CMAKE_CURRENT_SOURCE_DIR}/fmt/include
-		${CMAKE_CURRENT_SOURCE_DIR}/shaderc/libshaderc/include
-	${CMAKE_CURRENT_SOURCE_DIR}/meshops/VHACD_Lib/inc
-	)
-set( wyrd_INCLUDES ${wyrd_INCLUDES} PARENT_SCOPE )
+set( LEVEL1_LIBS binny math input)
+foreach(LIB ${LEVEL1_LIBS})
+	add_subdirectory(${LIB})
+endforeach(LIB)
+
+set( LEVEL2_LIBS resourcemanager geometry)
+foreach(LIB ${LEVEL2_LIBS})
+	add_subdirectory(${LIB})
+endforeach(LIB)
+
+set( LEVEL3_LIBS tacticalmap render meshmod)
+foreach(LIB ${LEVEL3_LIBS})
+	add_subdirectory(${LIB})
+endforeach(LIB)
+
+set( LEVEL4_LIBS midrender vulkan meshops)
+foreach(LIB ${LEVEL4_LIBS})
+	add_subdirectory(${LIB})
+endforeach(LIB)
+
+set( LEVEL5_LIBS  shell )
+foreach(LIB ${LEVEL5_LIBS})
+	add_subdirectory(${LIB})
+endforeach(LIB)
+
+#-----------
+set(wryd_srcs dummy.cpp)
+
+set( wyrd_LIBRARIES
+		thirdparty
+		${LEVEL0_LIBS}
+		${LEVEL1_LIBS}
+		${LEVEL2_LIBS}
+		${LEVEL3_LIBS}
+		${LEVEL4_LIBS}
+		${LEVEL5_LIBS}
+		)
 
 add_definitions(${wyrd_DEFINITIONS})
 include_directories( ${wyrd_INCLUDES})

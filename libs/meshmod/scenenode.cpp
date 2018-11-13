@@ -61,14 +61,14 @@ void SceneNode::mutateDescendents(Math::Matrix4x4 const& rootMatrix, std::functi
 }
 
 
-void SceneNode::visitObjects( std::function<void(ConstSceneObjectPtr)> func ) const
+void SceneNode::visitObjects( std::function<void(SceneObject::ConstPtr)> func ) const
 {
 	for(auto obj : objects)
 	{
 		func(obj);
 	}
 }
-void SceneNode::mutateObjects(std::function<void(SceneObjectPtr)> func)
+void SceneNode::mutateObjects(std::function<void(SceneObject::Ptr)> func)
 {
 	for (auto obj : objects)
 	{

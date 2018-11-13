@@ -33,7 +33,7 @@
 namespace MeshOps
 {
 
-MeshMod::SceneNodePtr Gltf::LoadAscii(std::string const& fileName_)
+MeshMod::SceneNode::Ptr Gltf::LoadAscii(std::string const& fileName_)
 {
 	using namespace tinygltf;
 	using namespace MeshMod;
@@ -51,7 +51,7 @@ MeshMod::SceneNodePtr Gltf::LoadAscii(std::string const& fileName_)
 
 	return LoadInternal(model);
 }
-MeshMod::SceneNodePtr Gltf::LoadBinary(std::string const& fileName_)
+MeshMod::SceneNode::Ptr Gltf::LoadBinary(std::string const& fileName_)
 {
 	using namespace tinygltf;
 	using namespace MeshMod;
@@ -70,7 +70,7 @@ MeshMod::SceneNodePtr Gltf::LoadBinary(std::string const& fileName_)
 	return LoadInternal(model);
 }
 
-MeshMod::SceneNodePtr Gltf::LoadInternal(tinygltf::Model const& model)
+MeshMod::SceneNode::Ptr Gltf::LoadInternal(tinygltf::Model const& model)
 {
 	using namespace tinygltf;
 	using namespace MeshMod;
@@ -78,12 +78,12 @@ MeshMod::SceneNodePtr Gltf::LoadInternal(tinygltf::Model const& model)
 	int sceneIndex = model.defaultScene;
 	tinygltf::Scene const& gltfScene = model.scenes[sceneIndex];
 
-	SceneNodePtr rootNode = std::make_shared<SceneNode>();
+	SceneNode::Ptr rootNode = std::make_shared<SceneNode>();
 
 	for (int nodeIndex : gltfScene.nodes)
 	{
 		Node const& node = model.nodes[nodeIndex];
-		SceneNodePtr sceneNode = std::make_shared<SceneNode>();
+		SceneNode::Ptr sceneNode = std::make_shared<SceneNode>();
 		rootNode->addChild(sceneNode);
 		convertTransform(node, sceneNode);
 
@@ -91,7 +91,7 @@ MeshMod::SceneNodePtr Gltf::LoadInternal(tinygltf::Model const& model)
 		if (node.mesh != -1)
 		{
 			tinygltf::Mesh const& gltfMesh = model.meshes[node.mesh];
-			MeshPtr mesh = std::make_shared<MeshMod::Mesh>(gltfMesh.name);
+			MeshMod::Mesh::Ptr mesh = std::make_shared<MeshMod::Mesh>(gltfMesh.name);
 			sceneNode->addObject(mesh);
 
 			std::map<uint32_t, uint32_t> accessorAttributeMap;
@@ -131,7 +131,7 @@ MeshMod::SceneNodePtr Gltf::LoadInternal(tinygltf::Model const& model)
 	return rootNode;
 }
 
-void Gltf::convertTransform(tinygltf::Node const &node_, MeshMod::SceneNodePtr &sceneNode_)
+void Gltf::convertTransform(tinygltf::Node const &node_, MeshMod::SceneNode::Ptr &sceneNode_)
 {
 	if (!node_.translation.empty())
 	{
@@ -154,7 +154,7 @@ void Gltf::convertTransform(tinygltf::Node const &node_, MeshMod::SceneNodePtr &
 	}
 }
 
-bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, tinygltf::Model const& model, MeshMod::MeshPtr& mesh)
+bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, tinygltf::Model const& model, MeshMod::Mesh::Ptr& mesh)
 {
 	using namespace tinygltf;
 	using namespace MeshMod;
@@ -186,7 +186,7 @@ bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, ti
 
 
 
-void Gltf::convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tinygltf::Model const& model, MeshMod::MeshPtr& mesh)
+void Gltf::convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tinygltf::Model const& model, MeshMod::Mesh::Ptr& mesh)
 {
 	using namespace tinygltf;
 	using namespace MeshMod;
@@ -274,7 +274,7 @@ void Gltf::convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tiny
 	}
 }
 
-void Gltf::convertPrimitives(tinygltf::Model const& model, tinygltf::Mesh const& gltfMesh, MeshMod::MeshPtr& mesh)
+void Gltf::convertPrimitives(tinygltf::Model const& model, tinygltf::Mesh const& gltfMesh, MeshMod::Mesh::Ptr& mesh)
 {
 	using namespace tinygltf;
 	for (size_t i = 0; i < gltfMesh.primitives.size(); i++)
@@ -318,13 +318,13 @@ void Gltf::convertPrimitives(tinygltf::Model const& model, tinygltf::Mesh const&
 	mesh->updateFromEdits();
 }
 
-void Gltf::SaveAscii(MeshMod::SceneNodePtr mesh_, std::string const fileName_){
+void Gltf::SaveAscii(MeshMod::SceneNode::Ptr mesh_, std::string const fileName_){
 	std::string output_filename(fileName_);
 	std::string embedded_filename =
 			output_filename.substr(0, output_filename.size() - 5) + "-Embedded.gltf";
 
 	// skip root node if empty
-	MeshMod::SceneNodePtr rootNode = mesh_;
+	MeshMod::SceneNode::Ptr rootNode = mesh_;
 	if (rootNode->getObjectCount() == 0 && rootNode->getChildCount() == 1)
 	{
 		// now see if the transform is identical
@@ -348,7 +348,7 @@ void Gltf::SaveAscii(MeshMod::SceneNodePtr mesh_, std::string const fileName_){
 //	loader.WriteGltfSceneToFile(&model, embedded_filename, true, true);
 }
 
-void Gltf::convertTransform(MeshMod::SceneNodePtr const& sceneNode_, tinygltf::Node &node_ )
+void Gltf::convertTransform(MeshMod::SceneNode::Ptr const& sceneNode_, tinygltf::Node &node_ )
 {
 	node_.translation.resize(3);
 	node_.translation[0] = sceneNode_->transform.position.x;
@@ -369,7 +369,7 @@ void Gltf::convertTransform(MeshMod::SceneNodePtr const& sceneNode_, tinygltf::N
 }
 bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, 
 	std::vector<uint8_t>& dataBuffer, 
-	MeshMod::MeshPtr const& mesh, 
+	MeshMod::Mesh::Ptr const& mesh,
 	tinygltf::Model& model)
 {
 	using namespace tinygltf;
@@ -409,7 +409,7 @@ bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap,
 }
 void Gltf::convertPrimitives(std::map<uint32_t, uint32_t> const& attribMap, 
 	std::vector<uint8_t>& dataBuffer, 
-	MeshMod::MeshPtr const& mesh, 
+	MeshMod::Mesh::Ptr const& mesh,
 	tinygltf::Model & model, 
 	tinygltf::Mesh & gltfMesh)
 {
@@ -497,7 +497,7 @@ void Gltf::convertPrimitives(std::map<uint32_t, uint32_t> const& attribMap,
 
 }
 
-void Gltf::SaveInternal(MeshMod::SceneNodePtr node_, tinygltf::Model& model_)
+void Gltf::SaveInternal(MeshMod::SceneNode::Ptr node_, tinygltf::Model& model_)
 {
 	using namespace tinygltf;
 	using namespace MeshMod;
@@ -507,7 +507,7 @@ void Gltf::SaveInternal(MeshMod::SceneNodePtr node_, tinygltf::Model& model_)
 	static const uint32_t meshTypeHash = Core::QuickHash("Mesh"sv);
 
 	std::vector<uint8_t> dataBuffer;
-	std::stack<MeshMod::SceneNodePtr> nodeStack;
+	std::stack<MeshMod::SceneNode::Ptr> nodeStack;
 	nodeStack.push(node_);
 
 	std::map<uint32_t, uint32_t> accessorAttributeMap;
@@ -516,7 +516,7 @@ void Gltf::SaveInternal(MeshMod::SceneNodePtr node_, tinygltf::Model& model_)
 	accessorAttributeMap["POSITION"_hash] = 1;
 	while (!nodeStack.empty())
 	{
-		MeshMod::SceneNodePtr node = nodeStack.top(); nodeStack.pop();
+		MeshMod::SceneNode::Ptr node = nodeStack.top(); nodeStack.pop();
 		int nodeIndex = (int)model_.nodes.size();
 		model_.nodes.resize(nodeIndex + 1);
 		gltfScene.nodes.push_back(nodeIndex);

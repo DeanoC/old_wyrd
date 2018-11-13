@@ -57,7 +57,7 @@ public:
 					TEXTURE_ADDRESS_TYPE uAddressType,
 					TEXTURE_ADDRESS_TYPE vAddressType );
 
-	TextureUnit(	const LayeredFloatTexture& texture,
+	TextureUnit(	const LayeredTexture& texture,
 					const std::string& layerName, 
 					TEXTURE_FILTER_TYPE filterType,
 					TEXTURE_ADDRESS_TYPE uAddressType,

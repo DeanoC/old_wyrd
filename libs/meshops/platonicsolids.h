@@ -8,13 +8,13 @@ namespace MeshOps {
 
 class PlatonicSolids {
 public:
-	static MeshMod::MeshPtr createTetrahedon();
-	static MeshMod::MeshPtr createOctahedron();
-	static MeshMod::MeshPtr createCube();
-	static MeshMod::MeshPtr createIcosahedron();
-	static MeshMod::MeshPtr createDodecahedron();
+	static MeshMod::Mesh::Ptr createTetrahedon();
+	static MeshMod::Mesh::Ptr createOctahedron();
+	static MeshMod::Mesh::Ptr createCube();
+	static MeshMod::Mesh::Ptr createIcosahedron();
+	static MeshMod::Mesh::Ptr createDodecahedron();
 
-	static MeshMod::MeshPtr createBoxFrom(Geometry::AABB const& box);
+	static MeshMod::Mesh::Ptr createBoxFrom(Geometry::AABB const& box);
 
 private:
 };

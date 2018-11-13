@@ -2,11 +2,11 @@
 #ifndef WYRD_RESOURCEMANANAGER_STORAGE_H
 #define WYRD_RESOURCEMANANAGER_STORAGE_H
 
-#include <string_view>
-#include <iostream>
 #include "binny/ibundle.h"
 #include "resourcemanager/resource.h"
 #include "resourcemanager/resourcename.h"
+#include <string_view>
+#include <iostream>
 
 namespace ResourceManager {
 

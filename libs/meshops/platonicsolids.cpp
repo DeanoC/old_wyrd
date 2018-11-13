@@ -6,11 +6,11 @@
 #include "platonicsolids.h"
 
 namespace MeshOps {
-MeshMod::MeshPtr PlatonicSolids::createTetrahedon()
+MeshMod::Mesh::Ptr PlatonicSolids::createTetrahedon()
 {
 	using namespace MeshMod;
 	using namespace Math;
-	MeshPtr mesh = std::make_shared<Mesh>("Tetrahedron");
+	Mesh::Ptr mesh = std::make_shared<Mesh>("Tetrahedron");
 
 	Vector3 pos[4] = {
 			{1,  1,  1},
@@ -41,11 +41,11 @@ MeshMod::MeshPtr PlatonicSolids::createTetrahedon()
 	return mesh;
 }
 
-MeshMod::MeshPtr PlatonicSolids::createOctahedron()
+MeshMod::Mesh::Ptr PlatonicSolids::createOctahedron()
 {
 	using namespace MeshMod;
 	using namespace Math;
-	MeshPtr mesh = std::make_shared<Mesh>("Octahedron");
+	Mesh::Ptr mesh = std::make_shared<Mesh>("Octahedron");
 
 	static const Vector3 pos[] = {
 			{-1, 0,  0},
@@ -83,11 +83,11 @@ MeshMod::MeshPtr PlatonicSolids::createOctahedron()
 	return mesh;
 }
 
-MeshMod::MeshPtr PlatonicSolids::createCube()
+MeshMod::Mesh::Ptr PlatonicSolids::createCube()
 {
 	using namespace MeshMod;
 	using namespace Math;
-	MeshPtr mesh = std::make_shared<Mesh>("Cube");
+	Mesh::Ptr mesh = std::make_shared<Mesh>("Cube");
 
 	static const Vector3 pos[] = {
 			{-1,  1, -1},
@@ -127,14 +127,14 @@ MeshMod::MeshPtr PlatonicSolids::createCube()
 
 }
 
-MeshMod::MeshPtr PlatonicSolids::createIcosahedron()
+MeshMod::Mesh::Ptr PlatonicSolids::createIcosahedron()
 {
 	using namespace MeshMod;
 	using namespace Math;
 
 	using namespace MeshMod;
 	using namespace Math;
-	MeshPtr mesh = std::make_shared<Mesh>("Icosahedron");
+	Mesh::Ptr mesh = std::make_shared<Mesh>("Icosahedron");
 
 	// Phi - the square root of 5 plus 1 divided by 2
 	double phi = (1.0 + sqrt(5.0)) * 0.5;
@@ -202,18 +202,18 @@ MeshMod::MeshPtr PlatonicSolids::createIcosahedron()
 	return mesh;
 }
 
-MeshMod::MeshPtr PlatonicSolids::createDodecahedron()
+MeshMod::Mesh::Ptr PlatonicSolids::createDodecahedron()
 {
 	assert(false); // TODO
 	return nullptr;
 }
 
 
-MeshMod::MeshPtr PlatonicSolids::createBoxFrom(Geometry::AABB const& aabb)
+MeshMod::Mesh::Ptr PlatonicSolids::createBoxFrom(Geometry::AABB const& aabb)
 {
 	using namespace MeshMod;
 	using namespace Math;
-	MeshPtr mesh = std::make_shared<Mesh>("Cube");
+	Mesh::Ptr mesh = std::make_shared<Mesh>("Cube");
 
 	Math::Vector3 const minBox = aabb.getMinExtent();
 	Math::Vector3 const maxBox = aabb.getMaxExtent();

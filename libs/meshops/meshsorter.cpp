@@ -25,7 +25,7 @@
 
 namespace MeshOps {
 
-MeshSorter::MeshSorter( const MeshMod::MeshPtr& _mesh ) :
+MeshSorter::MeshSorter( const MeshMod::Mesh::Ptr& _mesh ) :
 	mesh( _mesh )
 {
 }

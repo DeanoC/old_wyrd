@@ -16,13 +16,13 @@ namespace MeshOps {
 	class MeshSorter {
 	public:
 
-		MeshSorter( const MeshMod::MeshPtr& _mesh );
+		MeshSorter( const MeshMod::Mesh::Ptr& _mesh );
 
 		std::shared_ptr<MeshMod::PolygonData::SortIndices> sortPolygonsByMaterialIndex();
 		std::shared_ptr<MeshMod::VertexData::SortIndices> sortVerticesByAxis( MeshMod::VertexData::Position::AXIS axis );
 
 	private:
-		const MeshMod::MeshPtr	mesh;
+		const MeshMod::Mesh::Ptr	mesh;
 	};
 };
 

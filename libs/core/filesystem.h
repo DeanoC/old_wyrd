@@ -9,4 +9,9 @@
 #include <experimental/filesystem>
 #endif
 
+namespace std
+{
+	namespace filesystem = std::experimental::filesystem;
+}
+
 #endif //WYRD_FILESYSTEM_H

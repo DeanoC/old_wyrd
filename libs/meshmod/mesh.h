@@ -77,6 +77,10 @@ public:
 	friend class HalfEdges;
 	friend class Polygons;
 
+	using Ptr = std::shared_ptr<Mesh>;
+	using ConstPtr = std::shared_ptr<Mesh const>;
+	using WeakPtr = std::weak_ptr<Mesh>;
+
 	enum EditState
 	{
 		NoEdits = 0,
@@ -155,7 +159,6 @@ protected:
 	Vertices& vertices;
 };
 
-typedef std::shared_ptr<Mesh> MeshPtr;
 
 
 } // end namespace

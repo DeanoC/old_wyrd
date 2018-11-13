@@ -44,7 +44,7 @@ TextureUnit::TextureUnit(	float const*	pixels,
 	m_vTexelOffset = 0.5f / float(m_height);
 }
 
-TextureUnit::TextureUnit( const LayeredFloatTexture& texture,
+TextureUnit::TextureUnit( const LayeredTexture& texture,
 	const std::string& layerName, 
 	TEXTURE_FILTER_TYPE filterType,
 	TEXTURE_ADDRESS_TYPE uAddressType,
@@ -55,7 +55,7 @@ TextureUnit::TextureUnit( const LayeredFloatTexture& texture,
 	m_uAddressType( uAddressType ),
 	m_vAddressType( vAddressType ) {
 
-	m_pixels = texture.getLayer( layerName ).getData();
+	m_pixels = texture.getLayer(layerName).getData<float>();
 	m_componentCount = texture.getLayer( layerName ).getComponentCount();
 
 	m_tempData.resize( m_componentCount );
