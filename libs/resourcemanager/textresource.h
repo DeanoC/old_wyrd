@@ -28,6 +28,10 @@ struct TextResource : public Resource<TextResourceId>
 					   ResourceManager::ResourceNameView const& name_,
 					   std::string_view text_) -> TextResourceHandle;
 
+	static auto CreateFromFile(std::shared_ptr<ResourceManager::ResourceMan> rm_,
+					   ResourceManager::ResourceNameView const& name_,
+					   std::string_view filename_) -> TextResourceHandle;
+
 	char const* const getText() const { return (char const* const) (this + 1); }
 
 	size_t const getTextSize() const { return getSize() - sizeof(TextResource); }

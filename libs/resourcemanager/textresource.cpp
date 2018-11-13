@@ -63,4 +63,28 @@ auto TextResource::Create(
 	return rm_->openByName<Id>(name_);
 }
 
+auto TextResource::CreateFromFile(
+		ResourceManager::ResourceMan::Ptr rm_,
+		ResourceManager::ResourceNameView const& name_,
+		std::string_view filename_) -> TextResourceHandle
+{
+	std::ifstream stream(static_cast<std::string>(filename_), std::ifstream::binary | std::ifstream::in);
+	if(stream.bad()) return {};
+
+	stream.seekg (0, stream.end);
+	size_t const dataSize = stream.tellg();
+	stream.seekg (0, stream.beg);
+	size_t totalSize = Core::alignTo(sizeof(TextResource) + dataSize + 1, 8);
+	TextResource* txt = (TextResource*) malloc(totalSize);
+	std::memset(txt, 0, totalSize);
+	char* text = ((char*)txt) + sizeof(ResourceBase);
+	stream.read( text, dataSize);
+	stream.close();
+
+	txt->sizeAndStageCount = totalSize;
+	rm_->placeInStorage(name_, *txt);
+	free(txt);
+
+	return rm_->openByName<Id>(name_);
+}
 }

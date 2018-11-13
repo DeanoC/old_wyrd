@@ -13,11 +13,9 @@
 #include "tbb/concurrent_unordered_map.h"
 #include "tbb/concurrent_vector.h"
 #include "istorage.h"
-#include <iostream>
 #include <string_view>
 #include <unordered_map>
 #include <functional>
-
 
 namespace ResourceManager {
 class ResourceMan;
