@@ -11,7 +11,7 @@ auto Sampler::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 	using namespace Core::bitmask;
 
 	auto registerFunc = [device_](int stage_, ResourceManager::ResolverInterface, uint16_t, uint16_t,
-								  ResourceManager::ResourceBase::Ptr ptr_) -> bool
+								  std::shared_ptr<ResourceManager::ResourceBase> ptr_) -> bool
 	{
 		auto sampler = std::static_pointer_cast<Render::Sampler>(ptr_);
 		auto vulkanSampler = sampler->getStage<Vulkan::Sampler, false>(stage_);

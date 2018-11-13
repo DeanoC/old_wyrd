@@ -58,11 +58,11 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void
 	{
 		return true;
 	};
-	auto changed = [](ResourceBase::ConstPtr ptr_)
+	auto changed = [](std::shared_ptr<ResourceBase const> ptr_)
 	{
 		return false;
 	};
-	auto save = [](ResourceBase::ConstPtr ptr_, ResourceManager::ISaver& writer_)
+	auto save = [](std::shared_ptr<ResourceBase const> ptr_, ResourceManager::ISaver& writer_)
 	{
 		auto texture = std::static_pointer_cast<Texture const>(ptr_);
 

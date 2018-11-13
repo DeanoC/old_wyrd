@@ -13,7 +13,7 @@ auto BindingTableMemoryMap::RegisterResourceHandler(ResourceManager::ResourceMan
 													std::weak_ptr<Device> device_) -> void
 {
 	auto registerFunc = [device_](int stage_, ResourceManager::ResolverInterface, uint16_t, uint16_t,
-								  ResourceManager::ResourceBase::Ptr ptr_) -> bool
+								  std::shared_ptr<ResourceManager::ResourceBase> ptr_) -> bool
 	{
 		auto bindingTableMM = std::static_pointer_cast<Render::BindingTableMemoryMap>(ptr_);
 		auto vulkanBindingtableMM = bindingTableMM->getStage<Vulkan::BindingTableMemoryMap, false>(stage_);
@@ -22,10 +22,10 @@ auto BindingTableMemoryMap::RegisterResourceHandler(ResourceManager::ResourceMan
 		if(!device) return false;
 
 		VkDescriptorSetLayoutCreateInfo createInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
-		createInfo.bindingCount = bindingTableMM->numBindings;
+		createInfo.bindingCount = bindingTableMM->numBindingLayouts;
 
-		std::vector<VkDescriptorSetLayoutBinding> bindings(bindingTableMM->numBindings);
-		for(auto i = 0u; i < bindingTableMM->numBindings; ++i)
+		std::vector<VkDescriptorSetLayoutBinding> bindings(bindingTableMM->numBindingLayouts);
+		for(auto i = 0u; i < bindingTableMM->numBindingLayouts; ++i)
 		{
 			VkDescriptorSetLayoutBinding& vkbinding = bindings[i];
 			Render::BindingLayout const* binding = bindingTableMM->getBindingLayouts();
@@ -59,7 +59,7 @@ auto BindingTableMemoryMap::RegisterResourceHandler(ResourceManager::ResourceMan
 auto BindingTable::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device::WeakPtr device_) -> void
 {
 	auto registerFunc = [device_](int stage_, ResourceManager::ResolverInterface resolver_, uint16_t, uint16_t,
-								  ResourceManager::ResourceBase::Ptr ptr_) -> bool
+								  std::shared_ptr<ResourceManager::ResourceBase> ptr_) -> bool
 	{
 		auto bindingTable = std::static_pointer_cast<Render::BindingTable>(ptr_);
 		auto vulkanBindingTable = bindingTable->getStage<Vulkan::BindingTable>(stage_);
@@ -118,10 +118,14 @@ auto BindingTable::update(uint8_t memoryMapIndex_,
 						  std::vector<Render::TextureHandle> const& textures_) -> void
 {
 	auto memoryMap = memoryMaps[memoryMapIndex_];
+	assert(bindingIndex_ < memoryMap->numBindingLayouts);
+	Render::BindingLayout const& layout = memoryMap->getBindingLayouts()[bindingIndex_];
+
+	assert(layout.count == (uint32_t) textures_.size());
 
 	VkWriteDescriptorSet writer { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-	writer.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE; // TODO
-	writer.descriptorCount = (uint32_t)textures_.size();
+	writer.descriptorType = from(layout.type);
+	writer.descriptorCount = layout.count;
 	writer.dstBinding = bindingIndex_;
 	writer.dstSet = descriptorSets[memoryMapIndex_];
 

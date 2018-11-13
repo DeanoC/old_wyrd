@@ -11,7 +11,7 @@ auto Buffer::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device::
 	using namespace Core::bitmask;
 
 	auto registerFunc = [device_](int stage_, ResourceManager::ResolverInterface, uint16_t, uint16_t,
-								  ResourceManager::ResourceBase::Ptr ptr_) -> bool
+								  std::shared_ptr<ResourceManager::ResourceBase> ptr_) -> bool
 	{
 		auto buffer = std::static_pointer_cast<Render::Buffer const>(ptr_);
 		auto vulkanBuffer = buffer->getStage<Vulkan::Buffer, false>(stage_);

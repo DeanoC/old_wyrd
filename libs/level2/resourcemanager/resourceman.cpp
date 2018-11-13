@@ -139,24 +139,24 @@ auto ResourceMan::GetNameFromHandleBase(ResourceHandleBase const& base_) -> Reso
 	return rm->indexToResourceName[base_.index].getName();
 }
 
-auto ResourceHandleBase::acquire() const -> ResourceBase::ConstPtr
+auto ResourceHandleBase::acquire() const -> std::shared_ptr<ResourceBase const>
 {
 	auto resourceMan = ResourceMan::GetFromIndex(managerIndex);
 	return resourceMan->acquire(*this);
 }
 
-auto ResourceHandleBase::tryAcquire() const -> ResourceBase::ConstPtr
+auto ResourceHandleBase::tryAcquire() const -> std::shared_ptr<ResourceBase const>
 {
 	auto resourceMan = ResourceMan::GetFromIndex(managerIndex);
 	return resourceMan->tryAcquire(*this);
 }
 
-auto ResourceMan::acquire(ResourceHandleBase const& base_) -> ResourceBase::Ptr
+auto ResourceMan::acquire(ResourceHandleBase const& base_) -> std::shared_ptr<ResourceBase>
 {
-	if(base_.index == ResourceHandleBase::InvalidIndex) return ResourceBase::Ptr();
+	if(base_.index == ResourceHandleBase::InvalidIndex) return {};
 
 	assert(typeToHandler.find(base_.id) != typeToHandler.end());
-	ResourceBase::Ptr ptr;
+	std::shared_ptr<ResourceBase> ptr;
 	while(!ptr)
 	{
 		ptr = tryAcquire(base_);
@@ -176,11 +176,11 @@ auto ResourceMan::acquire(ResourceHandleBase const& base_) -> ResourceBase::Ptr
 	return ptr;
 }
 
-auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> ResourceBase::Ptr
+auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> std::shared_ptr<ResourceBase>
 {
-	if(base_.index == ResourceHandleBase::InvalidIndex) return ResourceBase::Ptr();
+	if(base_.index == ResourceHandleBase::InvalidIndex) return {};
 
-	ResourceBase::Ptr cached = resourceCache.lookup(base_.index);
+	auto cached = resourceCache.lookup(base_.index);
 	if(cached) return cached;
 
 	assert(typeToHandler.find(base_.id) != typeToHandler.end());

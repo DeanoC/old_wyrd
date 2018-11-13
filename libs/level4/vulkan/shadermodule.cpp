@@ -10,7 +10,7 @@ auto ShaderModule::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 	using namespace Core::bitmask;
 
 	auto registerFunc = [device_](int stage_, ResourceManager::ResolverInterface, uint16_t, uint16_t,
-								  ResourceManager::ResourceBase::Ptr ptr_) -> bool
+								  std::shared_ptr<ResourceManager::ResourceBase> ptr_) -> bool
 	{
 		auto shader = std::static_pointer_cast<Render::SPIRVShader>(ptr_);
 		auto vulkanShaderModule = shader->getStage<Vulkan::ShaderModule, false>(stage_);

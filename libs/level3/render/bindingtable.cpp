@@ -24,11 +24,11 @@ auto BindingTableMemoryMap::RegisterResourceHandler(ResourceManager::ResourceMan
 	{
 		return true;
 	};
-	auto changed = [](ResourceBase::ConstPtr ptr_)
+	auto changed = [](std::shared_ptr<ResourceBase const> ptr_)
 	{
 		return false;
 	};
-	auto save = [](ResourceBase::ConstPtr ptr_, ResourceManager::ISaver& writer_)
+	auto save = [](std::shared_ptr<ResourceBase const> ptr_, ResourceManager::ISaver& writer_)
 	{
 		auto bindingTableMemoryMap = std::static_pointer_cast<BindingTableMemoryMap const>(ptr_);
 
@@ -62,11 +62,11 @@ auto BindingTable::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) ->
 	{
 		return true;
 	};
-	auto changed = [](ResourceBase::ConstPtr ptr_)
+	auto changed = [](std::shared_ptr<ResourceBase const> ptr_)
 	{
 		return false;
 	};
-	auto save = [](ResourceBase::ConstPtr ptr_, ResourceManager::ISaver& writer_)
+	auto save = [](std::shared_ptr<ResourceBase const> ptr_, ResourceManager::ISaver& writer_)
 	{
 		auto bindingTable = std::static_pointer_cast<BindingTable const>(ptr_);
 
@@ -81,15 +81,15 @@ auto BindingTableMemoryMap::Create(
 		ResourceManager::ResourceNameView const& name_,
 		std::vector<BindingLayout> const& bindingLayouts_) -> BindingTableMemoryMapHandle
 {
-	assert(bindingLayouts_.size() < (1 << (sizeof(BindingTableMemoryMap::numBindings) * 8)));
+	assert(bindingLayouts_.size() < (1 << (sizeof(BindingTableMemoryMap::numBindingLayouts) * 8)));
 
-	size_t const bindSize = sizeof(Binding) * bindingLayouts_.size();
+	size_t const bindSize = sizeof(BindingLayout) * bindingLayouts_.size();
 	size_t const dataSize = bindSize;
 
 	size_t const totalSize = Core::alignTo(sizeof(BindingTableMemoryMap) + dataSize, 8);
 	auto obj = (BindingTableMemoryMap*) malloc(totalSize);
 	obj->sizeAndStageCount = totalSize;
-	obj->numBindings = (uint8_t) bindingLayouts_.size();
+	obj->numBindingLayouts = (uint8_t) bindingLayouts_.size();
 
 	auto bindPtr = obj->getBindingLayouts();
 	std::memcpy(const_cast<BindingLayout*>(bindPtr), bindingLayouts_.data(), bindSize);
@@ -106,7 +106,7 @@ auto BindingTable::Create(
 {
 	assert(bindingTables.size() < (1 << (sizeof(BindingTable::numMemoryMaps) * 8)));
 
-	size_t const dataSize = sizeof(Binding) * bindingTables.size();
+	size_t const dataSize = sizeof(BindingTableMemoryMapHandle) * bindingTables.size();
 	size_t const totalSize = Core::alignTo(sizeof(BindingTable) + dataSize, 8);
 	auto obj = (BindingTable*) malloc(totalSize);
 	obj->sizeAndStageCount = totalSize;

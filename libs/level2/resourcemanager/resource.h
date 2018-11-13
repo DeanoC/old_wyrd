@@ -13,10 +13,6 @@ enum class ResourceId : uint32_t;
 
 struct ResourceBase
 {
-	using Ptr = std::shared_ptr<ResourceBase>;
-	using ConstPtr = std::shared_ptr<ResourceBase const>;
-	using WeakPtr = std::weak_ptr<ResourceBase>;
-	using ConstWeakPtr = std::weak_ptr<ResourceBase>;
 
 	static constexpr uint32_t MaxStages = Binny::IBundle::MaxHandlerStages;
 
@@ -77,10 +73,6 @@ template<ResourceId id_>
 struct Resource : public ResourceBase
 {
 public:
-	using Ptr = std::shared_ptr<Resource<id_>>;
-	using ConstPtr = std::shared_ptr<Resource<id_> const>;
-	using WeakPtr = std::weak_ptr<Resource<id_>>;
-	using ConstWeakPtr = std::weak_ptr<Resource<id_> const>;
 	static constexpr ResourceId Id = id_;
 
 protected:

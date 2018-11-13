@@ -95,7 +95,7 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 	using namespace Core::bitmask;
 
 	auto registerFunc = [device_](int stage_, ResourceManager::ResolverInterface resolver_, uint16_t, uint16_t,
-								  ResourceManager::ResourceBase::Ptr ptr_) -> bool
+								  std::shared_ptr<ResourceManager::ResourceBase> ptr_) -> bool
 	{
 		auto renderPipeline = std::static_pointer_cast<Render::RenderPipeline>(ptr_);
 		auto vulkanRenderPipeline = renderPipeline->getStage<Vulkan::RenderPipeline, false>(stage_);

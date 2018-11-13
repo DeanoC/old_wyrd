@@ -20,12 +20,6 @@ struct BindingLayout
 	ShaderType shaderAccess;
 };
 
-struct Binding : public BindingLayout
-{
-	// use type to convert this back into the actual handle
-	ResourceManager::ResourceHandleBase resource;
-};
-
 struct alignas(8)    BindingTableMemoryMap : public ResourceManager::Resource<BindingTableMemoryMapId>
 {
 	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void;
@@ -39,7 +33,7 @@ struct alignas(8)    BindingTableMemoryMap : public ResourceManager::Resource<Bi
 
 	BindingLayout const* getBindingLayouts() const { return (BindingLayout*) (this + 1); }
 
-	uint8_t numBindings;
+	uint8_t numBindingLayouts;
 };
 
 // resource stages of BindingTable have to implement IGpuBindingTable

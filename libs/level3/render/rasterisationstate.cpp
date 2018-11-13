@@ -21,11 +21,11 @@ auto RasterisationState::RegisterResourceHandler(ResourceManager::ResourceMan& r
 	{
 		return true;
 	};
-	auto changed = [](ResourceBase::ConstPtr ptr_)
+	auto changed = [](std::shared_ptr<ResourceBase const> ptr_)
 	{
 		return false;
 	};
-	auto save = [](ResourceBase::ConstPtr ptr_, ResourceManager::ISaver& writer_)
+	auto save = [](std::shared_ptr<ResourceBase const> ptr_, ResourceManager::ISaver& writer_)
 	{
 		auto rasterState = std::static_pointer_cast<RasterisationState const>(ptr_);
 

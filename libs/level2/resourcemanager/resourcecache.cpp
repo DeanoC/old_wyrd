@@ -4,7 +4,7 @@
 namespace ResourceManager
 {
 
-auto ResourceCache::lookup(uint64_t id_) -> ResourceBase::Ptr
+auto ResourceCache::lookup(uint64_t id_) -> std::shared_ptr<ResourceBase>
 {
 	// look it up first without a mutex, if we found it, return it!
 	auto it = cache.find(id_);
@@ -23,7 +23,7 @@ auto ResourceCache::lookup(uint64_t id_) -> ResourceBase::Ptr
 	return it->second;
 }
 
-void ResourceCache::insert(uint64_t id_, ResourceBase::Ptr const& resource_ )
+void ResourceCache::insert(uint64_t id_, std::shared_ptr<ResourceBase> const& resource_)
 {
 	// this might be overkill but head fuzzy and better safe than sorry!
 	std::lock_guard guard(updateMutex);

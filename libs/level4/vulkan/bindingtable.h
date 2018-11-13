@@ -41,7 +41,7 @@ struct BindingTable : public Render::IGpuBindingTable
 #include "functionlist.inl"
 
 	std::vector<VkDescriptorSet> descriptorSets;
-	std::vector<Render::BindingTableMemoryMap::ConstPtr> memoryMaps;
+	std::vector<Render::BindingTableMemoryMapConstPtr> memoryMaps;
 
 	VkDevice device;
 

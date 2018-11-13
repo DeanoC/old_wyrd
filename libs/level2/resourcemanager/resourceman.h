@@ -36,11 +36,12 @@ using ResolveLinkFunc = std::function<void(ResourceHandleBase const&)>;
 using ResolveNameFunc = std::function<ResourceNameView const()>;
 
 using ResolverInterface = std::tuple<ResolveGetResourceMan, ResolveLinkFunc, ResolveNameFunc>;
-using HandlerInit = std::function<bool(int stage_, ResolverInterface resolver_, uint16_t majorVersion_, uint16_t minorVersion_, ResourceBase::Ptr ptr_ )>;
+using HandlerInit = std::function<bool(int stage_, ResolverInterface resolver_, uint16_t majorVersion_,
+									   uint16_t minorVersion_, std::shared_ptr<ResourceBase> ptr_)>;
 using HandlerDestroy = std::function<bool(int stage_, void* ptr_)>;
 
-using HasResourceChangedFunc = std::function<bool(ResourceBase::ConstPtr ptr_)>;
-using SaveResourceFunc = std::function<bool(ResourceBase::ConstPtr ptr_, ISaver& saver_)>;
+using HasResourceChangedFunc = std::function<bool(std::shared_ptr<ResourceBase const> ptr_)>;
+using SaveResourceFunc = std::function<bool(std::shared_ptr<ResourceBase const> ptr_, ISaver& saver_)>;
 
 // extra memory, init, destroy
 using ResourceHandler = std::tuple<size_t, HandlerInit, HandlerDestroy>;
@@ -107,8 +108,8 @@ public:
 protected:
 	ResourceMan();
 
-	auto acquire( ResourceHandleBase const& base_ ) -> ResourceBase::Ptr;
-	auto tryAcquire( ResourceHandleBase const& base_ ) -> ResourceBase::Ptr;
+	auto acquire(ResourceHandleBase const& base_) -> std::shared_ptr<ResourceBase>;
+	auto tryAcquire(ResourceHandleBase const& base_) -> std::shared_ptr<ResourceBase>;
 	auto resolveLink(ResourceHandleBase& link_, ResourceNameView const& current_) -> void;
 
 	using PrefixToStorage = std::unordered_map<std::string_view, IStorage::Ptr>;

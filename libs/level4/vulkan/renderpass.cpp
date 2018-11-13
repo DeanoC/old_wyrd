@@ -10,7 +10,7 @@ auto RenderPass::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Devi
 	using namespace Core::bitmask;
 
 	auto registerFunc = [device_](int stage_, ResourceManager::ResolverInterface, uint16_t, uint16_t,
-								  ResourceManager::ResourceBase::Ptr ptr_) -> bool
+								  std::shared_ptr<ResourceManager::ResourceBase> ptr_) -> bool
 	{
 		auto renderPass = std::static_pointer_cast<Render::RenderPass>(ptr_);
 		auto vulkanRenderPass = renderPass->getStage<Vulkan::RenderPass, false>(stage_);

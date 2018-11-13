@@ -55,12 +55,12 @@ public:
 
 	auto isValid() const { return base.isValid(); }
 
-	auto acquire() const -> typename Resource<id_>::ConstPtr
+	auto acquire() const -> typename std::shared_ptr<Resource<id_> const>
 	{
 		return std::static_pointer_cast<Resource<id_> const>(base.acquire());
 	}
 
-	auto tryAcquire() const -> typename Resource<id_>::ConstPtr
+	auto tryAcquire() const -> typename std::shared_ptr<Resource<id_> const>
 	{
 		return std::static_pointer_cast<Resource<id_> const>(base.tryAcquire());
 	}

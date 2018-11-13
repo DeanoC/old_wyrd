@@ -29,11 +29,11 @@ auto GenericImage::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) ->
 	{
 		return true;
 	};
-	auto changed = [](ResourceBase::ConstPtr ptr_)
+	auto changed = [](std::shared_ptr<ResourceBase const> ptr_)
 	{
 		return false;
 	};
-	auto save = [](ResourceBase::ConstPtr ptr_, ResourceManager::ISaver& saver_)
+	auto save = [](std::shared_ptr<ResourceBase const> ptr_, ResourceManager::ISaver& saver_)
 	{
 		using namespace std::string_literals;
 		auto image = std::static_pointer_cast<GenericImage const>(ptr_);

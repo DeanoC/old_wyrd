@@ -13,7 +13,7 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 	using namespace Core::bitmask;
 
 	auto registerFunc = [device_](int stage_, ResourceManager::ResolverInterface resolver_, uint16_t, uint16_t,
-								  ResourceManager::ResourceBase::Ptr ptr_) -> bool
+								  std::shared_ptr<ResourceManager::ResourceBase> ptr_) -> bool
 	{
 		auto texture = std::static_pointer_cast<Render::Texture>(ptr_);
 		auto vulkanTexture = texture->getStage<Vulkan::Texture, false>(stage_);

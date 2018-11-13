@@ -34,11 +34,11 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_) 
 	{
 		return true;
 	};
-	auto changed = [](ResourceBase::ConstPtr ptr_)
+	auto changed = [](std::shared_ptr<ResourceBase const> ptr_)
 	{
 		return false;
 	};
-	auto save = [](ResourceBase::ConstPtr ptr_, ResourceManager::ISaver& writer_)
+	auto save = [](std::shared_ptr<ResourceBase const> ptr_, ResourceManager::ISaver& writer_)
 	{
 		auto renderPipeline = std::static_pointer_cast<RenderPipeline const>(ptr_);
 
@@ -68,11 +68,11 @@ auto ComputePipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_)
 	{
 		return true;
 	};
-	auto changed = [](ResourceBase::ConstPtr ptr_)
+	auto changed = [](std::shared_ptr<ResourceBase const> ptr_)
 	{
 		return false;
 	};
-	auto save = [](ResourceBase::ConstPtr ptr_, ResourceManager::ISaver& writer_)
+	auto save = [](std::shared_ptr<ResourceBase const> ptr_, ResourceManager::ISaver& writer_)
 	{
 		auto computePipeline = std::static_pointer_cast<ComputePipeline const>(ptr_);
 
