@@ -81,7 +81,7 @@ SCENARIO("Resource Manager has mem storage", "[resourcemanager]")
 												 {10, [&testText](int stage_, ResourceManager::ResolverInterface,
 																  uint16_t majorVersion_,
 																  uint16_t minorVersion_,
-																  ResourceBase::Ptr ptr_) -> bool
+																  std::shared_ptr<ResourceBase> ptr_) -> bool
 												 {
 													 if(majorVersion_ != 0) return false;
 													 if(minorVersion_ != 0) return false;

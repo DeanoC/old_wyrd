@@ -15,7 +15,8 @@ struct IRenderEncoder;
 struct IComputeEncoder;
 struct Fence;
 struct Semaphore;
-
+struct ViewportDef;
+struct Scissor;
 
 // All Encoders are DMA encoders so there is no asDMAEncoder just use the encoder
 // object
@@ -69,17 +70,23 @@ struct IRenderEncoder
 								 RenderTargetConstPtr const& renderTarget_) -> void = 0;
 	virtual auto endRenderPass() -> void = 0;
 	virtual auto blit(TextureConstPtr const& src_, TextureConstPtr const& dst_) -> void = 0;
+
 	virtual auto bind(RenderPipelineConstPtr const& pipeline_) -> void = 0;
+	virtual auto bind(RenderPipelineConstPtr const& pipeline_, BindingTableConstPtr const& bindingTable_) -> void = 0;
 	virtual auto bindVertexBuffer(Render::BufferConstPtr const& buffer_, uint64_t offset_ = 0,
 								  uint32_t bindingIndex = 0) -> void = 0;
 	virtual auto bindIndexBuffer(Render::BufferConstPtr const& buffer_, uint8_t bitSize_ = 16u,
 								 uint64_t offset_ = 0) -> void = 0;
 	virtual auto pushConstants(Render::RenderPipelineConstPtr const& pipeline_, PushConstantRange const& range_,
 							   void const* data_) -> void = 0;
+
 	virtual auto draw(uint32_t vertexCount_, uint32_t vertexOffset_ = 0, uint32_t instanceCount_ = 1,
 					  uint32_t instanceOffset_ = 0) -> void = 0;
 	virtual auto drawIndexed(uint32_t indexCount_, uint32_t indexOffset_ = 0, uint32_t vertexOffset = 0,
 							 uint32_t instanceCount_ = 1, uint32_t instanceOffset_ = 0) -> void = 0;
+
+	virtual auto setDynamicViewport(uint32_t viewportIndex_, ViewportDef const& viewport_) -> void = 0;
+	virtual auto setDynamicScissor(uint32_t viewportIndex_, Scissor const& scissor_) -> void = 0;
 
 };
 

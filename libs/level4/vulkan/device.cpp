@@ -403,11 +403,10 @@ auto Device::getDisplay() const -> std::shared_ptr<Render::Display>
 	return std::static_pointer_cast<Render::Display>(display);
 };
 
-auto Device::upload(uint8_t* data_, uint64_t size_, VkImageCreateInfo const& createInfo_,
-					Render::TextureConstPtr const& dst_) -> void
+auto Device::upload(uint8_t const* data_, uint64_t size_, Texture const* dst_) -> void
 {
 	// create CPU side texture
-	VkImageCreateInfo cpuCreateInfo = createInfo_;
+	VkImageCreateInfo cpuCreateInfo = dst_->createInfo;
 	cpuCreateInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
 	cpuCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	cpuCreateInfo.tiling = VK_IMAGE_TILING_LINEAR;
@@ -424,11 +423,10 @@ auto Device::upload(uint8_t* data_, uint64_t size_, VkImageCreateInfo const& cre
 	destroyImage({cpuImage, cpuAlloc});
 }
 
-auto Device::upload(uint8_t* data_, uint64_t size_, VkBufferCreateInfo const& createInfo_,
-					Render::BufferConstPtr const& dst_) -> void
+auto Device::upload(uint8_t const* data_, uint64_t size_, Buffer const* dst_) -> void
 {
 	// create CPU side buffer
-	VkBufferCreateInfo cpuCreateInfo = createInfo_;
+	VkBufferCreateInfo cpuCreateInfo = dst_->createInfo;
 	cpuCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 	VmaAllocationCreateInfo cpuAllocInfo{};
 	cpuAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
@@ -443,11 +441,10 @@ auto Device::upload(uint8_t* data_, uint64_t size_, VkBufferCreateInfo const& cr
 	destroyBuffer({cpuImage, cpuAlloc});
 }
 
-auto Device::fill(uint32_t value_, VkImageCreateInfo const& createInfo_,
-				  Render::TextureConstPtr const& dst_) -> void
+auto Device::fill(uint32_t value_, Texture const* dst_) -> void
 {
 	// create CPU side texture
-	VkImageCreateInfo cpuCreateInfo = createInfo_;
+	VkImageCreateInfo cpuCreateInfo = dst_->createInfo;
 	cpuCreateInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
 	cpuCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	cpuCreateInfo.tiling = VK_IMAGE_TILING_LINEAR;
@@ -466,8 +463,7 @@ auto Device::fill(uint32_t value_, VkImageCreateInfo const& createInfo_,
 	destroyImage({cpuImage, cpuAlloc});
 }
 
-auto Device::fill(uint32_t value_, VkBufferCreateInfo const& createInfo_,
-				  Render::BufferConstPtr const& dst_) -> void
+auto Device::fill(uint32_t value_, Buffer const* dst_) -> void
 {
 	auto encoder = std::static_pointer_cast<Encoder>(dmaEncoderPool->allocateEncoder());
 	encoder->begin();
@@ -480,10 +476,9 @@ auto Device::fill(uint32_t value_, VkBufferCreateInfo const& createInfo_,
 }
 
 
-void Device::upload(VkImage cpuImage, Render::TextureConstPtr const& dst_)
+void Device::upload(VkImage cpuImage, Texture const* dst_)
 {
 	auto encoder = std::static_pointer_cast<Encoder>(dmaEncoderPool->allocateEncoder());
-	Texture* dst = dst_->getStage<Texture>(Texture::s_stage);
 
 	encoder->begin();
 	VkImageMemoryBarrier hostBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
@@ -492,50 +487,50 @@ void Device::upload(VkImage cpuImage, Render::TextureConstPtr const& dst_)
 	hostBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	hostBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	hostBarrier.image = cpuImage;
-	hostBarrier.subresourceRange.aspectMask = dst->entireRange.aspectMask;
-	hostBarrier.subresourceRange.baseMipLevel = dst->entireRange.baseMipLevel;
-	hostBarrier.subresourceRange.levelCount = dst->entireRange.levelCount;
-	hostBarrier.subresourceRange.baseArrayLayer = dst->entireRange.baseArrayLayer;
-	hostBarrier.subresourceRange.layerCount = dst->entireRange.layerCount;
+	hostBarrier.subresourceRange.aspectMask = dst_->entireRange.aspectMask;
+	hostBarrier.subresourceRange.baseMipLevel = dst_->entireRange.baseMipLevel;
+	hostBarrier.subresourceRange.levelCount = dst_->entireRange.levelCount;
+	hostBarrier.subresourceRange.baseArrayLayer = dst_->entireRange.baseArrayLayer;
+	hostBarrier.subresourceRange.layerCount = dst_->entireRange.layerCount;
 	hostBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
 	hostBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 	encoder->textureBarrier(VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, hostBarrier);
 
 	VkImageMemoryBarrier dstBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
-	dstBarrier.oldLayout = dst->imageLayout;
+	dstBarrier.oldLayout = dst_->imageLayout;
 	dstBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	dst->imageLayout = dstBarrier.newLayout;
+	dst_->imageLayout = dstBarrier.newLayout;
 	dstBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	dstBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	dstBarrier.image = dst->image;
-	dstBarrier.subresourceRange.aspectMask = dst->entireRange.aspectMask;
-	dstBarrier.subresourceRange.baseMipLevel = dst->entireRange.baseMipLevel;
-	dstBarrier.subresourceRange.levelCount = dst->entireRange.levelCount;
-	dstBarrier.subresourceRange.baseArrayLayer = dst->entireRange.baseArrayLayer;
-	dstBarrier.subresourceRange.layerCount = dst->entireRange.layerCount;
+	dstBarrier.image = dst_->image;
+	dstBarrier.subresourceRange.aspectMask = dst_->entireRange.aspectMask;
+	dstBarrier.subresourceRange.baseMipLevel = dst_->entireRange.baseMipLevel;
+	dstBarrier.subresourceRange.levelCount = dst_->entireRange.levelCount;
+	dstBarrier.subresourceRange.baseArrayLayer = dst_->entireRange.baseArrayLayer;
+	dstBarrier.subresourceRange.layerCount = dst_->entireRange.layerCount;
 	dstBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
 	dstBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 	encoder->textureBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, dstBarrier);
 
 	VkImageSubresourceLayers srcLayers;
-	srcLayers.aspectMask = dst->entireRange.aspectMask;
-	srcLayers.baseArrayLayer = dst->entireRange.baseArrayLayer;
-	srcLayers.layerCount = dst->entireRange.layerCount;
-	srcLayers.mipLevel = dst->entireRange.levelCount;
+	srcLayers.aspectMask = dst_->entireRange.aspectMask;
+	srcLayers.baseArrayLayer = dst_->entireRange.baseArrayLayer;
+	srcLayers.layerCount = dst_->entireRange.layerCount;
+	srcLayers.mipLevel = dst_->entireRange.levelCount;
 	encoder->copy(cpuImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, srcLayers, dst_);
 
 	VkImageMemoryBarrier copyBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
-	copyBarrier.oldLayout = dst->imageLayout;
+	copyBarrier.oldLayout = dst_->imageLayout;
 	copyBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	dst->imageLayout = copyBarrier.newLayout;
+	dst_->imageLayout = copyBarrier.newLayout;
 	copyBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	copyBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	copyBarrier.image = dst->image;
-	copyBarrier.subresourceRange.aspectMask = dst->entireRange.aspectMask;
-	copyBarrier.subresourceRange.baseMipLevel = dst->entireRange.baseMipLevel;
-	copyBarrier.subresourceRange.levelCount = dst->entireRange.levelCount;
-	copyBarrier.subresourceRange.baseArrayLayer = dst->entireRange.baseArrayLayer;
-	copyBarrier.subresourceRange.layerCount = dst->entireRange.layerCount;
+	copyBarrier.image = dst_->image;
+	copyBarrier.subresourceRange.aspectMask = dst_->entireRange.aspectMask;
+	copyBarrier.subresourceRange.baseMipLevel = dst_->entireRange.baseMipLevel;
+	copyBarrier.subresourceRange.levelCount = dst_->entireRange.levelCount;
+	copyBarrier.subresourceRange.baseArrayLayer = dst_->entireRange.baseArrayLayer;
+	copyBarrier.subresourceRange.layerCount = dst_->entireRange.layerCount;
 	copyBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 	copyBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 	encoder->textureBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, copyBarrier);
@@ -547,10 +542,9 @@ void Device::upload(VkImage cpuImage, Render::TextureConstPtr const& dst_)
 
 }
 
-void Device::upload(VkBuffer cpuBuffer, Render::BufferConstPtr const& dst_)
+void Device::upload(VkBuffer cpuBuffer, Buffer const* dst_)
 {
 	auto encoder = std::static_pointer_cast<Encoder>(dmaEncoderPool->allocateEncoder());
-	Buffer* dst = dst_->getStage<Buffer>(Buffer::s_stage);
 
 	encoder->begin();
 	VkBufferMemoryBarrier hostBarrier{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
@@ -560,29 +554,29 @@ void Device::upload(VkBuffer cpuBuffer, Render::BufferConstPtr const& dst_)
 	hostBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
 	hostBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 	hostBarrier.offset = 0;
-	hostBarrier.size = dst_->sizeInBytes;
+	hostBarrier.size = dst_->createInfo.size;
 	encoder->bufferBarrier(VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, hostBarrier);
 
 	VkBufferMemoryBarrier dstBarrier{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
 	dstBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	dstBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	dstBarrier.buffer = dst->buffer;
+	dstBarrier.buffer = dst_->buffer;
 	dstBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
 	dstBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 	hostBarrier.offset = 0;
-	hostBarrier.size = dst_->sizeInBytes;
+	hostBarrier.size = dst_->createInfo.size;
 	encoder->bufferBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, dstBarrier);
 
-	encoder->copy(cpuBuffer, 0, dst_->sizeInBytes, dst_);
+	encoder->copy(cpuBuffer, 0, dst_->createInfo.size, dst_);
 
 	VkBufferMemoryBarrier copyBarrier{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
 	copyBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	copyBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	copyBarrier.buffer = dst->buffer;
+	copyBarrier.buffer = dst_->buffer;
 	copyBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 	copyBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 	hostBarrier.offset = 0;
-	hostBarrier.size = dst_->sizeInBytes;
+	hostBarrier.size = dst_->createInfo.size;
 	encoder->bufferBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, copyBarrier);
 	encoder->end();
 
@@ -591,6 +585,24 @@ void Device::upload(VkBuffer cpuBuffer, Render::BufferConstPtr const& dst_)
 	getDMASpecificQueue()->stallTillIdle();
 
 }
+
+auto Device::mapMemory(VmaAllocation const& alloc_) -> void*
+{
+	void* ptr = nullptr;
+	vmaMapMemory(allocator,alloc_, &ptr);
+	return ptr;
+}
+
+auto Device::unmapMemory(VmaAllocation const& alloc_) -> void
+{
+	vmaUnmapMemory(allocator, alloc_);
+}
+
+auto Device::flushMemory(VmaAllocation const& alloc_) -> void
+{
+	vmaFlushAllocation(allocator, alloc_, 0, VK_WHOLE_SIZE);
+}
+
 
 auto Device::destroyQueue(VkQueue const& queue_) -> void
 {

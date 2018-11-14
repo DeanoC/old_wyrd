@@ -14,6 +14,7 @@ auto RenderPass::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Devi
 	{
 		auto renderPass = std::static_pointer_cast<Render::RenderPass>(ptr_);
 		auto vulkanRenderPass = renderPass->getStage<Vulkan::RenderPass, false>(stage_);
+		new(vulkanRenderPass) RenderPass();
 
 		auto device = device_.lock();
 		if(!device) return false;

@@ -57,7 +57,7 @@ auto Stocks::InitBasics(std::shared_ptr<ResourceManager::ResourceMan> const& rm_
 			rm_,
 			Stock::positionOnlyVertexInput,
 			{
-					{0, VertexInputLocation::Position, VertexInputType::Float3}
+				{VertexInputLocation::Position, VertexInputType::Float3}
 			});
 
 	ROPBlender::Create(
@@ -140,11 +140,15 @@ auto Stocks::InitSimpleForwardRenderer(std::shared_ptr<ResourceManager::Resource
 			rm_,
 			Stock::simpleForwardRendererViewport,
 			{{
-					 0, 0,
-					 (float) width_, (float) height_,
-					 0.0f, 1.0f,
-					 {0, 0},
-					 {width_, height_}
+					 {
+							 0, 0,
+							 (float) width_, (float) height_,
+							 0.0f, 1.0f,
+					 },
+					 {
+							 {0, 0},
+							 {width_, height_}
+					 }
 			 }}
 	);
 

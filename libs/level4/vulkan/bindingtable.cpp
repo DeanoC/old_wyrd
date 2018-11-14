@@ -1,11 +1,12 @@
 #include "core/core.h"
 #include "vulkan/api.h"
+#include "resourcemanager/resourceman.h"
 #include "render/bindingtable.h"
 #include "vulkan/bindingtable.h"
-#include "resourcemanager/resourceman.h"
 #include "vulkan/types.h"
 #include "vulkan/device.h"
-#include "texture.h"
+#include "vulkan/texture.h"
+#include "vulkan/sampler.h"
 
 namespace Vulkan {
 
@@ -17,7 +18,7 @@ auto BindingTableMemoryMap::RegisterResourceHandler(ResourceManager::ResourceMan
 	{
 		auto bindingTableMM = std::static_pointer_cast<Render::BindingTableMemoryMap>(ptr_);
 		auto vulkanBindingtableMM = bindingTableMM->getStage<Vulkan::BindingTableMemoryMap, false>(stage_);
-
+		new(vulkanBindingtableMM) BindingTableMemoryMap();
 		auto device = device_.lock();
 		if(!device) return false;
 
@@ -36,6 +37,8 @@ auto BindingTableMemoryMap::RegisterResourceHandler(ResourceManager::ResourceMan
 			vkbinding.pImmutableSamplers = nullptr; // not sure to support yet
 
 		}
+		createInfo.pBindings = bindings.data();
+
 		vulkanBindingtableMM->layout = device->createDescriptorSetLayout(createInfo);
 		return true;
 	};
@@ -62,7 +65,8 @@ auto BindingTable::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 								  std::shared_ptr<ResourceManager::ResourceBase> ptr_) -> bool
 	{
 		auto bindingTable = std::static_pointer_cast<Render::BindingTable>(ptr_);
-		auto vulkanBindingTable = bindingTable->getStage<Vulkan::BindingTable>(stage_);
+		auto vulkanBindingTable = bindingTable->getStage<Vulkan::BindingTable,false>(stage_);
+		new(vulkanBindingTable) BindingTable();
 
 		auto device = device_.lock();
 		if(!device) return false;
@@ -112,6 +116,98 @@ auto BindingTable::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 	s_stage = rm_.registerNextHandler(Render::BindingTableId,
 									  {sizeof(Vulkan::BindingTable), registerFunc, deleteFunc});
 }
+auto BindingTable::update(uint8_t memoryMapIndex_,
+			uint32_t bindingIndex_,
+			Render::TextureHandle const& texture_) -> void
+{
+	auto memoryMap = memoryMaps[memoryMapIndex_];
+	assert(bindingIndex_ < memoryMap->numBindingLayouts);
+	Render::BindingLayout const& layout = memoryMap->getBindingLayouts()[bindingIndex_];
+
+	VkWriteDescriptorSet writer { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+	writer.descriptorType = from(layout.type);
+	writer.descriptorCount = 1;
+	writer.dstBinding = bindingIndex_;
+	writer.dstSet = descriptorSets[memoryMapIndex_];
+	assert(writer.descriptorType == VkDescriptorType::VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+
+	VkDescriptorImageInfo imageInfo{};
+	auto texture = texture_.acquire<Render::Texture>();
+	auto vulkanTexture = texture->getStage<Texture>(Texture::s_stage);
+	imageInfo.imageView = vulkanTexture->imageView;
+	imageInfo.imageLayout = vulkanTexture->imageLayout;
+
+	writer.pImageInfo = &imageInfo;
+	vkUpdateDescriptorSets(
+			1,
+			&writer,
+			0,
+			nullptr);
+
+}
+
+auto BindingTable::update(uint8_t memoryMapIndex_,
+			uint32_t bindingIndex_,
+			Render::SamplerHandle const& sampler_) -> void
+{
+	auto memoryMap = memoryMaps[memoryMapIndex_];
+	assert(bindingIndex_ < memoryMap->numBindingLayouts);
+	Render::BindingLayout const& layout = memoryMap->getBindingLayouts()[bindingIndex_];
+
+	VkWriteDescriptorSet writer { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+	writer.descriptorType = from(layout.type);
+	writer.descriptorCount = 1;
+	writer.dstBinding = bindingIndex_;
+	writer.dstSet = descriptorSets[memoryMapIndex_];
+	assert(writer.descriptorType == VkDescriptorType::VK_DESCRIPTOR_TYPE_SAMPLER);
+
+	VkDescriptorImageInfo imageInfo{};
+	auto sampler = sampler_.acquire<Render::Sampler>();
+	auto vulkanSampler = sampler->getStage<Sampler>(Sampler::s_stage);
+
+	imageInfo.sampler = vulkanSampler->sampler;
+
+	writer.pImageInfo = &imageInfo;
+	vkUpdateDescriptorSets(
+			1,
+			&writer,
+			0,
+			nullptr);
+}
+
+auto BindingTable::update(uint8_t memoryMapIndex_,
+			uint32_t bindingIndex_,
+			Render::TextureHandle const& texture_,
+			Render::SamplerHandle const& sampler_) -> void
+{
+	auto memoryMap = memoryMaps[memoryMapIndex_];
+	assert(bindingIndex_ < memoryMap->numBindingLayouts);
+	Render::BindingLayout const& layout = memoryMap->getBindingLayouts()[bindingIndex_];
+
+	VkWriteDescriptorSet writer { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+	writer.descriptorType = from(layout.type);
+	writer.descriptorCount = 1;
+	writer.dstBinding = bindingIndex_;
+	writer.dstSet = descriptorSets[memoryMapIndex_];
+	assert(writer.descriptorType == VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+
+	VkDescriptorImageInfo imageInfo{};
+	auto texture = texture_.acquire<Render::Texture>();
+	auto sampler = sampler_.acquire<Render::Sampler>();
+	auto vulkanTexture = texture->getStage<Texture>(Texture::s_stage);
+	auto vulkanSampler = sampler->getStage<Sampler>(Sampler::s_stage);
+
+	imageInfo.imageView = vulkanTexture->imageView;
+	imageInfo.imageLayout = vulkanTexture->imageLayout;
+	imageInfo.sampler = vulkanSampler->sampler;
+
+	writer.pImageInfo = &imageInfo;
+	vkUpdateDescriptorSets(
+			1,
+			&writer,
+			0,
+			nullptr);
+}
 
 auto BindingTable::update(uint8_t memoryMapIndex_,
 						  uint32_t bindingIndex_,
@@ -134,11 +230,11 @@ auto BindingTable::update(uint8_t memoryMapIndex_,
 	{
 		auto texture = textures_[i].acquire<Render::Texture>();
 		auto vulkanTexture = texture->getStage<Texture>(Texture::s_stage);
+		imageInfos[i] = {};
 		imageInfos[i].imageView = vulkanTexture->imageView;
 		imageInfos[i].imageLayout = vulkanTexture->imageLayout;
 	}
 	writer.pImageInfo = imageInfos.data();
-
 	vkUpdateDescriptorSets(
 			1,
 			&writer,

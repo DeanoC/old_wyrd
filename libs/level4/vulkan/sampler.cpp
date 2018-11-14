@@ -15,12 +15,15 @@ auto Sampler::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 	{
 		auto sampler = std::static_pointer_cast<Render::Sampler>(ptr_);
 		auto vulkanSampler = sampler->getStage<Vulkan::Sampler, false>(stage_);
+		new(vulkanSampler) Sampler();
 
 		auto device = device_.lock();
 		if(!device) return false;
 
-		VkSamplerCreateInfo createInfo{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
-		createInfo.minFilter = from(sampler->magFilter);
+
+		VkSamplerCreateInfo createInfo { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+
+		createInfo.magFilter = from(sampler->magFilter);
 		createInfo.minFilter = from(sampler->minFilter);
 		createInfo.mipmapMode = (sampler->mipFilter == Render::Filter::Nearest) ? VK_SAMPLER_MIPMAP_MODE_NEAREST : VK_SAMPLER_MIPMAP_MODE_LINEAR;
 		createInfo.addressModeU = from(sampler->uAddressMode);

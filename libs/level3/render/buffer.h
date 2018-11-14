@@ -12,16 +12,31 @@
 namespace ResourceManager { class ResourceMan; }
 
 namespace Render {
+struct Encoder;
 
 enum class BufferFlags : uint32_t
 {
 	NoInit = Core::Bit(0),
 	InitZero = Core::Bit(1),
-	Usage = UsageMask << 2
+	CPUDynamic = Core::Bit(2), // not needed for irregular updated but faster for regular
+	Usage = UsageMask << 3
 };
 
 constexpr auto is_bitmask_enum(BufferFlags) -> bool { return true; }
 
+
+// resource stages of Buffer have to implement IGpuBuffer
+struct IGpuBuffer
+{
+	virtual ~IGpuBuffer() = default;
+	// update will allocate a host side buffer, copy the data in and then upload
+	// via the devices DMA queue. Note not always performant but simple
+	virtual auto update(uint8_t const* data_, uint64_t size_) -> void = 0;
+
+	// requires CPUDynamic, provides cpu accessible pointer
+	virtual auto map() -> void* = 0;
+	virtual auto unmap() -> void = 0;
+};
 
 struct alignas(8) Buffer : public ResourceManager::Resource<BufferId>
 {
@@ -63,7 +78,55 @@ struct alignas(8) Buffer : public ResourceManager::Resource<BufferId>
 
 	constexpr auto canBeWrittenAsTexture() const { return testUsageFlag(Usage::TextureWrite); }
 
-	auto getData() const -> uint8_t* { return (uint8_t*) (this + 1); }
+	constexpr auto canBeUpdatedByCPU() const { return Core::bitmask::test_equal(flags, BufferFlags::CPUDynamic); }
+
+
+	constexpr auto hasImplicitData() const -> bool {
+		using namespace Core::bitmask;
+		return !test_any(flags, BufferFlags::InitZero | BufferFlags::NoInit);
+	}
+
+	auto getData() const -> uint8_t const* { assert(hasImplicitData()); return (uint8_t const*) (this + 1); }
+	auto getData() -> uint8_t* { assert(hasImplicitData()); return(uint8_t*) (this + 1); }
+
+	// use if you've edited the implicit data (does update/map etc. for you)
+	auto implicitDataChanged() const;
+
+#define INTERFACE_THUNK(name) \
+    template<typename... Args> auto name(Args... args) const -> void { \
+        for(auto i = 0u; i < getStageCount(); ++i) \
+        { \
+        	auto iptr = getStage<IGpuBuffer>(i+1); \
+            assert(iptr != nullptr); \
+            iptr->name(args...); \
+        }; \
+	}
+
+	INTERFACE_THUNK(update);
+    INTERFACE_THUNK(unmap);
+
+#undef INTERFACE_THUNK
+    // map can only be done stage by stage so either pass the exact stage OR
+    // ~0 (default) will use the first stage
+	auto map(uint32_t stage_ = ~0) const -> void*
+	{
+		if(stage_ == ~0)
+		{
+			for(auto i = 0u; i < getStageCount(); ++i)
+			{
+				auto iptr = getStage<IGpuBuffer>(i+1);
+				assert(iptr != nullptr);
+				return iptr->map();
+			};
+			return nullptr;
+		} else
+		{
+			auto iptr = getStage<IGpuBuffer>(stage_+1);
+			assert(iptr != nullptr);
+			return iptr->map();
+		}
+	}
+
 	uint64_t sizeInBytes;
 	BufferFlags flags;
 	uint32_t padd;

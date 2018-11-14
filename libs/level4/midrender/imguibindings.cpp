@@ -1,11 +1,15 @@
 
 #include "core/core.h"
 #include "render/bindingtable.h"
+#include "render/buffer.h"
+#include "render/encoder.h"
 #include "render/sampler.h"
 #include "render/shader.h"
 #include "render/pipeline.h"
+#include "render/rasterisationstate.h"
 #include "render/texture.h"
 #include "render/vertexinput.h"
+#include "render/viewport.h"
 #include "midrender/stocks.h"
 #include "resourcemanager/resourceman.h"
 #include "midrender/imguibindings.h"
@@ -92,11 +96,13 @@ std::vector<uint32_t> glsl_shader_frag_spv{
 } // end anon namespace
 
 
-auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan>& rm_) -> bool
+auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan>& rm_) -> void
 {
 	using namespace Render;
 	using namespace ResourceManager;
 	using namespace Core::bitmask;
+
+	rm = rm_;
 
 	vertexShaderHandle = SPIRVShader::Create(
 			rm_,
@@ -145,9 +151,9 @@ auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan>& rm_) -> 
 			rm_,
 			ResourceNameView("mem$ImguiVertexFormat"),
 			{
-				{0, VertexInputLocation(Position), VertexInputType::Float3},
-				{0, VertexInputLocation(1), VertexInputType::Float2},
-				{0, VertexInputLocation(2), VertexInputType::Byte4}
+				{VertexInputLocation(Position), VertexInputType::Float2},
+				{VertexInputLocation(1), VertexInputType::Float2},
+				{VertexInputLocation(2), VertexInputType::Byte4}
 			});
 
 	pipelineHandle = RenderPipeline::Create(
@@ -165,12 +171,18 @@ auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan>& rm_) -> 
 				fragmentShaderHandle
 			},
 			rm_->openByName<RasterisationStateId>(Stock::defaultRasterState),
-			rm_->openByName<RenderPassId>(Stock::defaultRenderPass),
+			rm_->openByName<RenderPassId>(Stock::simpleForwardRendererRenderPass),
 			rm_->openByName<ROPBlenderId>(Stock::singleOverROPBlender),
-			vertexFormatHandle
+			vertexFormatHandle,
+			rm_->openByName<ViewportId>(Stock::simpleForwardRendererViewport)
 	);
 
+	IMGUI_CHECKVERSION();
+	context = ImGui::CreateContext();
+
 	ImGuiIO& io = ImGui::GetIO();
+//	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
 	unsigned char* pixels;
 	int width, height;
 	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
@@ -190,7 +202,7 @@ auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan>& rm_) -> 
 	fontTextureHandle = Texture::Create(
 			rm_,
 			ResourceNameView("mem$ImguiFontTexture"),
-			Texture::FromUsage(Usage::DMADst | Usage::TextureRead),
+			Texture::FromUsage(Usage::DMADst | Usage::ShaderRead),
 			width,
 			height,
 			1,
@@ -219,8 +231,159 @@ auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan>& rm_) -> 
 //		platform_io.Renderer_RenderWindow = ImGui_ImplVulkan_RenderWindow;
 //		platform_io.Renderer_SwapBuffers = ImGui_ImplVulkan_SwapBuffers;
 	}
-	return true;
-
 }
+
+auto ImguiBindings::destroy() -> void
+{
+}
+auto ImguiBindings::newFrame(uint32_t width_, uint32_t height_) -> void
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.DisplaySize.x = width_;
+	io.DisplaySize.y = height_;
+
+	ImGui::NewFrame();
+}
+
+auto ImguiBindings::render(std::shared_ptr<Render::Encoder>& encoder_) -> void
+{
+	using namespace Render;
+	using namespace Core::bitmask;
+	using namespace ResourceManager;
+
+	ImGui::EndFrame();
+	ImGui::Render();
+	auto drawData = ImGui::GetDrawData();
+
+	assert(drawData);
+	if (drawData->TotalVtxCount == 0)
+		return;
+
+	// Create the Vertex and Index buffers:
+	size_t const vertexSize = drawData->TotalVtxCount * sizeof(ImDrawVert);
+	size_t const indexSize = drawData->TotalIdxCount * sizeof(ImDrawIdx);
+
+	if (allocatedVertexBufferSize < vertexSize)
+	{
+		// TODO add the ability to hint resource manager to dump the old resource
+		std::string name("mem$ImguiVertexBuffer_gen");
+		name += std::to_string(vertexBufferAllocGeneration++);
+		auto handle = Buffer::Create(
+				rm,
+				ResourceNameView(name),
+				BufferFlags::NoInit | BufferFlags::CPUDynamic |
+				Buffer::FromUsage(Usage::DMADst | Usage::VertexRead),
+				vertexSize);
+		vertexBuffer = handle.acquire<Buffer>();
+		allocatedVertexBufferSize = vertexSize;
+	}
+
+	if (allocatedIndexBufferSize < indexSize)
+	{
+		std::string name("mem$ImguiIndexBuffer_gen");
+		name += std::to_string(indexBufferAllocGeneration++);
+		auto handle = Buffer::Create(
+				rm,
+				ResourceNameView(name),
+				BufferFlags::NoInit | BufferFlags::CPUDynamic |
+				Buffer::FromUsage(Usage::DMADst | Usage::IndexRead),
+				indexSize);
+		indexBuffer = handle.acquire<Buffer>();
+		allocatedIndexBufferSize = indexSize;
+	}
+
+	// upload vertex and index data
+	ImDrawVert* vtx_dst = (ImDrawVert*)vertexBuffer->map();
+	ImDrawIdx* idx_dst = (ImDrawIdx*)indexBuffer->map();
+	assert(vtx_dst);
+	assert(idx_dst);
+	for (int n = 0; n < drawData->CmdListsCount; n++)
+	{
+		const ImDrawList* cmd_list = drawData->CmdLists[n];
+		memcpy(vtx_dst, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+		memcpy(idx_dst, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+		vtx_dst += cmd_list->VtxBuffer.Size;
+		idx_dst += cmd_list->IdxBuffer.Size;
+	}
+	indexBuffer->unmap();
+	vertexBuffer->unmap();
+
+
+	// update bindingTable for texture and sampler
+	auto bindingTable = bindingTableHandle.acquire<BindingTable>();
+	bindingTable->update(0, 0, fontTextureHandle, fontSamplerHandle );
+
+	// bind stuff
+	auto renderEncoder = encoder_->asRenderEncoder();
+	auto renderPipeline = pipelineHandle.acquire<RenderPipeline>();
+	renderEncoder->bind(renderPipeline, bindingTable);
+	renderEncoder->bindVertexBuffer(vertexBuffer);
+	renderEncoder->bindIndexBuffer(indexBuffer);
+
+	// set push constants used for scaling
+	std::array<float,2> scale {
+			2.0f / drawData->DisplaySize.x,
+			2.0f / drawData->DisplaySize.y
+	};
+	std::array<float, 2> translate {
+			-1.0f - drawData->DisplayPos.x * scale[0],
+			-1.0f - drawData->DisplayPos.y * scale[1]
+	};
+
+	ViewportDef viewport;
+	viewport.x = 0;
+	viewport.y = 0;
+	viewport.width = drawData->DisplaySize.x;
+	viewport.height = drawData->DisplaySize.y;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	renderEncoder->setDynamicViewport(0, viewport);
+
+	renderEncoder->pushConstants(
+			renderPipeline,
+			PushConstantRange{0, sizeof(float)*2, ShaderType::Vertex,},
+			scale.data());
+	renderEncoder->pushConstants(
+			renderPipeline,
+			PushConstantRange{sizeof(float)*2, sizeof(float)*2, ShaderType::Vertex,},
+			translate.data());
+
+	// draw lists setting scissor as we go
+	// Render the command lists:
+	int vtx_offset = 0;
+	int idx_offset = 0;
+	ImVec2 display_pos = drawData->DisplayPos;
+	for (int n = 0; n < drawData->CmdListsCount; n++)
+	{
+		const ImDrawList* cmd_list = drawData->CmdLists[n];
+		for(int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+		{
+			const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
+			if(pcmd->UserCallback)
+			{
+//				pcmd->UserCallback(cmd_list, pcmd);
+			} else
+			{
+				// Apply scissor/clipping rectangle
+				// FIXME: We could clamp width/height based on clamped min/max values.
+				Render::Scissor scissor;
+				scissor.offset[0] =
+						(int32_t) (pcmd->ClipRect.x - display_pos.x) > 0 ? (int32_t) (pcmd->ClipRect.x - display_pos.x)
+																		 : 0;
+				scissor.offset[1] =
+						(int32_t) (pcmd->ClipRect.y - display_pos.y) > 0 ? (int32_t) (pcmd->ClipRect.y - display_pos.y)
+																		 : 0;
+				scissor.extent[0] = (uint32_t) (pcmd->ClipRect.z - pcmd->ClipRect.x);
+				scissor.extent[1] = (uint32_t) (pcmd->ClipRect.w - pcmd->ClipRect.y + 1); // FIXME: Why +1 here?
+				renderEncoder->setDynamicScissor(0, scissor);
+				// Draw
+				renderEncoder->drawIndexed(pcmd->ElemCount, idx_offset, vtx_offset);
+			}
+			idx_offset += pcmd->ElemCount;
+		}
+		vtx_offset += cmd_list->VtxBuffer.Size;
+	}
+}
+
 
 } // end MidRender namespace

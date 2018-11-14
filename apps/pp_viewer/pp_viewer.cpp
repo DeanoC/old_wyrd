@@ -234,6 +234,12 @@ struct App
 		do
 		{
 			rEncoderPool->reset();
+			imguiBindings->newFrame(display->getWidth(), display->getHeight());
+
+			bool show_demo_window = true;
+			if (show_demo_window)
+				ImGui::ShowDemoWindow(&show_demo_window);
+
 			auto encoder = rEncoderPool->allocateEncoder(EncoderFlag::RenderEncoder);
 			auto renderEncoder = encoder->asRenderEncoder();
 
@@ -251,7 +257,12 @@ struct App
 			renderEncoder->bindIndexBuffer(iBuffer);
 			renderEncoder->pushConstants(renderPipeline, PushConstantRange{64, 16, ShaderType::Fragment,}, &red);
 			renderEncoder->drawIndexed(3);
+
+			imguiBindings->render(encoder);
+
 			renderEncoder->endRenderPass();
+
+
 			colourRT0->transitionToDMASrc(encoder);
 
 			encoder->end();

@@ -264,13 +264,16 @@ constexpr auto from(Render::ROPBlendFactor const in_) -> VkBlendFactor
 
 	bool invert = false;
 
+	ROPBlendFactor in = in_;
+
 	if(uint8_t(in_) & uint8_t(ROPBlendFactor::InvertedBit))
 	{
 		assert(in_ != ROPBlendFactor::SrcAlphaSaturate);
 		invert = true;
+		in = (ROPBlendFactor)(uint8_t(in_) & ~uint8_t(ROPBlendFactor::InvertedBit));
 	}
 
-	switch(in_)
+	switch(in)
 	{
 		case ROPBlendFactor::Zero:
 			return invert ? VK_BLEND_FACTOR_ONE : VK_BLEND_FACTOR_ZERO;
@@ -458,7 +461,7 @@ constexpr auto from(Render::SampleCounts const in_) -> uint8_t
 	ret |= test_equal(in_, SampleCounts::SixtyFour) ? VK_SAMPLE_COUNT_64_BIT : 0;
 	return ret;
 }
-constexpr auto from(Render::Filter const& in_)
+constexpr auto from(Render::Filter const& in_) -> VkFilter
 {
 	using namespace Render;
 	switch(in_)
@@ -469,7 +472,7 @@ constexpr auto from(Render::Filter const& in_)
 	}
 }
 
-constexpr auto from(Render::SamplerAddressMode const& in_)
+constexpr auto from(Render::SamplerAddressMode const& in_) -> VkSamplerAddressMode
 {
 	using namespace Render;
 	switch(in_)

@@ -74,6 +74,7 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 		createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		vulkanTexture->imageLayout = createInfo.initialLayout;
+		vulkanTexture->createInfo = createInfo;
 
 		VmaAllocationCreateInfo gpuAllocInfo{};
 		gpuAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -119,14 +120,14 @@ auto Texture::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device:
 		{
 			if(test_equal(texture->flags, Render::TextureFlags::InitZero))
 			{
-				device->fill(0x0, createInfo, texture);
+				device->fill(0x0, vulkanTexture);
 			}
 			else
 			{
 				auto img = texture->imageHandle.acquire<Render::GenericImage>();
 				assert(img);
 
-				device->upload(img->data(), img->dataSize, createInfo, texture);
+				device->upload(img->data(), img->dataSize, vulkanTexture);
 			}
 		}
 

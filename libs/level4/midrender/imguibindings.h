@@ -11,10 +11,17 @@
 namespace ResourceManager { class ResourceMan; }
 
 namespace MidRender {
+struct Encoder;
 
 struct ImguiBindings
 {
-	auto init(std::shared_ptr<ResourceManager::ResourceMan>& rm_) -> bool;
+	auto init(std::shared_ptr<ResourceManager::ResourceMan>& rm_) -> void;
+	auto destroy() -> void;
+
+	auto newFrame(uint32_t width_, uint32_t height_) -> void;
+	auto render(std::shared_ptr<Render::Encoder>& encoder_) -> void;
+
+	std::shared_ptr<ResourceManager::ResourceMan> rm;
 
 	Render::SPIRVShaderHandle vertexShaderHandle;
 	Render::SPIRVShaderHandle fragmentShaderHandle;
@@ -23,9 +30,17 @@ struct ImguiBindings
 	Render::SamplerHandle fontSamplerHandle;
 	Render::VertexInputHandle vertexFormatHandle;
 	Render::TextureHandle fontTextureHandle;
-
 	Render::RenderPipelineHandle pipelineHandle;
 
+	uint64_t allocatedVertexBufferSize = 0;
+	uint64_t allocatedIndexBufferSize = 0;
+	Render::BufferConstPtr vertexBuffer;
+	Render::BufferConstPtr indexBuffer;
+
+	uint32_t vertexBufferAllocGeneration = 0;
+	uint32_t indexBufferAllocGeneration = 0;
+
+	ImGuiContext* context;
 };
 
 }

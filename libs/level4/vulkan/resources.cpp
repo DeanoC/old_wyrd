@@ -8,6 +8,7 @@
 #include "vulkan/renderpass.h"
 #include "vulkan/pipeline.h"
 #include "vulkan/bindingtable.h"
+#include "vulkan/sampler.h"
 #include "vulkan/shadermodule.h"
 
 namespace Vulkan {
@@ -22,7 +23,7 @@ auto RegisterResourceHandlers(ResourceManager::ResourceMan& rm_, Device::Ptr dev
 	BindingTableMemoryMap::RegisterResourceHandler(rm_, device_);
 	RenderPipeline::RegisterResourceHandler(rm_, device_);
 	//	ComputePipeline::RegisterResourceHandler(rm_, device_);
-
+	Sampler::RegisterResourceHandler(rm_, device_);
 
 }
 }

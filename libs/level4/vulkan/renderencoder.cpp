@@ -1,9 +1,12 @@
 #include "core/core.h"
 
+#include "render/bindingtable.h"
 #include "render/buffer.h"
 #include "render/commandqueue.h"
 #include "render/pipeline.h"
+#include "render/viewport.h"
 
+#include "vulkan/bindingtable.h"
 #include "vulkan/buffer.h"
 #include "vulkan/texture.h"
 #include "vulkan/semaphore.h"
@@ -203,6 +206,23 @@ auto RenderEncoder::resolveForDisplay(
 		assert(false);
 	}
 }
+auto RenderEncoder::bind(Render::RenderPipelineConstPtr const& pipeline_, Render::BindingTableConstPtr const& bindingTable_) -> void
+{
+	auto pipeline = pipeline_->getStage<RenderPipeline>(RenderPipeline::s_stage);
+	auto bindingTable = bindingTable_->getStage<BindingTable>(BindingTable::s_stage);
+
+	bind(pipeline_);
+
+	vkCmdBindDescriptorSets(
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			pipeline->layout,
+			0,
+			(uint32_t)bindingTable->descriptorSets.size(),
+			bindingTable->descriptorSets.data(),
+			0,
+			nullptr);
+
+}
 
 auto RenderEncoder::bind(Render::RenderPipelineConstPtr const& pipeline_) -> void
 {
@@ -244,6 +264,27 @@ auto RenderEncoder::drawIndexed(uint32_t indexCount_, uint32_t indexOffset_, uin
 								uint32_t instanceCount_, uint32_t instanceOffset_) -> void
 {
 	vkCmdDrawIndexed(indexCount_, instanceCount_, indexOffset_, vertexOffset, instanceOffset_);
+}
+
+auto RenderEncoder::setDynamicViewport(uint32_t viewportIndex_, Render::ViewportDef const& viewport_) -> void
+{
+	VkViewport vkviewport{};
+	vkviewport.x = viewport_.x;
+	vkviewport.y = viewport_.y;
+	vkviewport.width = viewport_.width;
+	vkviewport.height = viewport_.height;
+	vkviewport.minDepth = viewport_.minDepth;
+	vkviewport.maxDepth = viewport_.maxDepth;
+	vkCmdSetViewport(viewportIndex_, 1, &vkviewport);
+}
+auto RenderEncoder::setDynamicScissor(uint32_t viewportIndex_, Render::Scissor const& scissor_) -> void
+{
+	VkRect2D scissor{};
+	scissor.offset.x = scissor_.offset[0];
+	scissor.offset.y = scissor_.offset[1];
+	scissor.extent.width = scissor_.extent[0];
+	scissor.extent.height = scissor_.extent[1];
+	vkCmdSetScissor(viewportIndex_, 1, &scissor);
 }
 
 }

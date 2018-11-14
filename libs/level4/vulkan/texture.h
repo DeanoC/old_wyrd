@@ -38,9 +38,10 @@ struct Texture : public Render::IGpuTexture
 	VkImageViewType imageViewType;
 	VkImageView imageView; // the default view same as when created
 	VkImageSubresourceRange entireRange;
+	VkImageCreateInfo createInfo;
 
 	// note this assumes a single writer of this state!
-	VkImageLayout imageLayout; // this holds the current layout
+	mutable VkImageLayout imageLayout; // this holds the current layout
 };
 
 }

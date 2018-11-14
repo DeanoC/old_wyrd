@@ -38,6 +38,7 @@ auto RegisterResourceHandlers(ResourceManager::ResourceMan& rm_) -> void
 	VertexInput::RegisterResourceHandler(rm_);
 	Buffer::RegisterResourceHandler(rm_);
 	RasterisationState::RegisterResourceHandler(rm_);
+	Sampler::RegisterResourceHandler(rm_);
 }
 
 } // end namespace

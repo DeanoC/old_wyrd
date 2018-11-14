@@ -23,6 +23,8 @@ struct RenderEncoder : public Render::IRenderEncoder
 	) -> void final;
 	auto endRenderPass() -> void final;
 	auto blit(Render::TextureConstPtr const& src_, Render::TextureConstPtr const& dst_) -> void final;
+
+	auto bind(Render::RenderPipelineConstPtr const& pipeline_, Render::BindingTableConstPtr const& bindingTable_) -> void final;
 	auto bind(Render::RenderPipelineConstPtr const& pipeline_) -> void final;
 	auto bindVertexBuffer(Render::BufferConstPtr const& buffer_, uint64_t offset_ = 0,
 						  uint32_t bindingIndex = 0) -> void final;
@@ -35,6 +37,9 @@ struct RenderEncoder : public Render::IRenderEncoder
 			  uint32_t instanceOffset_) -> void final;
 	auto drawIndexed(uint32_t indexCount_, uint32_t indexOffset_, uint32_t vertexOffset,
 					 uint32_t instanceCount_, uint32_t instanceOffset_) -> void final;
+
+	auto setDynamicViewport(uint32_t viewportIndex_, Render::ViewportDef const& viewport_) -> void final;
+	auto setDynamicScissor(uint32_t viewportIndex_, Render::Scissor const& scissor_) -> void final;
 
 #define GENERAL_CB_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(commandBuffer, args...); }
 #define GENERAL_CB_VK_FUNC_EXT(name, extension) GENERAL_CB_VK_FUNC(name)

@@ -17,14 +17,23 @@ struct ResourceNameView;
 
 namespace Render {
 
-struct ViewportAndScissor
+struct ViewportDef
 {
 	float x, y;
 	float width, height;
 	float minDepth, maxDepth;
-	std::array<int32_t, 2> scissorOffset;
-	std::array<uint32_t, 2> scissorExtent;
 };
+struct Scissor
+{
+	std::array<int32_t, 2> offset;
+	std::array<uint32_t, 2> extent;
+};
+struct ViewportAndScissor
+{
+	ViewportDef viewport;
+	Scissor scissor;
+};
+
 
 struct alignas(8) Viewport : public ResourceManager::Resource<ViewportId>
 {

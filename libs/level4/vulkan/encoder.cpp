@@ -71,6 +71,7 @@ auto Encoder::reset() -> void
 auto Encoder::copy(Render::TextureConstPtr const& src_, Render::TextureConstPtr const& dst_) -> void
 {
 	Texture* src = src_->getStage<Texture>(Texture::s_stage);
+	Texture* dst = dst_->getStage<Texture>(Texture::s_stage);
 
 	VkImageSubresourceLayers srcLayers;
 	srcLayers.aspectMask = src->entireRange.aspectMask;
@@ -78,7 +79,7 @@ auto Encoder::copy(Render::TextureConstPtr const& src_, Render::TextureConstPtr 
 	srcLayers.layerCount = src->entireRange.layerCount;
 	srcLayers.mipLevel = src_->mipLevels;
 
-	copy(src->image, src->imageLayout, srcLayers, dst_);
+	copy(src->image, src->imageLayout, srcLayers, dst);
 
 }
 
@@ -91,24 +92,23 @@ auto Encoder::fill(uint32_t fill_, Render::BufferConstPtr const& dst_) -> void
 auto Encoder::copy(VkImage srcImage_,
 				   VkImageLayout srcLayout_,
 				   VkImageSubresourceLayers const& srcExtents_,
-				   Render::TextureConstPtr const& dst_) -> void
+				   Texture const* dst_) -> void
 {
-	Texture* dst = dst_->getStage<Texture>(Texture::s_stage);
-	assert(srcExtents_.aspectMask == dst->entireRange.aspectMask);
-	assert(srcExtents_.layerCount == dst->entireRange.layerCount);
+	assert(srcExtents_.aspectMask == dst_->entireRange.aspectMask);
+	assert(srcExtents_.layerCount == dst_->entireRange.layerCount);
 
-	uint32_t mipCount = std::min(dst_->mipLevels, srcExtents_.mipLevel);
+	uint32_t mipCount = std::min(dst_->createInfo.mipLevels, srcExtents_.mipLevel);
 
 	VkImageCopy imageCopy = {};
 	imageCopy.srcSubresource = srcExtents_;
-	imageCopy.dstSubresource.aspectMask = dst->entireRange.aspectMask;
-	imageCopy.dstSubresource.baseArrayLayer = dst->entireRange.baseArrayLayer;
-	imageCopy.dstSubresource.layerCount = dst->entireRange.layerCount;
+	imageCopy.dstSubresource.aspectMask = dst_->entireRange.aspectMask;
+	imageCopy.dstSubresource.baseArrayLayer = dst_->entireRange.baseArrayLayer;
+	imageCopy.dstSubresource.layerCount = dst_->entireRange.layerCount;
 	imageCopy.srcOffset = {0, 0, 0};
 	imageCopy.dstOffset = {0, 0, 0};
-	imageCopy.extent.width = dst_->width;
-	imageCopy.extent.height = dst_->height;
-	imageCopy.extent.depth = dst_->depth;
+	imageCopy.extent.width = dst_->createInfo.extent.width;
+	imageCopy.extent.height = dst_->createInfo.extent.height;
+	imageCopy.extent.depth = dst_->createInfo.extent.depth;
 
 	VkImageCopy mipCopy[16]; // 16 mip maps would be crazy big texture
 	for(auto i = 0u; i < mipCount; ++i)
@@ -119,21 +119,18 @@ auto Encoder::copy(VkImage srcImage_,
 	}
 
 	vkCmdCopyImage(srcImage_, srcLayout_,
-				   dst->image, dst->imageLayout,
+				   dst_->image, dst_->imageLayout,
 				   mipCount, mipCopy);
-
 }
 
 auto Encoder::copy(VkBuffer srcBuffer_,
 				   uint64_t srcOffset_,
 				   uint64_t srcBytes_,
-				   Render::BufferConstPtr const& dst_) -> void
+				   Buffer const* dst_) -> void
 {
-	Buffer* dst = dst_->getStage<Buffer>(Buffer::s_stage);
-
 	VkBufferCopy region{srcOffset_, 0, srcBytes_};
 
-	vkCmdCopyBuffer(srcBuffer_, dst->buffer, 1, &region);
+	vkCmdCopyBuffer(srcBuffer_, dst_->buffer, 1, &region);
 }
 
 auto Encoder::textureBarrier(
@@ -196,4 +193,10 @@ auto Encoder::bufferBarrier(VkPipelineStageFlagBits srcStage_, VkPipelineStageFl
 			1, &barrier_,
 			0, nullptr);
 }
+
+auto Encoder::fill(uint32_t fill_, Buffer const* dst_) -> void
+{
+	vkCmdFillBuffer(dst_->buffer, 0, VK_WHOLE_SIZE, fill_);
+}
+
 }

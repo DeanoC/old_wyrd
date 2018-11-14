@@ -43,6 +43,19 @@ struct IGpuBindingTable
 
 	virtual auto update(uint8_t memoryMapIndex_,
 						uint32_t bindingIndex_,
+						Render::TextureHandle const& texture_) -> void = 0;
+
+	virtual auto update(uint8_t memoryMapIndex_,
+						uint32_t bindingIndex_,
+						Render::SamplerHandle const& sampler_) -> void = 0;
+
+	virtual auto update(uint8_t memoryMapIndex_,
+						uint32_t bindingIndex_,
+						Render::TextureHandle const& texture_,
+						Render::SamplerHandle const& sampler_) -> void = 0;
+
+	virtual auto update(uint8_t memoryMapIndex_,
+						uint32_t bindingIndex_,
 						std::vector<Render::TextureHandle> const& textures_) -> void = 0;
 };
 

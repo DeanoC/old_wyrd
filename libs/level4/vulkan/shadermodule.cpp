@@ -14,6 +14,7 @@ auto ShaderModule::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 	{
 		auto shader = std::static_pointer_cast<Render::SPIRVShader>(ptr_);
 		auto vulkanShaderModule = shader->getStage<Vulkan::ShaderModule, false>(stage_);
+		new(vulkanShaderModule) ShaderModule();
 
 		auto device = device_.lock();
 		if(!device) return false;

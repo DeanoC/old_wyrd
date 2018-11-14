@@ -52,6 +52,11 @@ auto Buffer::Create(
 	{
 		dataSize = 0;
 		noInit = true;
+		// if we don't have any data and not zero init set the noinit flag
+		if(data_ == nullptr && !test_equal(flags_, BufferFlags::InitZero))
+		{
+			flags_ |= BufferFlags::NoInit;
+		}
 	}
 
 	size_t const totalSize = Core::alignTo(sizeof(Buffer) + dataSize, 8);
@@ -73,5 +78,10 @@ auto Buffer::Create(
 	return rm_->openByName<Id>(name_);
 }
 
+auto Buffer::implicitDataChanged() const
+{
+	assert(Core::bitmask::test_equal(flags, BufferFlags::CPUDynamic));
+
+}
 
 } // end namespace

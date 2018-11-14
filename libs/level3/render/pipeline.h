@@ -50,7 +50,7 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 			RenderPassHandle renderPass_,
 			ROPBlenderHandle ropBlender_,
 			VertexInputHandle vertexInput_,
-			ViewportHandle viewport_ = {}
+			ViewportHandle viewport_
 			) -> RenderPipelineHandle;
 
 	auto isPrimitiveRestartEnabled() const

@@ -17,7 +17,8 @@ auto RenderTarget::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 								  std::shared_ptr<ResourceManager::ResourceBase> ptr_) -> bool
 	{
 		auto renderTarget = std::static_pointer_cast<Render::RenderTarget const>(ptr_);
-		Vulkan::RenderTarget* vulkanRenderTarget = renderTarget->getStage<Vulkan::RenderTarget, false>(stage_);
+		RenderTarget* vulkanRenderTarget = renderTarget->getStage<Vulkan::RenderTarget, false>(stage_);
+		new(vulkanRenderTarget) RenderTarget();
 
 		std::vector<VkImageView> images(renderTarget->numTargetTextures);
 		std::vector<Render::TextureConstPtr> targets(renderTarget->numTargetTextures);

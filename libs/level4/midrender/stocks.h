@@ -23,6 +23,7 @@ namespace Stock
 inline static auto defaultRenderPass = ResourceManager::ResourceNameView("mem$defaultRenderPass");
 inline static auto singleOpaqueROPBlender = ResourceManager::ResourceNameView("mem$singleOpaqueROPBlender");
 inline static auto singleOverROPBlender = ResourceManager::ResourceNameView("mem$singleOverROPBlender");
+inline static auto singleDynamicViewport = ResourceManager::ResourceNameView("mem$singleDynamicViewport");
 inline static auto defaultRasterState = ResourceManager::ResourceNameView("mem$defaultRasterState");
 
 inline static auto blank4x4Tex = ResourceManager::ResourceNameView("mem$blankTex4x4");

@@ -95,22 +95,24 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 	using namespace Core::bitmask;
 
 	auto registerFunc = [device_](int stage_, ResourceManager::ResolverInterface resolver_, uint16_t, uint16_t,
-								  std::shared_ptr<ResourceManager::ResourceBase> ptr_) -> bool
+		std::shared_ptr<ResourceManager::ResourceBase> ptr_) -> bool
 	{
 		auto renderPipeline = std::static_pointer_cast<Render::RenderPipeline>(ptr_);
 		auto vulkanRenderPipeline = renderPipeline->getStage<Vulkan::RenderPipeline, false>(stage_);
+		new(vulkanRenderPipeline) RenderPipeline();
+
 		auto[getRMFunc, resolverFunc, resourceNameFunc] = resolver_;
 
 		auto device = device_.lock();
-		if(!device) return false;
+		if (!device) return false;
 
 		// TODO pipeline inheritance
-		VkGraphicsPipelineCreateInfo createInfo{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
-		VkPipelineLayoutCreateInfo layoutCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+		VkGraphicsPipelineCreateInfo createInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
+		VkPipelineLayoutCreateInfo layoutCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 
 		layoutCreateInfo.setLayoutCount = renderPipeline->numBindingTableMemoryMaps;
 		std::vector<VkDescriptorSetLayout> layouts(renderPipeline->numBindingTableMemoryMaps);
-		for(auto i = 0u; i < renderPipeline->numBindingTableMemoryMaps; ++i)
+		for (auto i = 0u; i < renderPipeline->numBindingTableMemoryMaps; ++i)
 		{
 			auto memmap = renderPipeline->getBindingTableMemoryMapHandles()[i].acquire<Render::BindingTableMemoryMap>();
 			auto bindingLayout = memmap->getStage<Vulkan::BindingTableMemoryMap>(BindingTableMemoryMap::s_stage);
@@ -119,7 +121,7 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 		layoutCreateInfo.pSetLayouts = layouts.data();
 		layoutCreateInfo.pushConstantRangeCount = renderPipeline->numPushConstantRanges;
 		std::vector<VkPushConstantRange> pushConstants(renderPipeline->numPushConstantRanges);
-		for(auto i = 0u; i < renderPipeline->numPushConstantRanges; ++i)
+		for (auto i = 0u; i < renderPipeline->numPushConstantRanges; ++i)
 		{
 			auto const& pushC = renderPipeline->getPushConstantRanges()[i];
 			pushConstants[i].stageFlags = from(pushC.shaderAccess);
@@ -130,14 +132,14 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 
 		std::vector<VkPipelineShaderStageCreateInfo> stages;
 		stages.reserve(renderPipeline->numShaders);
-		for(auto m = 0u; m < renderPipeline->numShaders; ++m)
+		for (auto m = 0u; m < renderPipeline->numShaders; ++m)
 		{
 			auto const& handle = renderPipeline->getSPIRVShaderHandles()[m];
-			if(handle.isValid())
+			if (handle.isValid())
 			{
 				auto shader = handle.acquire<Render::SPIRVShader>();
 				auto vulkanShader = shader->getStage<ShaderModule>(ShaderModule::s_stage);
-				VkPipelineShaderStageCreateInfo stage{VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
+				VkPipelineShaderStageCreateInfo stage{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
 				stage.module = vulkanShader->shaderModule;
 				stage.stage = fromSingle(shader->shaderType);
 				stage.pName = "main"; // TODO
@@ -145,11 +147,11 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 				stages.push_back(stage);
 			}
 		}
-		createInfo.stageCount = (uint32_t) stages.size();
+		createInfo.stageCount = (uint32_t)stages.size();
 		createInfo.pStages = stages.data();
 
 		VkPipelineInputAssemblyStateCreateInfo inputCreateInfo{
-				VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
+				VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
 		inputCreateInfo.topology = from(renderPipeline->inputTopology);
 		inputCreateInfo.primitiveRestartEnable = renderPipeline->isPrimitiveRestartEnabled();
 		createInfo.pInputAssemblyState = &inputCreateInfo;
@@ -157,39 +159,40 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 		auto vertexInput = renderPipeline->vertexInput.acquire<Render::VertexInput>();
 
 		VkPipelineVertexInputStateCreateInfo vertexCreateInfo = {
-				VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
-		vertexCreateInfo.vertexAttributeDescriptionCount = vertexInput->numVertexInputs;
-		vertexCreateInfo.vertexBindingDescriptionCount = vertexInput->numVertexInputs;
+				VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
 
-		std::vector<VkVertexInputBindingDescription> vinputBinding(vertexInput->numVertexInputs);
 		std::vector<VkVertexInputAttributeDescription> vinputAttr(vertexInput->numVertexInputs);
-		for(auto l = 0u; l < vertexInput->numVertexInputs; ++l)
+		for (auto l = 0u; l < vertexInput->numVertexInputs; ++l)
 		{
 			auto const& input = vertexInput->getInputs()[l];
-			auto& inputBinding = vinputBinding[l];
 			auto& inputAttr = vinputAttr[l];
 			inputAttr.format = from(input.type);
-			inputAttr.location = input.shaderIndex;
-			inputAttr.binding = input.binding;
+			inputAttr.binding = 0;
+			inputAttr.location = input.location;
 			inputAttr.offset = vertexInput->getElementOffset(l);
-			inputBinding.binding = input.binding;
-			inputBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-			inputBinding.stride = vertexInput->getStride();
 		}
+		VkVertexInputBindingDescription inputBinding;
+		inputBinding.binding = 0;
+		inputBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		inputBinding.stride = vertexInput->getStride();
+
+		vertexCreateInfo.vertexAttributeDescriptionCount = vertexInput->numVertexInputs;
 		vertexCreateInfo.pVertexAttributeDescriptions = vinputAttr.data();
-		vertexCreateInfo.pVertexBindingDescriptions = vinputBinding.data();
+		vertexCreateInfo.vertexBindingDescriptionCount = 1;
+		vertexCreateInfo.pVertexBindingDescriptions = &inputBinding;
+
 		createInfo.pVertexInputState = &vertexCreateInfo;
 
 		auto rasterState = renderPipeline->rasterisationState.acquire<Render::RasterisationState>();
 
 		VkPipelineRasterizationStateCreateInfo rasterStateCreateInfo{
-				VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
+				VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
 		VkPipelineTessellationStateCreateInfo tessStateCreateInfo{
-				VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO};
+				VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO };
 		VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo{
-				VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
+				VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
 		VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo{
-				VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
+				VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
 
 		rasterStateCreateInfo.rasterizerDiscardEnable = rasterState->isDiscardEnabled();
 
@@ -230,7 +233,7 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 		multisampleStateCreateInfo.alphaToCoverageEnable = rasterState->isAlphaToCoverageEnabled();
 		multisampleStateCreateInfo.alphaToOneEnable = rasterState->isAlphaToOneEnabled();
 		multisampleStateCreateInfo.minSampleShading = rasterState->minSampleShadingRate;
-		multisampleStateCreateInfo.pSampleMask = (VkSampleMask*) &rasterState->sampleMask;
+		multisampleStateCreateInfo.pSampleMask = (VkSampleMask*)&rasterState->sampleMask;
 
 		createInfo.pRasterizationState = &rasterStateCreateInfo;
 		createInfo.pTessellationState = &tessStateCreateInfo;
@@ -239,14 +242,14 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 
 		auto ropBlender = renderPipeline->ropBlender.acquire<Render::ROPBlender>();
 		VkPipelineColorBlendStateCreateInfo colourBlendCreateInfo{
-				VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
+				VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
 		colourBlendCreateInfo.logicOpEnable = ropBlender->isLogicBlender();
 		colourBlendCreateInfo.logicOp = from(ropBlender->logicOp);
 		std::memcpy(colourBlendCreateInfo.blendConstants, ropBlender->constants, sizeof(float) * 4);
 
 		colourBlendCreateInfo.attachmentCount = ropBlender->numTargets;
 		std::vector<VkPipelineColorBlendAttachmentState> vulkanBlenders(ropBlender->numTargets);
-		for(auto j = 0u; j < ropBlender->numTargets; ++j)
+		for (auto j = 0u; j < ropBlender->numTargets; ++j)
 		{
 			auto const& blender = ropBlender->targetBlenders()[j];
 			auto& vkblender = vulkanBlenders[j];
@@ -262,53 +265,54 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 		colourBlendCreateInfo.pAttachments = vulkanBlenders.data();
 		createInfo.pColorBlendState = &colourBlendCreateInfo;
 
+		assert(renderPipeline->viewport.isValid());
 		auto viewport = renderPipeline->viewport.acquire<Render::Viewport>();
-		VkPipelineViewportStateCreateInfo viewportCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
+		VkPipelineViewportStateCreateInfo viewportCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
 		viewportCreateInfo.scissorCount = viewport->numViewports;
 		viewportCreateInfo.viewportCount = viewport->numViewports;
 		std::vector<VkViewport> vkviewports(viewport->numViewports);
 		std::vector<VkRect2D> vkscissors(viewport->numViewports);
 
-		for(auto k = 0u; k < viewport->numViewports; ++k)
+		for (auto k = 0u; k < viewport->numViewports; ++k)
 		{
 			auto const& viewportAndScissor = viewport->getViewports()[k];
 			auto& vkviewport = vkviewports[k];
 			auto& vkscissor = vkscissors[k];
-			vkviewport.x = viewportAndScissor.x;
-			vkviewport.y = viewportAndScissor.y;
-			vkviewport.width = viewportAndScissor.width;
-			vkviewport.height = viewportAndScissor.height;
-			vkviewport.minDepth = viewportAndScissor.minDepth;
-			vkviewport.maxDepth = viewportAndScissor.maxDepth;
-			vkscissor.offset.x = viewportAndScissor.scissorOffset[0];
-			vkscissor.offset.y = viewportAndScissor.scissorOffset[1];
-			vkscissor.extent.width = viewportAndScissor.scissorExtent[0];
-			vkscissor.extent.height = viewportAndScissor.scissorExtent[1];
+			vkviewport.x = viewportAndScissor.viewport.x;
+			vkviewport.y = viewportAndScissor.viewport.y;
+			vkviewport.width = viewportAndScissor.viewport.width;
+			vkviewport.height = viewportAndScissor.viewport.height;
+			vkviewport.minDepth = viewportAndScissor.viewport.minDepth;
+			vkviewport.maxDepth = viewportAndScissor.viewport.maxDepth;
+			vkscissor.offset.x = viewportAndScissor.scissor.offset[0];
+			vkscissor.offset.y = viewportAndScissor.scissor.offset[1];
+			vkscissor.extent.width = viewportAndScissor.scissor.extent[0];
+			vkscissor.extent.height = viewportAndScissor.scissor.extent[1];
 		}
 		viewportCreateInfo.pViewports = vkviewports.data();
 		viewportCreateInfo.pScissors = vkscissors.data();
 		createInfo.pViewportState = &viewportCreateInfo;
 
-		vulkanRenderPipeline->layout = device->createPipelineLayout(layoutCreateInfo);
-		createInfo.layout = vulkanRenderPipeline->layout;
-
 		constexpr auto MaxDynamicPipelineStates = sizeof(renderPipeline->dynamicPipelineState) * 8;
-		std::vector<VkDynamicState> dynamicState;
-		dynamicState.reserve(MaxDynamicPipelineStates);
-		for(auto n = 0u; n < MaxDynamicPipelineStates; ++n)
+		std::vector<VkDynamicState> dynamicStates;
+		dynamicStates.reserve(MaxDynamicPipelineStates);
+		for (auto n = 0u; n < MaxDynamicPipelineStates; ++n)
 		{
 			using namespace Core::bitmask;
-			if(test_equal(renderPipeline->dynamicPipelineState, (Render::DynamicPipelineState)(1u<<n)))
+			if (test_equal(renderPipeline->dynamicPipelineState, (Render::DynamicPipelineState)(1u << n)))
 			{
-				dynamicState.push_back((VkDynamicState)n);
+				dynamicStates.push_back((VkDynamicState)n);
 			}
 		}
 
+		vulkanRenderPipeline->layout = device->createPipelineLayout(layoutCreateInfo);
+		createInfo.layout = vulkanRenderPipeline->layout;
+
 		VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
-		if (dynamicState.size() > 0)
+		if (dynamicStates.size() > 0)
 		{
-			dynamicStateCreateInfo.dynamicStateCount = (uint32_t)dynamicState.size();
-			dynamicStateCreateInfo.pDynamicStates = dynamicState.data();
+			dynamicStateCreateInfo.dynamicStateCount = (uint32_t)dynamicStates.size();
+			dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
 			createInfo.pDynamicState = &dynamicStateCreateInfo;
 		}
 		else

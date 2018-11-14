@@ -15,6 +15,8 @@ namespace Vulkan {
 struct CommandQueue;
 struct Display;
 struct EncoderPool;
+struct Texture;
+struct Buffer;
 
 struct Device : public Render::Device, std::enable_shared_from_this<Device>
 {
@@ -37,13 +39,15 @@ public:
 
 	auto getVkDevice() -> VkDevice { return device; }
 
-	auto upload(uint8_t* data_, uint64_t size_, VkImageCreateInfo const& createInfo_,
-				Render::TextureConstPtr const& dst_) -> void;
-	auto fill(uint32_t value_, VkImageCreateInfo const& createInfo_, Render::TextureConstPtr const& dst_) -> void;
+	auto upload(uint8_t const* data_, uint64_t size_, Texture const* dst_) -> void;
+	auto fill(uint32_t value_, Texture const* dst_) -> void;
 
-	auto upload(uint8_t* data_, uint64_t size_, VkBufferCreateInfo const& createInfo_,
-				Render::BufferConstPtr const& dst_) -> void;
-	auto fill(uint32_t value_, VkBufferCreateInfo const& createInfo_, Render::BufferConstPtr const& dst_) -> void;
+	auto upload(uint8_t const* data_, uint64_t size_, Buffer const* dst_) -> void;
+	auto fill(uint32_t value_, Buffer const* dst_) -> void;
+
+	auto mapMemory(VmaAllocation const& alloc_) -> void*;
+	auto unmapMemory(VmaAllocation const& alloc_) -> void;
+	auto flushMemory(VmaAllocation const& alloc_) -> void;
 
 	// Render::Device interface
 	auto getDisplay() const -> std::shared_ptr<Render::Display> final;
@@ -146,8 +150,8 @@ public:
 	auto debugNameVkObject(uint64_t object_, VkDebugReportObjectTypeEXT type_, char const* name_) -> void;
 
 private:
-	void upload(VkImage cpuImage, Render::TextureConstPtr const& dst_);
-	void upload(VkBuffer cpuImage, Render::BufferConstPtr const& dst_);
+	void upload(VkImage cpuImage, Texture const* dst_);
+	void upload(VkBuffer cpuImage, Buffer const* dst_);
 
 	DeviceVkVTable vtable;
 

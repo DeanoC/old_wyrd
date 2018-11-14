@@ -14,6 +14,8 @@ namespace Vulkan {
 struct EncoderPool;
 struct Semaphore;
 struct Fence;
+struct Buffer;
+struct Texture;
 
 struct Encoder : public Render::Encoder
 {
@@ -43,12 +45,14 @@ struct Encoder : public Render::Encoder
 	auto copy(VkImage srcImage_,
 			  VkImageLayout srcLayout_,
 			  VkImageSubresourceLayers const& srcExtents_,
-			  Render::TextureConstPtr const& dst_) -> void;
+			  Texture const* dst_) -> void;
 	auto copy(VkBuffer srcBuffer_,
 			  uint64_t srcOffset_,
 			  uint64_t srcBytes_,
-			  Render::BufferConstPtr const& dst_) -> void;
+			  Buffer const* dst_) -> void;
 
+	auto fill(uint32_t fill_, Buffer const* dst_) -> void;
+	auto copy(Render::TextureConstPtr const& src_, Texture const* dst_) -> void;
 	auto textureBarrier(VkPipelineStageFlagBits srcStage_, VkPipelineStageFlagBits dstStage_,
 						VkImageMemoryBarrier const& barrier_) -> void;
 	auto bufferBarrier(VkPipelineStageFlagBits srcStage_, VkPipelineStageFlagBits dstStage_,

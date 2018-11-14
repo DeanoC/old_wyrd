@@ -52,8 +52,7 @@ struct alignas(8) VertexInput : public ResourceManager::Resource<VertexInputId>
 
 	using Input = struct
 	{
-		uint32_t shaderIndex;
-		VertexInputLocation binding;
+		VertexInputLocation location;
 		VertexInputType type;
 		uint8_t padd[2];
 	};
