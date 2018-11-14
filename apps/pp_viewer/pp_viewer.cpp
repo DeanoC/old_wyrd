@@ -237,9 +237,10 @@ struct App
 			imguiBindings->newFrame(display->getWidth(), display->getHeight());
 
 			bool show_demo_window = true;
+			bool show_app_about = true;
+
 			if (show_demo_window)
 				ImGui::ShowDemoWindow(&show_demo_window);
-
 			auto encoder = rEncoderPool->allocateEncoder(EncoderFlag::RenderEncoder);
 			auto renderEncoder = encoder->asRenderEncoder();
 

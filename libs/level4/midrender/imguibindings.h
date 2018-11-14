@@ -5,7 +5,6 @@
 #include "core/core.h"
 #include "render/resources.h"
 
-#define ImTextureID Render::TextureHandle
 #include "imgui/imgui.h"
 
 namespace ResourceManager { class ResourceMan; }

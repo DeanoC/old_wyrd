@@ -188,6 +188,8 @@ auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan>& rm_) -> 
 	unsigned char* pixels;
 	int width, height;
 	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+	io.DisplaySize.x = 1280; // set every frame so this should matter..
+	io.DisplaySize.y = 720; // set every frame
 
 	size_t const upload_size = width*height*4*sizeof(char);
 	auto image = GenericImage::Create(
@@ -214,25 +216,10 @@ auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan>& rm_) -> 
 			GenericTextureFormat::R8G8B8A8_UNORM,
 			image
 	);
-	io.Fonts->TexID = fontTextureHandle;
+	io.Fonts->TexID = (ImTextureID)&fontTextureHandle;
 
 	// setup back-end capability flags
 	//	io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
-
-	// TODO
-	if(io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-	{
-		ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
-
-		if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-			IM_ASSERT(platform_io.Platform_CreateVkSurface != NULL && "Platform needs to setup the CreateVkSurface handler.");
-
-//		platform_io.Renderer_CreateWindow = ImGui_ImplVulkan_CreateWindow;
-//		platform_io.Renderer_DestroyWindow = ImGui_ImplVulkan_DestroyWindow;
-//		platform_io.Renderer_SetWindowSize = ImGui_ImplVulkan_SetWindowSize;
-//		platform_io.Renderer_RenderWindow = ImGui_ImplVulkan_RenderWindow;
-//		platform_io.Renderer_SwapBuffers = ImGui_ImplVulkan_SwapBuffers;
-	}
 
 	// Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array that we will update during the application lifetime.
 	using namespace Input;
@@ -295,8 +282,8 @@ auto ImguiBindings::newFrame(uint32_t width_, uint32_t height_) -> void
 	}
 	if(g_Mouse != nullptr)
 	{
-		io.MousePos[0] = g_Mouse->getAbsMouseX();
-		io.MousePos[1] = g_Mouse->getAbsMouseY();
+		io.MousePos.x = g_Mouse->getAbsMouseX();
+		io.MousePos.y = g_Mouse->getAbsMouseY();
 		io.MouseDown[0] = g_Mouse->buttonDown(MouseButton::Left);
 		io.MouseDown[1] = g_Mouse->buttonDown(MouseButton::Middle);
 		io.MouseDown[2] = g_Mouse->buttonDown(MouseButton::Right);
@@ -421,7 +408,7 @@ auto ImguiBindings::render(std::shared_ptr<Render::Encoder>& encoder_) -> void
 			const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
 			if(pcmd->UserCallback)
 			{
-//				pcmd->UserCallback(cmd_list, pcmd);
+				pcmd->UserCallback(cmd_list, pcmd);
 			} else
 			{
 				// Apply scissor/clipping rectangle
