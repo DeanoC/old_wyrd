@@ -5,6 +5,7 @@ set( wyrd_INCLUDES
 set( LEVEL_LIBS
 		shell
 		tacticalmap
+		midrender
 		)
 foreach(LIB ${LEVEL_LIBS})
 	add_subdirectory(${LIB})

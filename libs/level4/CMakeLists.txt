@@ -5,7 +5,6 @@ set( wyrd_INCLUDES
 
 set( LEVEL_LIBS
 		meshops
-		midrender
 		vulkan
 		)
 foreach(LIB ${LEVEL_LIBS})
