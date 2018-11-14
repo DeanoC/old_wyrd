@@ -7,7 +7,7 @@
 #include "resourcemanager/resourceman.h"
 #include "fmt/format.h"
 
-auto ImageTester(size_t w_, size_t h_, size_t d_, size_t s_, Render::GenericTextureFormat fmt_, bool doLog_) -> void
+auto ImageTester(uint32_t w_, uint32_t h_, uint32_t d_, uint32_t s_, Render::GenericTextureFormat fmt_, bool doLog_) -> void
 {
 	using namespace Render;
 	using namespace Catch::literals;
@@ -22,7 +22,7 @@ auto ImageTester(size_t w_, size_t h_, size_t d_, size_t s_, Render::GenericText
 	ResourceManager::ResourceName rname(name);
 
 	auto imgHandle = GenericImage::Create(rm, rname.getView(), w_, h_, d_, s_, fmt_);
-	auto img = imgHandle.mutableAcquire<GenericImage>();
+	auto img = const_cast<GenericImageHandle*>(&imgHandle)->mutableAcquire<GenericImage>();
 	if(doLog_)
 	{
 		LOG_S(INFO) << "Testing " << name;

@@ -43,6 +43,15 @@ struct ResourceHandleBase
 protected:
 	auto tryAcquire() const -> std::shared_ptr<ResourceBase const>;
 	auto acquire() const -> std::shared_ptr<ResourceBase const>;
+	auto mutableTryAcquire() -> std::shared_ptr<ResourceBase>
+	{
+		return std::const_pointer_cast<ResourceBase>(tryAcquire());
+	}
+	auto mutableAcquire() -> std::shared_ptr<ResourceBase>
+	{
+		return std::const_pointer_cast<ResourceBase>(acquire());
+	}
+
 };
 
 static_assert(sizeof(ResourceHandleBase) == 16);
@@ -80,17 +89,17 @@ public:
 	}
 
 	template<typename T>
-	auto mutableAcquire() const -> typename std::shared_ptr<T>
+	auto mutableAcquire() -> typename std::shared_ptr<T>
 	{
 		static_assert(T::Id == id_, "Ptr is of different type from the handle");
-		return std::static_pointer_cast<T>(base.acquire());
+		return std::static_pointer_cast<T>(base.mutableAcquire());
 	}
 
 	template<typename T>
-	auto mutableTryAcquire() const -> typename std::shared_ptr<T>
+	auto mutableTryAcquire() -> typename std::shared_ptr<T>
 	{
 		static_assert(T::Id == id_, "Ptr is of different type from the handle");
-		return std::static_pointer_cast<T>(base.tryAcquire());
+		return std::static_pointer_cast<T>(base.mutableTryAcquire());
 	}
 	ResourceHandle() : base() {}
 

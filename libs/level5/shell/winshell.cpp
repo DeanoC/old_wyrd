@@ -7,10 +7,11 @@
 #include <fcntl.h>
 #include <io.h>
 #include "input/keyboard.h"
+#include "input/mouse.h"
 
 namespace Input {
-extern bool KeyboardWinProcessKeyMessages(uint32_t message, uint16_t wParam, uint32_t lParam);
 Keyboard* g_Keyboard = nullptr;
+Mouse* g_Mouse = nullptr;
 }
 
 namespace Shell {
@@ -25,7 +26,8 @@ struct Win32PresentationWindow
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	if(Input::KeyboardWinProcessKeyMessages(message, wParam, lParam)) return 0;
+	if(Input::Keyboard::WinProcessMessages(message, wParam, lParam)) return 0;
+	if(Input::Mouse::WinProcessMessages(message, wParam, lParam)) return 0;
 
 	switch(message)
 	{
@@ -254,8 +256,11 @@ auto WinShell::createPresentableWindow(PresentableWindowConfig const& config_) -
 	if(config_.directInput)
 	{
 		assert(Input::g_Keyboard == nullptr);
+		assert(Input::g_Mouse == nullptr);
 		Input::g_Keyboard = new Input::Keyboard();
+		Input::g_Mouse = new Input::Mouse();
 	}
+
 	// Create window
 	RECT rc = {0, 0, (LONG) config_.width, (LONG) config_.height};
 	DWORD style = WS_OVERLAPPEDWINDOW | WS_VISIBLE;

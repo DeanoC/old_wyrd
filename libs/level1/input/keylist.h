@@ -1,4 +1,12 @@
 
+#ifndef KEYTABLE_START
+#define KEYTABLE_START enum class Key : uint16_t {
+#endif
+
+#ifndef KEYTABLE_END
+#define KEYTABLE_END };
+#endif
+
 #ifndef VIRTUALKEY_KEY_MAP
 #define VIRTUALKEY_KEY_MAP(x) KT_##x,
 #endif
@@ -10,6 +18,7 @@
 #define NORMALKEY_KEY_MAP(c, d) KT_##c,
 #endif
 
+KEYTABLE_START
 VIRTUALKEY_KEY_MAP(ESCAPE)
 NORMALKEY_KEY_MAP(1, '1')
 NORMALKEY_KEY_MAP(2, '2')
@@ -116,12 +125,16 @@ VIRTUALKEY_KEY_MAP(END)    /* End on arrow keypad */
 VIRTUALKEY_KEY_MAP(DOWN)    /* DownArrow on arrow keypad */
 VIRTUALKEY_KEY_MAP(NEXT)    /* PgDn on arrow keypad */
 VIRTUALKEY_KEY_MAP(INSERT)    /* Insert on arrow keypad */
-//VIRTUALKEY_KEY_MAP(DELETE)    /* Delete on arrow keypad */
+VIRTUALKEY_KEY_MAP(DELETE)    /* Delete on arrow keypad */
 VIRTUALKEY_KEY_MAP(LWIN)    /* Left Windows key */
 VIRTUALKEY_KEY_MAP(RWIN)    /* Right Windows key */
 VIRTUALKEY_KEY_MAP(APPS)    /* AppMenu key */
 VIRTUALKEY_KEY_MAP(SLEEP)    /* System Sleep */
 
+KEYTABLE_END
+
 #undef VIRTUALKEY_KEY_MAP
 #undef VIRTUALKEY_KEY_MAP2
 #undef NORMALKEY_KEY_MAP
+#undef KEYTABLE_START
+#undef KEYTABLE_END

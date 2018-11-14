@@ -21,7 +21,7 @@ template<ResourceManager::ResourceId id_>
 auto Image<id_>::channelAt(Channel channel_, unsigned int x_, unsigned int y_, unsigned int z_,
 						   unsigned int slice_) const -> double
 {
-	assert((int) channel_ < GtfCracker::channelCount(format));
+	assert((unsigned int) channel_ < GtfCracker::channelCount(format));
 	auto index = calculateIndex(x_, y_, z_, slice_);
 
 	// seperate out the block compressed format first

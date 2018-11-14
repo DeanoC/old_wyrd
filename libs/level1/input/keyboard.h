@@ -13,7 +13,7 @@ class Keyboard
 {
 public:
 #if PLATFORM == WINDOWS
-	friend bool KeyboardWinProcessKeyMessages(uint32_t message, uint16_t wParam, uint32_t lParam);
+	static bool WinProcessMessages(uint32_t message, uint16_t wParam, uint32_t lParam);
 #elif PLATFORM == POSIX
 	friend void KeyboardX11ProcessKeyEvent( bool down, XKeyEvent* event );
 #endif
@@ -35,13 +35,18 @@ public:
 		return (!keyHeld(key) && keyDown(key));
 	}
 
+
+
+	static constexpr uint32_t MaxKeyCount = 512;
+	bool const* getKeyDownBitmap() const { return keyDownBitMap.data(); }
+
 protected:
-	static constexpr uint32_t MaxKeyCount = 256;
 	static constexpr uint16_t KeyDownFlag = 0x8000;
 	static constexpr uint16_t KeyHeldFlag = 0x4000;
 	static constexpr uint16_t KeyDownMask = 0xFF;
 
 	std::array<uint16_t, MaxKeyCount> keyDataState;
+	std::array<bool, MaxKeyCount> keyDownBitMap; // most for imgui
 };
 
 // if no keyboard is available will be nullptr

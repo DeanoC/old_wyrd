@@ -6,10 +6,11 @@
 
 namespace Input {
 
+// generates a Key enum class from the platform virtual keys
+
 // each key has a label KT_x (i.e. A = KT_A
-enum class Key : uint16_t
-{
 #if PLATFORM == WINDOWS
+#undef DELETE
 #define VIRTUALKEY_KEY_MAP2(x, y) KT_##x = VK_##y,
 #define VIRTUALKEY_KEY_MAP(x) VIRTUALKEY_KEY_MAP2(x,x)
 #define NORMALKEY_KEY_MAP(c, d) KT_##c = d,
@@ -17,7 +18,13 @@ enum class Key : uint16_t
 
 #include "input/keylist.h"
 
+enum class MouseButton : uint8_t
+{
+	Left,
+	Middle,
+	Right,
 };
+static constexpr uint32_t MaxMouseButtons = ((uint32_t) MouseButton::Right)+1u;
 
 }
 

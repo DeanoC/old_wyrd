@@ -1,5 +1,7 @@
 
 #include "core/core.h"
+#include "input/keyboard.h"
+#include "input/mouse.h"
 #include "render/bindingtable.h"
 #include "render/buffer.h"
 #include "render/encoder.h"
@@ -231,6 +233,36 @@ auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan>& rm_) -> 
 //		platform_io.Renderer_RenderWindow = ImGui_ImplVulkan_RenderWindow;
 //		platform_io.Renderer_SwapBuffers = ImGui_ImplVulkan_SwapBuffers;
 	}
+
+	// Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array that we will update during the application lifetime.
+	using namespace Input;
+	io.KeyMap[ImGuiKey_Tab] = (uint16_t) Key::KT_TAB;
+	io.KeyMap[ImGuiKey_LeftArrow] = (uint16_t) Key::KT_LEFT;
+	io.KeyMap[ImGuiKey_RightArrow] = (uint16_t) Key::KT_RIGHT;
+	io.KeyMap[ImGuiKey_UpArrow] = (uint16_t) Key::KT_UP;
+	io.KeyMap[ImGuiKey_DownArrow] = (uint16_t) Key::KT_DOWN;
+	io.KeyMap[ImGuiKey_PageUp] = (uint16_t) Key::KT_PRIOR;
+	io.KeyMap[ImGuiKey_PageDown] = (uint16_t) Key::KT_NEXT;
+	io.KeyMap[ImGuiKey_Home] = (uint16_t) Key::KT_HOME;
+	io.KeyMap[ImGuiKey_End] = (uint16_t) Key::KT_END;
+	io.KeyMap[ImGuiKey_Insert] = (uint16_t) Key::KT_INSERT;
+	io.KeyMap[ImGuiKey_Delete] = (uint16_t) Key::KT_DELETE;
+	io.KeyMap[ImGuiKey_Backspace] = (uint16_t) Key::KT_BACK;
+	io.KeyMap[ImGuiKey_Space] = (uint16_t) Key::KT_SPACE;
+	io.KeyMap[ImGuiKey_Enter] = (uint16_t) Key::KT_RETURN;
+	io.KeyMap[ImGuiKey_Escape] = (uint16_t) Key::KT_ESCAPE;
+	io.KeyMap[ImGuiKey_A] = (uint16_t) Key::KT_A;
+	io.KeyMap[ImGuiKey_C] = (uint16_t) Key::KT_C;
+	io.KeyMap[ImGuiKey_V] = (uint16_t) Key::KT_V;
+	io.KeyMap[ImGuiKey_X] = (uint16_t) Key::KT_X;
+	io.KeyMap[ImGuiKey_Y] = (uint16_t) Key::KT_Y;
+	io.KeyMap[ImGuiKey_Z] = (uint16_t) Key::KT_Z;
+
+	// TODO cross platform timers
+#if PLATFORM == WINDOWS
+	::QueryPerformanceFrequency((LARGE_INTEGER *)&ticksPerSecond);
+	::QueryPerformanceCounter((LARGE_INTEGER *)&time);
+#endif
 }
 
 auto ImguiBindings::destroy() -> void
@@ -241,6 +273,34 @@ auto ImguiBindings::newFrame(uint32_t width_, uint32_t height_) -> void
 	ImGuiIO& io = ImGui::GetIO();
 	io.DisplaySize.x = width_;
 	io.DisplaySize.y = height_;
+
+	// TODO cross platform timers
+#if PLATFORM == WINDOWS
+	// Setup time step
+	uint64_t current_time;
+	::QueryPerformanceCounter((LARGE_INTEGER *)&current_time);
+	io.DeltaTime = (float)(current_time - time) / ticksPerSecond;
+	time = current_time;
+#endif
+
+	using namespace Input;
+	if(g_Keyboard != nullptr)
+	{
+		std::memcpy(io.KeysDown, g_Keyboard->getKeyDownBitmap(), sizeof(bool) * Keyboard::MaxKeyCount);
+		io.KeyCtrl = (g_Keyboard->keyDown(Key::KT_LCONTROL) || g_Keyboard->keyDown(Key::KT_RCONTROL));
+		io.KeyAlt = (g_Keyboard->keyDown(Key::KT_LMENU) || g_Keyboard->keyDown(Key::KT_RMENU));
+		io.KeyShift = (g_Keyboard->keyDown(Key::KT_LSHIFT) || g_Keyboard->keyDown(Key::KT_RSHIFT));
+		io.KeySuper = (g_Keyboard->keyDown(Key::KT_LWIN) || g_Keyboard->keyDown(Key::KT_RWIN));
+		// TODO AddInputCharacter
+	}
+	if(g_Mouse != nullptr)
+	{
+		io.MousePos[0] = g_Mouse->getAbsMouseX();
+		io.MousePos[1] = g_Mouse->getAbsMouseY();
+		io.MouseDown[0] = g_Mouse->buttonDown(MouseButton::Left);
+		io.MouseDown[1] = g_Mouse->buttonDown(MouseButton::Middle);
+		io.MouseDown[2] = g_Mouse->buttonDown(MouseButton::Right);
+	}
 
 	ImGui::NewFrame();
 }
