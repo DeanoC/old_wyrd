@@ -39,7 +39,7 @@ public:
 	static auto computeAABB(MeshMod::Mesh::ConstPtr const& mesh, Geometry::AABB& aabb ) -> void;
 
 	//! transform the mesh by a matrix
-	static auto transform(MeshMod::Mesh::Ptr const& mesh, Math::Matrix4x4 const& transform ) -> void;
+	static auto transform(MeshMod::Mesh::Ptr const& mesh, Math::mat4x4 const& transform ) -> void;
 
 private:
 	template<size_t n>

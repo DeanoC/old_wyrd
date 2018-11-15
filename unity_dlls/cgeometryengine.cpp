@@ -1,7 +1,6 @@
 #if !defined(USING_STATIC_LIBS)
 #define STB_IMAGE_IMPLEMENTATION
 #endif
-
 #include "core/core.h"
 #include "crc32c/crc32c.h"
 #include "core/quick_hash.h"

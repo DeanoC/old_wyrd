@@ -27,7 +27,6 @@
 #include <cstdlib>
 #include <cassert>
 
-#define CALL
 #define READONLY_MEM
 #define LOCAL_MEM
 #define ALIGN(x)  __align__(x)

@@ -68,9 +68,9 @@ struct Position
 		}
 	}
 
-	Math::Vector3 getVector3() const
+	Math::vec3 getVec3() const
 	{
-		return Math::Vector3(x, y, z);
+		return Math::vec3(x, y, z);
 	}
 
 	Position interpolate(const Position &b, const float t) const

@@ -12,7 +12,7 @@ MeshMod::Mesh::Ptr PlatonicSolids::createTetrahedon()
 	using namespace Math;
 	Mesh::Ptr mesh = std::make_shared<Mesh>("Tetrahedron");
 
-	Vector3 pos[4] = {
+	vec3 pos[4] = {
 			{1,  1,  1},
 			{1,  -1, 1},
 			{-1, 1,  1},
@@ -47,7 +47,7 @@ MeshMod::Mesh::Ptr PlatonicSolids::createOctahedron()
 	using namespace Math;
 	Mesh::Ptr mesh = std::make_shared<Mesh>("Octahedron");
 
-	static const Vector3 pos[] = {
+	static const vec3 pos[] = {
 			{-1, 0,  0},
 			{1,  0,  0},
 			{0,  -1, 0},
@@ -89,7 +89,7 @@ MeshMod::Mesh::Ptr PlatonicSolids::createCube()
 	using namespace Math;
 	Mesh::Ptr mesh = std::make_shared<Mesh>("Cube");
 
-	static const Vector3 pos[] = {
+	static const vec3 pos[] = {
 			{-1,  1, -1},
 			{-1, -1, -1},
 			{ 1, -1, -1},
@@ -146,7 +146,7 @@ MeshMod::Mesh::Ptr PlatonicSolids::createIcosahedron()
 	a = a * 2;
 	b = b * 2;
 
-	static const Vector3 pos[] = {
+	static const vec3 pos[] = {
 			{0,  b,  -a},
 			{b,  a,  0},
 			{-b, a,  0},
@@ -215,10 +215,10 @@ MeshMod::Mesh::Ptr PlatonicSolids::createBoxFrom(Geometry::AABB const& aabb)
 	using namespace Math;
 	Mesh::Ptr mesh = std::make_shared<Mesh>("Cube");
 
-	Math::Vector3 const minBox = aabb.getMinExtent();
-	Math::Vector3 const maxBox = aabb.getMaxExtent();
+	Math::vec3 const minBox = aabb.getMinExtent();
+	Math::vec3 const maxBox = aabb.getMaxExtent();
 
-	const Vector3 pos[] = {
+	const vec3 pos[] {
 		{ minBox.x, maxBox.y, minBox.z },
 		{ minBox.x, minBox.y, minBox.z },
 		{ maxBox.x, minBox.y, minBox.z },

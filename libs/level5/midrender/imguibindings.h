@@ -14,7 +14,7 @@ struct Encoder;
 
 struct ImguiBindings
 {
-	auto init(std::shared_ptr<ResourceManager::ResourceMan>& rm_) -> void;
+	auto init(std::shared_ptr<ResourceManager::ResourceMan> const& rm_) -> void;
 	auto destroy() -> void;
 
 	auto newFrame(uint32_t width_, uint32_t height_) -> void;

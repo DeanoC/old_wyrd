@@ -41,7 +41,7 @@ constexpr auto Bit(T num) -> T
 /// \brief	Query if 'iNum' is power of two. 
 /// \param	iNum	Number to test. 
 /// \return	true if pow 2, false if not. 
-CALL inline bool isPow2(unsigned int iNum)
+inline bool isPow2(unsigned int iNum)
 {
 	return ((iNum & (iNum - 1)) == 0);
 }
@@ -50,7 +50,7 @@ CALL inline bool isPow2(unsigned int iNum)
 /// \brief	Gets the next pow 2. 
 /// \param	iNum	Number to get next pow 2 off. 
 /// \return	The next pow 2 of iNum. 
-CALL inline unsigned int nextPow2(unsigned int iNum)
+inline unsigned int nextPow2(unsigned int iNum)
 {
 	iNum -= 1;
 	iNum |= iNum >> 16;
@@ -68,7 +68,7 @@ CALL inline unsigned int nextPow2(unsigned int iNum)
 /// \param	align	The alignment boundary. 
 /// \return	k aligned to align. 
 template<typename T, typename T2>
-CALL inline T alignTo(T k, T2 align)
+inline T alignTo(T k, T2 align)
 {
 	return ((k + align - 1) & ~(align - 1));
 }

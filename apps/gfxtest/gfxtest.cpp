@@ -186,11 +186,11 @@ struct App
 									   rm->openByName<SPIRVShaderId>(Stock::passthroughVertexShader),
 									   rm->openByName<SPIRVShaderId>(pushColourFragmentShaderName),
 							   },
-							   rm->openByName<RasterisationStateId>(Stock::simpleForwardRendererDefaultPipeline),
-							   rm->openByName<RenderPassId>(Stock::simpleForwardRendererRenderPass),
+							   rm->openByName<RasterisationStateId>(Stock::simpleForwardRasterState),
+							   rm->openByName<RenderPassId>(Stock::simpleForwardRenderPass),
 							   rm->openByName<ROPBlenderId>(Stock::singleOpaqueROPBlender),
 							   rm->openByName<VertexInputId>(Stock::positionOnlyVertexInput),
-							   rm->openByName<ViewportId>(Stock::simpleForwardRendererViewport)
+							   rm->openByName<ViewportId>(Stock::simpleForwardViewport)
 		);
 	}
 
@@ -202,9 +202,9 @@ struct App
 
 		// acquire the resources by name
 		auto& rm = resourceManager;
-		auto colourRT0 = rm->acquireByName<Texture>(Stock::simpleForwardRendererColourRT);
-		auto renderPass = rm->acquireByName<RenderPass>(Stock::simpleForwardRendererRenderPass);
-		auto renderTarget = rm->acquireByName<RenderTarget>(Stock::simpleForwardRendererRenderTarget);
+		auto colourRT0 = rm->acquireByName<Texture>(Stock::simpleForwardColourRT);
+		auto renderPass = rm->acquireByName<RenderPass>(Stock::simpleForwardRenderPass);
+		auto renderTarget = rm->acquireByName<RenderTarget>(Stock::simpleForwardRenderTarget);
 		auto renderPipeline = rm->acquireByName<RenderPipeline>(defaultRenderPipelineName);
 
 		auto vBuffer = rm->acquireByName<Buffer>(basicTriVertexBufferName);

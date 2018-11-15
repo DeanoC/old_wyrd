@@ -137,10 +137,10 @@ void Raycaster::transferTo( LayeredTexture& image ) {
 			while( rasteriser.GetNext( &pixel ) ) {
 				// interpolate the position and normal to this point on the triangle
 				float coords[] = { float( 1 ) - pixel.v - pixel.w, pixel.v, pixel.w };
-				Vector3 origin, direction;
+				vec3 origin, direction;
 				for( unsigned int i = 0; i < 3; ++i ) {
-					origin += coords[i]*Vector3( ((*posEle)[ faceVert[i] ]).getVector3() );
-					direction += coords[i]*Vector3( ((*normEle)[ faceVert[i] ]).getVector3() );
+					origin += coords[i] * vec3( ((*posEle)[ faceVert[i] ]).getVec3() );
+					direction += coords[i]* vec3( ((*normEle)[ faceVert[i] ]).getVec3() );
 				}
 				direction = Normalise( direction );
 
@@ -173,7 +173,7 @@ void Raycaster::transferTo( LayeredTexture& image ) {
 					}
 #endif
 					// get the tangent, binormal and normal for this source ray
-					Vector3 basis[3];
+					vec3 basis[3];
 #if 0
 					if( m_tangentSpaceRequired ) {
 						for( int i = 0; i < 3; ++i )

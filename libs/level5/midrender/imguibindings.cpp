@@ -98,7 +98,7 @@ std::vector<uint32_t> glsl_shader_frag_spv{
 } // end anon namespace
 
 
-auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan>& rm_) -> void
+auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan> const& rm_) -> void
 {
 	using namespace Render;
 	using namespace ResourceManager;
@@ -173,10 +173,10 @@ auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan>& rm_) -> 
 				fragmentShaderHandle
 			},
 			rm_->openByName<RasterisationStateId>(Stock::defaultRasterState),
-			rm_->openByName<RenderPassId>(Stock::simpleForwardRendererRenderPass),
+			rm_->openByName<RenderPassId>(Stock::simpleForwardRenderPass),
 			rm_->openByName<ROPBlenderId>(Stock::singleOverROPBlender),
 			vertexFormatHandle,
-			rm_->openByName<ViewportId>(Stock::simpleForwardRendererViewport)
+			rm_->openByName<ViewportId>(Stock::simpleForwardViewport)
 	);
 
 	IMGUI_CHECKVERSION();

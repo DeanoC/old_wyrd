@@ -41,9 +41,9 @@ struct Normal
 					  (z * u) + (b.z * v) + (c.z * w));
 	}
 
-	Math::Vector3 getVector3() const
+	Math::vec3 getVec3() const
 	{
-		return Math::Vector3(x, y, z);
+		return Math::vec3(x, y, z);
 	}
 
 	//! is the position equal to the data passed in, using an epsilon parameter to decide

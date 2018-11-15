@@ -2,7 +2,6 @@
 #	include <cstdlib>
 #	include <memory.h>
 
-#define CALL
 #define READONLY_MEM
 #define LOCAL_MEM
 

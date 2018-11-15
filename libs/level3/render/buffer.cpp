@@ -43,7 +43,7 @@ auto Buffer::Create(
 		ResourceManager::ResourceNameView const& name_,
 		BufferFlags flags_,
 		uint64_t sizeInBytes_,
-		uint8_t* data_) -> BufferHandle
+		void* data_) -> BufferHandle
 {
 	using namespace Core::bitmask;
 	bool noInit = false;

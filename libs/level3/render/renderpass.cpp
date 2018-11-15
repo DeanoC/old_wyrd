@@ -43,11 +43,11 @@ auto RenderPass::Create(
 		std::shared_ptr<ResourceManager::ResourceMan> rm_,
 		ResourceManager::ResourceNameView const& name_,
 		std::vector<Target> const& targets_,
-		std::vector<Math::Vector4> const& clearValues_) -> RenderPassHandle
+		std::vector<Math::vec4> const& clearValues_) -> RenderPassHandle
 {
 	assert(targets_.size() == clearValues_.size());
 	size_t const targetSize = sizeof(Target) * targets_.size();
-	size_t const clearSize = sizeof(Math::Vector4) * clearValues_.size();
+	size_t const clearSize = sizeof(Math::vec4) * clearValues_.size();
 	size_t const dataSize = targetSize + clearSize;
 
 	size_t const totalSize = sizeof(RenderPass) + dataSize;
@@ -57,7 +57,7 @@ auto RenderPass::Create(
 	obj->sizeAndStageCount = totalSize;
 	obj->numTargets = (uint8_t) targets_.size();
 	std::memcpy(obj + 1, targets_.data(), dataSize);
-	std::memcpy(const_cast<Math::Vector4*>(obj->getClearValues()), clearValues_.data(), clearSize);
+	std::memcpy(const_cast<Math::vec4*>(obj->getClearValues()), clearValues_.data(), clearSize);
 
 	rm_->placeInStorage(name_, *obj);
 	free(obj);

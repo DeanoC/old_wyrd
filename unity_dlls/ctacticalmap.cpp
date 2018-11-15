@@ -108,14 +108,14 @@ CAPI auto CTM_LookupVolumeAtWorld(TacticalMapHandle ctmHandle, float const* poin
 {
 	if (ctmHandle == ~0) return false;
 	auto tm = unityOwnedTacticalMap.at((uint32_t)ctmHandle);
-	return tm->lookupVolumeAtWorld(Math::Vector3(point), range, levelMask, out);
+	return tm->lookupVolumeAtWorld(Math::Vec3FromArray(point), range, levelMask, out);
 }
 
 CAPI auto CTM_LookupLevelDataAtWorld(TacticalMapHandle ctmHandle, float const* point, float const range, uint32_t const levelMask, TacticalMapLevelDataHeader* out) -> bool
 {
 	if (ctmHandle == ~0) return false;
 	auto tm = unityOwnedTacticalMap.at((uint32_t)ctmHandle);
-	return tm->lookupLevelDataAtWorld(Math::Vector3(point), range, levelMask, out);
+	return tm->lookupLevelDataAtWorld(Math::Vec3FromArray(point), range, levelMask, out);
 }
 
 CAPI auto CTM_DamageStructure(TacticalMapHandle ctmHandle, float const* center, float const* extent) -> void
@@ -123,8 +123,8 @@ CAPI auto CTM_DamageStructure(TacticalMapHandle ctmHandle, float const* center, 
 	if (ctmHandle == ~0) return;
 	auto tm = unityOwnedTacticalMap.at((uint32_t)ctmHandle);
 
-	Math::Vector3 vCenter(center);
-	Math::Vector3 vHalfLength(extent);
+	Math::vec3 vCenter = Math::Vec3FromArray(center);
+	Math::vec3 vHalfLength = Math::Vec3FromArray(extent);
 	vHalfLength *= 0.5f;
 	Geometry::AABB box = Geometry::AABB::fromCenterAndHalfLength(vCenter, vHalfLength);
 	tm->damageStructure(box);
@@ -145,7 +145,7 @@ CAPI auto CTMB_CreateBuilder(float* bounds2D) -> TacticalMapBuilderHandle
 	g_EnkiTS.Initialize();
 #endif
 
-	Math::Vector2 bounds(bounds2D[0], bounds2D[1]);
+	Math::vec2 bounds(bounds2D[0], bounds2D[1]);
 
 	std::shared_ptr<ITacticalMapBuilder> builder = TacticalMap::allocateBuilder(bounds, width, height);
 
@@ -193,7 +193,7 @@ CAPI auto CTMB_ExportToGLTF(TacticalMapBuilderHandle tmHandle, char const* fileN
 	std::vector<MeshMod::MeshPtr> boxes;
 	std::unordered_map<uint64_t, std::vector<Geometry::AABB>> mortonBoxesAABBs;
 
-	Math::Vector3 const mortonMax(	(float)builder->getWidth(),
+	Math::vec3 const mortonMax(	(float)builder->getWidth(),
 									(float)builder->getHeight(),
 									(float)builder->getHeight());
 
@@ -299,7 +299,7 @@ CAPI auto CTMB_AddMeshAt(TacticalMapBuilderHandle handle, TacticalMapHandle mesh
 	auto const tmb = unityOwnedTacticalMapBuilders[(uint32_t)handle];
 	MeshMod::MeshPtr mesh(UnityOwnedMesh(meshHandle));
 
-	Math::Matrix4x4 transform(matrix);
+	Math::mat4x4 transform = Math::Mat4x4FromArray(matrix);
 	tmb->addMeshAt(mesh, levelData, transform);
 }
 
@@ -312,11 +312,11 @@ CAPI auto CTMB_AddBoxAt(TacticalMapBuilderHandle handle, TacticalMapLevelDataHea
 
 	auto const tmb = unityOwnedTacticalMapBuilders[(uint32_t)handle];
 
-	Math::Vector3 vCenter(center);
-	Math::Vector3 vHalfLength(extent);
+	Math::vec3 vCenter = Math::Vec3FromArray(center);
+	Math::vec3 vHalfLength= Math::Vec3FromArray(extent);
 	vHalfLength *= 0.5f;
 	Geometry::AABB box = Geometry::AABB::fromCenterAndHalfLength(vCenter, vHalfLength);
-	Math::Matrix4x4 transform(matrix);
+	Math::mat4x4 transform = Math::Mat4x4FromArray(matrix);
 	tmb->addBoxAt(box, levelData, transform);
 }
 
@@ -341,7 +341,7 @@ CAPI auto CTMS_AddParcelInstances(TacticalMapStitcherHandle ctmsHandle, Tactical
 	for(auto index = 0u; index < instances->count; ++index)
 	{
 		tms->addTacticalMapInstance(map, 
-			Math::Vector3(instances->positions + index*3), 
+			Math::Vec3FromArray(instances->positions + index*3),
 			instances->rotationInDegrees[index], 
 			instances->mapParcelIds[index]);
 	}

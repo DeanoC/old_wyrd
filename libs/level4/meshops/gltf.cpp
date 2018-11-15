@@ -391,7 +391,7 @@ bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap,
 	dataBuffer.resize(dataBufferSize + accessor.count * sizeof(float) * 3);
 	for (auto i = 0u; i < accessor.count; ++i)
 	{
-		Math::Vector3 pos = posEle[i].getVector3();
+		Math::vec3 pos = posEle[i].getVec3();
 		memcpy(dataBuffer.data() + dataBufferSize + i * sizeof(float) * 3, &pos.x, sizeof(float) * 3);
 	}	
 

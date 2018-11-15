@@ -224,7 +224,7 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> std::shared_ptr
 			std::tie(extramem, init, destroy) = orderedHandler[stage];
 			if(init == nullptr) continue;
 
-			auto createFun = [this, lambdaType, resolver, prefix, name, init]
+			auto createFun = [this, lambdaType, resolver, prefix, name, init, base_]
 					(std::string_view subObject_, int stage_,
 					 uint16_t majorVersion_, uint16_t minorVersion_,
 					 size_t size_, std::shared_ptr<void> ptr_) -> bool
@@ -237,11 +237,16 @@ auto ResourceMan::tryAcquire(ResourceHandleBase const& base_) -> std::shared_ptr
 					{
 						assert((size_ & 0x3) == 0);
 						ptr->sizeAndStageCount = size_;
-
-						uint64_t id;
-						ResourceName newName(prefix, name, subObject_);
-						id = getIndexFromName(lambdaType, newName.getResourceName());
-						resourceCache.insert(id, ptr);
+						if (subObject_.empty())
+						{ 
+							resourceCache.insert(base_.index, ptr);
+						} else
+						{
+							uint64_t index;
+							ResourceName newName(prefix, name, subObject_);
+							index = getIndexFromName(lambdaType, newName.getResourceName());
+							resourceCache.insert(index, ptr);
+						}
 					} else
 					{
 						ptr->sizeAndStageCount = (ptr->sizeAndStageCount & ~0x3) |

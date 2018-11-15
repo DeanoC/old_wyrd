@@ -7,7 +7,7 @@ namespace Geometry {
 /// \brief	Transforms this AABB by the affine matrix parameter.
 /// \param	matrix	An affine transform matrix.
 /// \return	Transformed AABB.
-AABB AABB::transformAffine( Math::Matrix4x4 const& matrix ) const
+AABB AABB::transformAffine( Math::mat4x4 const& matrix ) const
 {
 	// start search at the transform point
 	AABB ret( Math::GetTranslation( matrix ), Math::GetTranslation( matrix ));
@@ -18,8 +18,8 @@ AABB AABB::transformAffine( Math::Matrix4x4 const& matrix ) const
 	{
 		for(int i = 0; i < 3; ++i)
 		{
-			const float a = matrix( i, j ) * m_MinExtent[i];
-			const float b = matrix( i, j ) * m_MaxExtent[i];
+			const float a = matrix[i][j] * m_MinExtent[i];
+			const float b = matrix[i][j] * m_MaxExtent[i];
 
 			if(a < b)
 			{
@@ -39,7 +39,7 @@ AABB AABB::transformAffine( Math::Matrix4x4 const& matrix ) const
 /// \brief	Transforms this AABB by the parameter.
 /// \param	matrix	The transform matrix.
 /// \return	Transformed AABB.
-AABB AABB::transform( const Math::Matrix4x4& matrix ) const
+AABB AABB::transform( const Math::mat4x4& matrix ) const
 {
 
 	AABB ret;
@@ -49,12 +49,12 @@ AABB AABB::transform( const Math::Matrix4x4& matrix ) const
 		const bool maxX = !!(i & 0x1);
 		const bool maxY = !!(i & 0x2);
 		const bool maxZ = !!(i & 0x4);
-		Math::Vector3 pt;
+		Math::vec3 pt;
 		pt[0] = maxX ? m_MaxExtent[0] : m_MinExtent[0];
 		pt[1] = maxY ? m_MaxExtent[1] : m_MinExtent[1];
 		pt[2] = maxZ ? m_MaxExtent[2] : m_MinExtent[2];
 
-		pt = Math::TransformAndProject( pt, matrix );
+		pt = Math::TransformAndProject( matrix, pt );
 		ret.expandBy( pt );
 	}
 
@@ -63,9 +63,9 @@ AABB AABB::transform( const Math::Matrix4x4& matrix ) const
 
 // AABB-triangle overlap test code
 // by Tomas Akenine-Möller
-static bool planeBoxOverlap( Math::Vector3 normal, Math::Vector3 vert, Math::Vector3 maxbox )    // -NJMP-
+static bool planeBoxOverlap( Math::vec3 const& normal, Math::vec3 const& vert, Math::vec3 const& maxbox )    // -NJMP-
 {
-	Math::Vector3 vmin, vmax;
+	Math::vec3 vmin, vmax;
 
 	for(auto q = 0u; q < 3; q++)
 	{
@@ -81,8 +81,8 @@ static bool planeBoxOverlap( Math::Vector3 normal, Math::Vector3 vert, Math::Vec
 		}
 	}
 
-	if(Math::Dot( normal, vmin ) > 0.0f) return false;    // -NJMP-
-	if(Math::Dot( normal, vmax ) >= 0.0f) return true;    // -NJMP-
+	if(Math::dot( normal, vmin ) > 0.0f) return false;    // -NJMP-
+	if(Math::dot( normal, vmax ) >= 0.0f) return true;    // -NJMP-
 	return false;
 }
 
@@ -92,7 +92,7 @@ static bool planeBoxOverlap( Math::Vector3 normal, Math::Vector3 vert, Math::Vec
 /// \param	v1	2nd vertex of the triangle.
 /// \param	v1	3rd vertex of the triangle.
 /// \return	true if it succeeds, false if it fails.
-bool AABB::intersects( Math::Vector3 const& tv0, Math::Vector3 const& tv1, Math::Vector3 const& tv2 ) const
+bool AABB::intersects( Math::vec3 const& tv0, Math::vec3 const& tv1, Math::vec3 const& tv2 ) const
 {
 	//   use separating axis theorem to test overlap between triangle and box
 	//    need to test for overlap in these directions:
@@ -103,25 +103,25 @@ bool AABB::intersects( Math::Vector3 const& tv0, Math::Vector3 const& tv1, Math:
 	//       this gives 3x3=9 more tests
 	using namespace Math;
 
-	Vector3 const c = getBoxCenter();
-	Vector3 const hl = getHalfLength();
+	vec3 const c = getBoxCenter();
+	vec3 const hl = getHalfLength();
 
 	// This is the fastest branch on Sun
 	// move everything so that the boxcenter is in (0,0,0)
-	Vector3 const v0 = tv0 - c;
-	Vector3 const v1 = tv1 - c;
-	Vector3 const v2 = tv2 - c;
+	vec3 const v0 = tv0 - c;
+	vec3 const v1 = tv1 - c;
+	vec3 const v2 = tv2 - c;
 
 	// compute triangle edges
-	Vector3 const e0 = v1 - v0;
-	Vector3 const e1 = v2 - v1;
-	Vector3 const e2 = v0 - v2;
+	vec3 const e0 = v1 - v0;
+	vec3 const e1 = v2 - v1;
+	vec3 const e2 = v0 - v2;
 
 	// Bullet 3:
 	// test the 9 tests first (this was faster)
 
 	{
-		Vector3 fe = Abs( e0 );
+		vec3 fe = abs( e0 );
 		//	AXISTEST_X01( e0.z, e0.y, fez, fey );
 		{
 			float min = e0.z * v0.y - e0.y * v0.z;
@@ -153,7 +153,7 @@ bool AABB::intersects( Math::Vector3 const& tv0, Math::Vector3 const& tv1, Math:
 
 	{
 		//AXISTEST_X01( e1[Z], e1[Y], fez, fey );
-		Vector3 fe = Abs( e1 );
+		vec3 fe = abs( e1 );
 		{
 			float min = e1.z * v0.y - e1.y * v0.z;
 			float max = e1.z * v2.y - e1.y * v2.z;
@@ -182,7 +182,7 @@ bool AABB::intersects( Math::Vector3 const& tv0, Math::Vector3 const& tv1, Math:
 		}
 	}
 	{
-		Vector3 fe = Abs( e2 );
+		vec3 fe = abs( e2 );
 		// AXISTEST_X2( e2[Z], e2[Y], fez, fey );
 		{
 			float min = e2.z * v0.y - e2.y * v0.z;
@@ -233,7 +233,7 @@ bool AABB::intersects( Math::Vector3 const& tv0, Math::Vector3 const& tv1, Math:
 	// Bullet 2:
 	//  test if the box intersects the plane of the triangle
 	//  compute plane equation of triangle: normal*x+d=0
-	Vector3 normal = Cross(e0,e1);
+	vec3 normal = cross(e0,e1);
 
 	if(!planeBoxOverlap( normal, v0, hl )) return false;
 

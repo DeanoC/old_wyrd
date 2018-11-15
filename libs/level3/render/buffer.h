@@ -48,7 +48,7 @@ struct alignas(8) Buffer : public ResourceManager::Resource<BufferId>
 					   ResourceManager::ResourceNameView const& name_,
 					   BufferFlags flags_,
 					   uint64_t sizeInBytes_,
-					   uint8_t* data_ = nullptr) -> BufferHandle;
+					   void* data_ = nullptr) -> BufferHandle;
 
 	// helper for uniform data buffers
 	template<typename T>

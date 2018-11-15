@@ -2,7 +2,7 @@
 #include <unordered_map>
 #include <algorithm>
 
-Math::Vector3 TacticalMapStitcher::rotateVector(Math::Vector3 const& v, int rotationInDegrees_)
+Math::vec3 TacticalMapStitcher::rotateVector(Math::vec3 const& v, int rotationInDegrees_)
 {
 	if(rotationInDegrees_ < 0)
 	{
@@ -30,13 +30,13 @@ Geometry::AABB TacticalMapStitcher::rotateAABB(Geometry::AABB const& v, int rota
 	switch (rotationInDegrees_ % 360)
 	{
 	case 0: return v;
-	case 90: return v.transform(Math::CreateYRotationMatrix(Math::degreesToRadians(90.0f)));
-	case 180: return v.transform(Math::CreateYRotationMatrix(Math::degreesToRadians(180.0f)));
-	case 270: return v.transform(Math::CreateYRotationMatrix(Math::degreesToRadians(270.0f)));
+	case 90: return v.transform(Math::rotate(Math::identity<Math::mat4x4>(), 90.0f, Math::vec3(0,1,0)));
+	case 180: return v.transform(Math::rotate(Math::identity<Math::mat4x4>(), 180.0f, Math::vec3(0,1,0)));
+	case 270: return v.transform(Math::rotate(Math::identity<Math::mat4x4>(), 270.0f, Math::vec3(0,1,0)));
 	default: assert(false); return v;
 	}
 }
-void TacticalMapStitcher::addTacticalMapInstance(TacticalMap::ConstPtr map_, Math::Vector3 const position_, int rotationInDegrees_, int mapParcelId_)
+void TacticalMapStitcher::addTacticalMapInstance(TacticalMap::ConstPtr map_, Math::vec3 const position_, int rotationInDegrees_, int mapParcelId_)
 {
 	assert(mapParcelId_ <= 0xFF);
 	instances.emplace_back(map_, position_, rotationInDegrees_, mapParcelId_);
@@ -46,18 +46,18 @@ TacticalMap::Ptr TacticalMapStitcher::build()
 	// determine size of the stitched together map
 	static const float fmininit = std::numeric_limits<float>::max();
 	static const float fmaxinit = -std::numeric_limits<float>::max();
-	Math::Vector3 totalMinExtents {fmininit, fmininit, fmininit};
-	Math::Vector3 totalMaxExtents {fmaxinit, fmaxinit, fmaxinit};
+	Math::vec3 totalMinExtents {fmininit, fmininit, fmininit};
+	Math::vec3 totalMaxExtents {fmaxinit, fmaxinit, fmaxinit};
 	size_t levelCount = 0;
 	uint32_t tacticalLevelDataSize = 0;
 
 	for(auto[map, position, rotationInDegrees, _] : instances)
 	{
 		Geometry::AABB aabb = map->getAABB();
-		Math::Vector3 minExtent = position + aabb.getMinExtent();
-		Math::Vector3 maxExtent = position + aabb.getMaxExtent();
-		totalMinExtents = Math::Min( totalMinExtents, minExtent);
-		totalMaxExtents = Math::Max( totalMaxExtents, maxExtent);
+		Math::vec3 minExtent = position + aabb.getMinExtent();
+		Math::vec3 maxExtent = position + aabb.getMaxExtent();
+		totalMinExtents = Math::min( totalMinExtents, minExtent);
+		totalMaxExtents = Math::max( totalMaxExtents, maxExtent);
 		levelCount += map->levelCount;
 		if(tacticalLevelDataSize != 0)
 		{
@@ -93,8 +93,8 @@ TacticalMap::Ptr TacticalMapStitcher::build()
 	for(auto[map, position, rotationInDegrees, mapParcelId] : instances)
 	{
 		Geometry::AABB aabb = map->getAABB();
-		Math::Vector3 minExtent = position + aabb.getMinExtent();
-		Math::Vector3 maxExtent = position + aabb.getMaxExtent();
+		Math::vec3 minExtent = position + aabb.getMinExtent();
+		Math::vec3 maxExtent = position + aabb.getMaxExtent();
 
 		// copy level and level data
 		std::memcpy( curLevels, map->levels, map->levelCount * sizeof(TacticalMapTileLevel));
@@ -103,7 +103,7 @@ TacticalMap::Ptr TacticalMapStitcher::build()
 		// relocate tiles to the correct orientation and position on the big map
 		// also fixup pointers from the parcel map to the new big map
 
-		Math::Vector3 const bigMapPos = (minExtent - totalMinExtents);
+		Math::vec3 const bigMapPos = (minExtent - totalMinExtents);
 
 		int dsy = (int)std::floor(bigMapPos.z);
 		assert(dsy < height);
@@ -116,8 +116,8 @@ TacticalMap::Ptr TacticalMapStitcher::build()
 				TacticalMap::TileCoord_t ssx = 0;
 				TacticalMap::TileCoord_t ssy = 0;
 
-				Math::Vector3 v{ (float)x + map->getBottomLeft().x,  0, (float)y + map->getBottomLeft().y };
-				Math::Vector3 local = rotateVector( v, rotationInDegrees);
+				Math::vec3 v{ (float)x + map->getBottomLeft().x,  0, (float)y + map->getBottomLeft().y };
+				Math::vec3 local = rotateVector( v, rotationInDegrees);
 				map->worldToLocal(local, ssx, ssy);
 
 				int const si = (int)ssy * (int)map->width + (int)ssx;

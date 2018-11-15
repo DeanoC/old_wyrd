@@ -75,20 +75,20 @@ auto BasicMeshOps::computeFacePlaneEquations(MeshMod::Mesh::Ptr const& mesh, boo
 		// only makes sense for triangles or polygons (TODO should use newell method for polygons)
 		if(faceVert.size() >= 3)
 		{
-			Vector3 a( positions[faceVert[0]].getVector3());
-			Vector3 b( positions[faceVert[1]].getVector3());
-			Vector3 c( positions[faceVert[2]].getVector3());
+			vec3 const a( positions[faceVert[0]].getVec3());
+			vec3 const b( positions[faceVert[1]].getVec3());
+			vec3 const c( positions[faceVert[2]].getVec3());
 
-			Vector3 dba = b - a;
-			Vector3 dbc = b - c;
+			vec3 const dba = b - a;
+			vec3 const dbc = b - c;
 
-			Vector3 cross = Cross( dba, dbc );
-			Vector3 nc = Normalise( cross );
+			vec3 cross = Math::cross( dba, dbc );
+			vec3 nc = Normalise( cross );
 
 			if(IsFinite( nc ))
 			{
 				// d = distance along the plane normal to a vertex (all are on the plane if planar)
-				float d = Dot( nc, b );
+				float d = dot( nc, b );
 				(*peEle)[faceNum].planeEq = Math::Plane( nc, -d );
 			} else
 			{
@@ -100,8 +100,8 @@ auto BasicMeshOps::computeFacePlaneEquations(MeshMod::Mesh::Ptr const& mesh, boo
 					// polygon has degenerated to a line or point
 					// therefore fake a normal (any will do) and project a vertex
 					// it will give a plane going throught the line or point (best we can do)
-					nc = Vector3( 1, 0, 0 ); // any normal would do, randome would be better tbh...
-					float d = Dot( nc, b );
+					nc = vec3( 1, 0, 0 ); // any normal would do, randome would be better tbh...
+					float d = dot( nc, b );
 					(*peEle)[faceNum].planeEq = Math::Plane( nc, -d );
 				} else
 				{
@@ -115,12 +115,12 @@ auto BasicMeshOps::computeFacePlaneEquations(MeshMod::Mesh::Ptr const& mesh, boo
 				(*peEle)[faceNum].planeEq = Math::Plane( 0, 0, 0, 0 );
 			} else if(fixBad && faceVert.size() >= 1)
 			{
-				Vector3 a( positions[faceVert[0]].getVector3());
+				vec3 a( positions[faceVert[0]].getVec3());
 				// line or point cannot have a plane equation
 				// therefore fake a normal (any will do) and project a vertex
 				// it will give a plane going throught the line or point (best we can do)
-				Vector3 nc( 1, 0, 0 ); // any normal would do, randome would be better tbh...
-				float d = Dot( nc, a );
+				vec3 nc( 1, 0, 0 ); // any normal would do, randome would be better tbh...
+				float d = dot( nc, a );
 				(*peEle)[faceNum].planeEq = Math::Plane( nc, -d );
 			}
 		}
@@ -144,7 +144,7 @@ auto BasicMeshOps::computeAABB(MeshMod::Mesh::ConstPtr const& mesh, Geometry::AA
 	aabb = Geometry::AABB(); // reset aabb
 	for(auto const& pos : positions)
 	{
-		aabb.expandBy( pos.getVector3());
+		aabb.expandBy( pos.getVec3());
 	}
 }
 
@@ -403,14 +403,14 @@ auto BasicMeshOps::computeVertexNormalsEx(MeshMod::Mesh::Ptr const& mesh, bool r
 		vertexHalfEdges.clear();
 		vertices.getVertexHalfEdges( vertexIndex, vertexHalfEdges );
 
-		Math::Vector3 vertexNormal( 0, 0, 0 );
+		Math::vec3 vertexNormal( 0, 0, 0 );
 
 		// TODO smoothing groups
 		for(auto heIt = vertexHalfEdges.cbegin(); heIt != vertexHalfEdges.cend(); ++heIt)
 		{
 			const HalfEdgeData::HalfEdge& he = hes.get( *heIt );
 			const PolygonData::PlaneEquation& pe = planeEqs.get( he.polygonIndex );
-			Math::Vector3 localNormal = pe.planeEq.normal();
+			Math::vec3 localNormal = pe.planeEq.normal();
 
 			// get opposing indices
 			const HalfEdgeIndex i1 = ((*heIt) + 1) % (HalfEdgeIndex) vertexHalfEdges.size();
@@ -420,11 +420,11 @@ auto BasicMeshOps::computeVertexNormalsEx(MeshMod::Mesh::Ptr const& mesh, bool r
 			const PolygonData::PlaneEquation& pe1 = planeEqs.get( he1.polygonIndex );
 			const PolygonData::PlaneEquation& pe2 = planeEqs.get( he2.polygonIndex );
 
-			Math::Vector3 e1 = Normalise(pe1.planeEq.normal());
-			Math::Vector3 e2 = Normalise(pe2.planeEq.normal());
+			Math::vec3 e1 = Normalise(pe1.planeEq.normal());
+			Math::vec3 e2 = Normalise(pe2.planeEq.normal());
 
 			// compute the angle and only accumulate at non-sliver angles
-			const float angle = std::acos( -Dot( e1, e2 ) / (Math::Length( e1 ) * Math::Length( e2 )));
+			const float angle = std::acos( -dot( e1, e2 ) / (Math::Length( e1 ) * Math::Length( e2 )));
 			if(std::isfinite( angle ))
 			{
 				// accumulate the normal
@@ -441,11 +441,11 @@ auto BasicMeshOps::computeVertexNormalsEx(MeshMod::Mesh::Ptr const& mesh, bool r
 			// either fix it using simplier plane equation average, zero or ignore
 			if(zeroBad)
 			{
-				vertexNormal = Math::Vector3( 0, 0, 0 );
+				vertexNormal = Math::vec3( 0, 0, 0 );
 			} else if(fixBad)
 			{
 				HalfEdgeIndexContainer::const_iterator edgeIt = vertexHalfEdges.begin();
-				vertexNormal = Math::Vector3( 0, 0, 0 );
+				vertexNormal = Math::vec3( 0, 0, 0 );
 				while(edgeIt != vertexHalfEdges.end())
 				{
 					const HalfEdgeData::HalfEdge& he = hes.get( *edgeIt );
@@ -471,12 +471,12 @@ auto BasicMeshOps::computeVertexNormalsEx(MeshMod::Mesh::Ptr const& mesh, bool r
 
 }
 
-auto BasicMeshOps::transform(MeshMod::Mesh::Ptr const& mesh, Math::Matrix4x4 const& transform ) -> void
+auto BasicMeshOps::transform(MeshMod::Mesh::Ptr const& mesh, Math::mat4x4 const& transform ) -> void
 {
 	auto& vertices = mesh->getVertices();
 	for(auto& vertex : vertices.positions())
 	{
-		Math::Vector3 pos = Math::TransformAndProject( vertex.getVector3(), transform );
+		Math::vec3 pos = Math::TransformAndProject( transform, vertex.getVec3() );
 		vertex.x = pos.x;
 		vertex.y = pos.y;
 		vertex.z = pos.z;

@@ -40,26 +40,26 @@ constexpr auto Flip(Cardinal s1) -> Cardinal
 	}
 }
 
-constexpr auto ToVector(Cardinal s1) -> Math::Vector3
+inline auto ToVector(Cardinal s1) -> Math::vec3
 {
 	using namespace Math;
 	switch (s1)
 	{
-	case Cardinal::Above: return Vector3(0, 1, 0);
-	case Cardinal::Below: return Vector3(0, -1, 0);
-	case Cardinal::Left: return Vector3(-1, 0, 0);
-	case Cardinal::Right: return Vector3(1, 0, 0);
-	case Cardinal::Front: return Vector3(0, 0, 1);
-	case Cardinal::Back: return Vector3(0, 0, -1);
-	default: return Vector3(0, 0, 0);
+	case Cardinal::Above: return vec3(0, 1, 0);
+	case Cardinal::Below: return vec3(0, -1, 0);
+	case Cardinal::Left: return vec3(-1, 0, 0);
+	case Cardinal::Right: return vec3(1, 0, 0);
+	case Cardinal::Front: return vec3(0, 0, 1);
+	case Cardinal::Back: return vec3(0, 0, -1);
+	default: return vec3(0, 0, 0);
 	}
 }
 
-constexpr auto ToCardinal(Math::Vector3 v) -> Cardinal
+inline auto ToCardinal(Math::vec3 v) -> Cardinal
 {
-	if (cx::abs(v.x) > cx::abs(v.y))
+	if (std::abs(v.x) > std::abs(v.y))
 	{
-		if (cx::abs(v.x) > cx::abs(v.z))
+		if (std::abs(v.x) > std::abs(v.z))
 		{
 			// x major
 			if (v.x < 0) return Cardinal::Left;
@@ -72,7 +72,7 @@ constexpr auto ToCardinal(Math::Vector3 v) -> Cardinal
 			else return Cardinal::Front;
 		}
 	}
-	else if (cx::abs(v.y) > cx::abs(v.z))
+	else if (std::abs(v.y) > std::abs(v.z))
 	{
 		// y major
 		if (v.y < 0) return Cardinal::Below;
@@ -97,9 +97,9 @@ enum class StructuralType : uint8_t
 struct TacticalMapVolume
 {
 	float volume;
-	Math::Vector3 floorNormal;
+	Math::vec3 floorNormal;
 	float levelHeight;
-	Math::Vector3 roofNormal;
+	Math::vec3 roofNormal;
 	float roofHeight;
 };
 
@@ -161,8 +161,8 @@ struct ITacticalMapBuilder
 	virtual void setMinimumHeight(float height_) = 0;
 	virtual void setMaximumFloorInclination(float angleInRadians_) = 0;
 	virtual void setLevelDataSize(uint32_t size_) = 0;
-	virtual void addMeshAt(MeshMod::MeshPtr const& mesh, TacticalMapLevelDataHeader const* levelData, Math::Matrix4x4 const& transform) = 0;
-	virtual void addBoxAt(Geometry::AABB const& box, TacticalMapLevelDataHeader const* levelData, Math::Matrix4x4 const& transform) = 0;
+	virtual void addMeshAt(MeshMod::MeshPtr const& mesh, TacticalMapLevelDataHeader const* levelData, Math::mat4x4 const& transform) = 0;
+	virtual void addBoxAt(Geometry::AABB const& box, TacticalMapLevelDataHeader const* levelData, Math::mat4x4 const& transform) = 0;
 	virtual std::shared_ptr<class TacticalMap> build() = 0;
 };
 
@@ -172,7 +172,7 @@ struct ITacticalMapStitcher
 	using Ptr = std::shared_ptr<ITacticalMapStitcher>;
 	virtual ~ITacticalMapStitcher() {};
 
-	virtual void addTacticalMapInstance(std::shared_ptr<class TacticalMap const> map_, Math::Vector3 const position, int rotationInDegrees_, int mapParcelId_) = 0;
+	virtual void addTacticalMapInstance(std::shared_ptr<class TacticalMap const> map_, Math::vec3 const position, int rotationInDegrees_, int mapParcelId_) = 0;
 	virtual std::shared_ptr<class TacticalMap> build() = 0;
 };
 
@@ -191,25 +191,25 @@ public:
 
 	static bool createFromStream(std::istream& in, std::vector<TacticalMap::Ptr>& out_);
 
-	static ITacticalMapBuilder::Ptr allocateBuilder(Math::Vector2 const bottomLeft_, TileCoord_t width_, TileCoord_t height_);
+	static ITacticalMapBuilder::Ptr allocateBuilder(Math::vec2 const bottomLeft_, TileCoord_t width_, TileCoord_t height_);
 	static ITacticalMapStitcher::Ptr allocateStitcher();
 
 	int getWidth() const { return (int)width; }
 	int getHeight() const { return (int)height; }
-	Math::Vector2 const getBottomLeft() const { return bottomLeft; }
+	Math::vec2 const getBottomLeft() const { return bottomLeft; }
 
-	Math::Vector2 worldToLocal( Math::Vector3 const& world ) const;
-	void worldToLocal(Math::Vector3 const& world, TileCoord_t& outX, TileCoord_t &outY) const;
+	Math::vec2 worldToLocal( Math::vec3 const& world ) const;
+	void worldToLocal(Math::vec3 const& world, TileCoord_t& outX, TileCoord_t &outY) const;
 
-	Math::Vector3 localToWorld(TileCoord_t const x, TileCoord_t const y) const;
+	Math::vec3 localToWorld(TileCoord_t const x, TileCoord_t const y) const;
 
-	LevelDataPair mutateLookupAtWorld(Math::Vector3 const& world_, float const range_, uint32_t const levelMask_);
+	LevelDataPair mutateLookupAtWorld(Math::vec3 const& world_, float const range_, uint32_t const levelMask_);
 
-	ConstLevelDataPair lookupAtWorld(Math::Vector3 const& world_, float const range_, uint32_t const levelMask_) const;
+	ConstLevelDataPair lookupAtWorld(Math::vec3 const& world_, float const range_, uint32_t const levelMask_) const;
 
- 	bool lookupVolumeAtWorld(Math::Vector3 const& world_, float const range_, uint32_t const levelMask_, TacticalMapVolume* out_) const;
+ 	bool lookupVolumeAtWorld(Math::vec3 const& world_, float const range_, uint32_t const levelMask_, TacticalMapVolume* out_) const;
 
-	bool lookupLevelDataAtWorld(Math::Vector3 const& world_, float const range_, uint32_t const levelMask_, TacticalMapLevelDataHeader* out_) const;
+	bool lookupLevelDataAtWorld(Math::vec3 const& world_, float const range_, uint32_t const levelMask_, TacticalMapLevelDataHeader* out_) const;
 
 	void damageStructure(Geometry::AABB const& box);
 
@@ -232,8 +232,8 @@ public:
 	bool saveTo(uint64_t const regenMarker, std::vector<uint8_t>& result);
 
 	Geometry::AABB getAABB() const {
-		return Geometry::AABB(Math::Vector3(bottomLeft.x, minHeight, bottomLeft.y),
-						  Math::Vector3(bottomLeft.x + width, maxHeight, bottomLeft.y + height));
+		return Geometry::AABB(Math::vec3(bottomLeft.x, minHeight, bottomLeft.y),
+						  Math::vec3(bottomLeft.x + width, maxHeight, bottomLeft.y + height));
 	}
 
 private:
@@ -262,7 +262,7 @@ private:
 	uint16_t padd0, padd1;
 
 	uint32_t levelCount = 0;
-	Math::Vector2 bottomLeft;
+	Math::vec2 bottomLeft;
 	float minHeight, maxHeight;
 
 	TacticalMapTileLevel* levels = nullptr;
@@ -270,25 +270,24 @@ private:
 	uint8_t* levelDataHeap = nullptr;
 };
 
-inline Math::Vector2 TacticalMap::worldToLocal( Math::Vector3 const& world ) const
+inline Math::vec2 TacticalMap::worldToLocal( Math::vec3 const& world ) const
 {
-	return Math::Vector2((world.x - bottomLeft.x), (world.z - bottomLeft.y));
+	return Math::vec2((world.x - bottomLeft.x), (world.z - bottomLeft.y));
 }
 
-inline void TacticalMap::worldToLocal(Math::Vector3 const& world, TileCoord_t& outX, TileCoord_t &outY) const
+inline void TacticalMap::worldToLocal(Math::vec3 const& world, TileCoord_t& outX, TileCoord_t &outY) const
 {
-
-	Math::Vector2  local = worldToLocal(world) + Math::Vector2(0.5f,0.5f);
-	local = Math::Clamp(local, Math::Vector2(0, 0), Math::Vector2((float)width - 1, (float)height - 1));
+	Math::vec2  local = worldToLocal(world) + Math::vec2(0.5f,0.5f);
+	local = Math::clamp(local, Math::vec2(0, 0), Math::vec2((float)width - 1, (float)height - 1));
 	outX = (TileCoord_t) std::floor(local.x);
 	outY = (TileCoord_t) std::floor(local.y);
 }
 
-inline Math::Vector3 TacticalMap::localToWorld(TileCoord_t const x, TileCoord_t const y) const
+inline Math::vec3 TacticalMap::localToWorld(TileCoord_t const x, TileCoord_t const y) const
 {
 
-	Math::Vector2 local{ (float)x + bottomLeft.x, (float)y + bottomLeft.y };
-	local -= Math::Vector2(0.5f, 0.5f);
+	Math::vec2 local{ (float)x + bottomLeft.x, (float)y + bottomLeft.y };
+	local -= Math::vec2(0.5f, 0.5f);
 	return { local.x, 0, local.y };
 }
 

@@ -4,10 +4,10 @@
 
 namespace MeshMod {
 
-void SceneNode::visitDescendents(Math::Matrix4x4 const& rootMatrix, std::function<void(SceneNode const&, Math::Matrix4x4 const&)> func ) const
+void SceneNode::visitDescendents(Math::mat4x4 const& rootMatrix, std::function<void(SceneNode const&, Math::mat4x4 const&)> func ) const
 {
 	std::stack<MeshMod::SceneNode const*> nodeStack;
-	std::stack<Math::Matrix4x4> matrixStack;
+	std::stack<Math::mat4x4> matrixStack;
 
 	nodeStack.push(this);
 	matrixStack.push(rootMatrix);
@@ -19,8 +19,8 @@ void SceneNode::visitDescendents(Math::Matrix4x4 const& rootMatrix, std::functio
 		auto const parentMatrix = matrixStack.top();
 		matrixStack.pop();
 
-		Math::Matrix4x4 local = node->transform.MakeMatrix();
-		Math::Matrix4x4 world = local * parentMatrix;
+		Math::mat4x4 local = node->transform.MakeMatrix();
+		Math::mat4x4 world = local * parentMatrix;
 
 		func(*node, world);
 
@@ -32,10 +32,10 @@ void SceneNode::visitDescendents(Math::Matrix4x4 const& rootMatrix, std::functio
 	}
 }
 
-void SceneNode::mutateDescendents(Math::Matrix4x4 const& rootMatrix, std::function<void(SceneNode&, Math::Matrix4x4 const&)> func)
+void SceneNode::mutateDescendents(Math::mat4x4 const& rootMatrix, std::function<void(SceneNode&, Math::mat4x4 const&)> func)
 {
 	std::stack<MeshMod::SceneNode*> nodeStack;
-	std::stack<Math::Matrix4x4> matrixStack;
+	std::stack<Math::mat4x4> matrixStack;
 
 	nodeStack.push(this);
 	matrixStack.push(rootMatrix);
@@ -47,8 +47,8 @@ void SceneNode::mutateDescendents(Math::Matrix4x4 const& rootMatrix, std::functi
 		auto const parentMatrix = matrixStack.top();
 		matrixStack.pop();
 
-		Math::Matrix4x4 local = node->transform.MakeMatrix();
-		Math::Matrix4x4 world = local * parentMatrix;
+		Math::mat4x4 local = node->transform.MakeMatrix();
+		Math::mat4x4 world = local * parentMatrix;
 
 		func(*node, world);
 

@@ -36,10 +36,10 @@ struct alignas(8) RenderPass : public ResourceManager::Resource<RenderPassId>
 			std::shared_ptr<ResourceManager::ResourceMan> rm_,
 			ResourceManager::ResourceNameView const& name_,
 			std::vector<Target> const& targets_,
-			std::vector<Math::Vector4> const& clearValues_) -> RenderPassHandle;
+			std::vector<Math::vec4> const& clearValues_) -> RenderPassHandle;
 
 	Target const* getTargets() const { return (Target const*) (this + 1); }
-	Math::Vector4 const* getClearValues() const { return (Math::Vector4 const*)(getTargets() + numTargets); }
+	Math::vec4 const* getClearValues() const { return (Math::vec4 const*)(getTargets() + numTargets); }
 
 	uint8_t numTargets;
 	uint8_t padd[3];

@@ -9,7 +9,7 @@ namespace Geometry
 {
 Ray::Ray() {}
 
-Ray::Ray( Math::Vector3 const& origin, Math::Vector3 const& direction )
+Ray::Ray( Math::vec3 const& origin, Math::vec3 const& direction )
   : m_origin( origin ), 
 	m_direction( direction )
 {
@@ -27,8 +27,8 @@ bool Ray::intersectsAABB( AABB const& bounds, float& min, float& max ) const
 	max = std::numeric_limits<float>::max();
 
 	// clip to each axis
-	Math::Vector3 p1 = bounds.getMinExtent() - m_origin;
-	Math::Vector3 p2 = bounds.getMaxExtent() - m_origin;
+	Math::vec3 p1 = bounds.getMinExtent() - m_origin;
+	Math::vec3 p2 = bounds.getMaxExtent() - m_origin;
 	for( int axis = 0; axis < 3; ++axis )
 	{
 		// compute the ray extents (i.e. slab) along this axis
@@ -64,7 +64,7 @@ bool Ray::intersectsAABB( AABB const& bounds, float& min, float& max ) const
 /*! Moller and Trumbore fast culled ray-triangle intersection.
 */ 
 bool Ray::intersectsTriangle(
-	Math::Vector3 const& v0, Math::Vector3 const& v1, Math::Vector3 const& v2,
+	Math::vec3 const& v0, Math::vec3 const& v1, Math::vec3 const& v2,
 	float& v, float& w, float& t 
 ) const
 {
@@ -72,34 +72,34 @@ bool Ray::intersectsTriangle(
 	static float const one( 1 );
 
 	// find vectors for two edges sharing v0
-	Math::Vector3 edge1 = v1 - v0;
-	Math::Vector3 edge2 = v2 - v0;
+	Math::vec3 const edge1 = v1 - v0;
+	Math::vec3 const edge2 = v2 - v0;
 
 	// begin calculating determinant - also used to calculate v parameter
-	Math::Vector3 pvec = Cross( m_direction, edge2 );
+	Math::vec3 const pvec = cross( m_direction, edge2 );
 
 	// if determinant is zero, ray lies in plane of triangle
-	float const det = Dot( edge1, pvec );
+	float const det = dot( edge1, pvec );
 
 	// pre-compute the reciprocal
 	float const det_inv = one/det;
 
 	// calculate the distance from v0 to the ray origin
-	Math::Vector3 tvec = m_origin - v0;
+	Math::vec3 const  tvec = m_origin - v0;
 
 	// calculate v parameter and test bounds
-	v = Dot( tvec, pvec )*det_inv;
+	v = dot( tvec, pvec )*det_inv;
 	if( zero < v && v <= one )
 	{
 		// prepare to test w parameter
-		Math::Vector3 qvec = Cross( tvec, edge1 );
+		Math::vec3 const qvec = cross( tvec, edge1 );
 
 		// calculate w parameter and test bounds
-		w = Dot( m_direction, qvec )*det_inv;
+		w = dot( m_direction, qvec )*det_inv;
 		if( zero < w && w + v <= one )
 		{
 			// ray intersects triangle, calculate t
-			t = Dot( edge2, qvec )*det_inv;
+			t = dot( edge2, qvec )*det_inv;
 			return true;
 		}
 	}
@@ -109,7 +109,7 @@ bool Ray::intersectsTriangle(
 }
 
 bool Ray::intersectsTriangleBackFaceCull(
-	Math::Vector3 const& v0, Math::Vector3 const& v1, Math::Vector3 const& v2,
+	Math::vec3 const& v0, Math::vec3 const& v1, Math::vec3 const& v2,
 	float& v, float& w, float& t
 ) const
 {
@@ -117,14 +117,14 @@ bool Ray::intersectsTriangleBackFaceCull(
 	static float const one(1);
 
 	// find vectors for two edges sharing v0
-	Math::Vector3 edge1 = v1 - v0;
-	Math::Vector3 edge2 = v2 - v0;
+	Math::vec3 const edge1 = v1 - v0;
+	Math::vec3 const edge2 = v2 - v0;
 
 	// begin calculating determinant - also used to calculate v parameter
-	Math::Vector3 pvec = Cross(m_direction, edge2);
+	Math::vec3 const pvec = cross(m_direction, edge2);
 
 	// if determinant is zero, ray lies in plane of triangle
-	float const det = Dot(edge1, pvec);
+	float const det = dot(edge1, pvec);
 
 	// cull front-facing triangles
 	if (det >= zero)
@@ -134,21 +134,21 @@ bool Ray::intersectsTriangleBackFaceCull(
 	float const det_inv = one / det;
 
 	// calculate the distance from v0 to the ray origin
-	Math::Vector3 tvec = m_origin - v0;
+	Math::vec3 const tvec = m_origin - v0;
 
 	// calculate v parameter and test bounds
-	v = Dot(tvec, pvec)*det_inv;
+	v = dot(tvec, pvec)*det_inv;
 	if (zero < v && v <= one)
 	{
 		// prepare to test w parameter
-		Math::Vector3 qvec = Cross(tvec, edge1);
+		Math::vec3 const qvec = cross(tvec, edge1);
 
 		// calculate w parameter and test bounds
-		w = Dot(m_direction, qvec)*det_inv;
+		w = dot(m_direction, qvec)*det_inv;
 		if (zero < w && w + v <= one)
 		{
 			// ray intersects triangle, calculate t
-			t = Dot(edge2, qvec)*det_inv;
+			t = dot(edge2, qvec)*det_inv;
 			return true;
 		}
 	}

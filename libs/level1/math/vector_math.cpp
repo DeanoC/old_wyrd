@@ -8,117 +8,7 @@
 #include "core/core.h"
 #include "vector_math.h"
 
-namespace {
-float DetInternal(float a1, float a2, float a3,
-				  float b1, float b2, float b3,
-				  float c1, float c2, float c3)
-{
-	float ret = a1 * (b2 * c3 - b3 * c2) -
-				b1 * (a2 * c3 - a3 * c2) +
-				c1 * (a2 * b3 - a3 * b2);
-
-	return ret;
-}
-
-}
-
 namespace Math {
-float C_Determinant(const Matrix4x4& mat)
-{
-	float a1, a2, a3, a4;
-	float b1, b2, b3, b4;
-	float c1, c2, c3, c4;
-	float d1, d2, d3, d4;
-
-	a1 = mat(0, 0);
-	b1 = mat(0, 1);
-	c1 = mat(0, 2);
-	d1 = mat(0, 3);
-	a2 = mat(1, 0);
-	b2 = mat(1, 1);
-	c2 = mat(1, 2);
-	d2 = mat(1, 3);
-	a3 = mat(2, 0);
-	b3 = mat(2, 1);
-	c3 = mat(2, 2);
-	d3 = mat(2, 3);
-	a4 = mat(3, 0);
-	b4 = mat(3, 1);
-	c4 = mat(3, 2);
-	d4 = mat(3, 3);
-
-	float ret = a1 * DetInternal(b2, b3, b4, c2, c3, c4, d2, d3, d4) -
-				b1 * DetInternal(a2, a3, a4, c2, c3, c4, d2, d3, d4) +
-				c1 * DetInternal(a2, a3, a4, b2, b3, b4, d2, d3, d4) -
-				d1 * DetInternal(a2, a3, a4, b2, b3, b4, c2, c3, c4);
-
-	return ret;
-}
-
-Matrix4x4 C_Adjoint(const Matrix4x4& mat)
-{
-	float a1, a2, a3, a4;
-	float b1, b2, b3, b4;
-	float c1, c2, c3, c4;
-	float d1, d2, d3, d4;
-
-	a1 = mat(0, 0);
-	b1 = mat(0, 1);
-	c1 = mat(0, 2);
-	d1 = mat(0, 3);
-	a2 = mat(1, 0);
-	b2 = mat(1, 1);
-	c2 = mat(1, 2);
-	d2 = mat(1, 3);
-	a3 = mat(2, 0);
-	b3 = mat(2, 1);
-	c3 = mat(2, 2);
-	d3 = mat(2, 3);
-	a4 = mat(3, 0);
-	b4 = mat(3, 1);
-	c4 = mat(3, 2);
-	d4 = mat(3, 3);
-
-	Matrix4x4 ret;
-	ret(0, 0) = DetInternal(b2, b3, b4, c2, c3, c4, d2, d3, d4);
-	ret(1, 0) = -DetInternal(a2, a3, a4, c2, c3, c4, d2, d3, d4);
-	ret(2, 0) = DetInternal(a2, a3, a4, b2, b3, b4, d2, d3, d4);
-	ret(3, 0) = -DetInternal(a2, a3, a4, b2, b3, b4, c2, c3, c4);
-
-	ret(0, 1) = -DetInternal(b1, b3, b4, c1, c3, c4, d1, d3, d4);
-	ret(1, 1) = DetInternal(a1, a3, a4, c1, c3, c4, d1, d3, d4);
-	ret(2, 1) = -DetInternal(a1, a3, a4, b1, b3, b4, d1, d3, d4);
-	ret(3, 1) = DetInternal(a1, a3, a4, b1, b3, b4, c1, c3, c4);
-
-	ret(0, 2) = DetInternal(b1, b2, b4, c1, c2, c4, d1, d2, d4);
-	ret(1, 2) = -DetInternal(a1, a2, a4, c1, c2, c4, d1, d2, d4);
-	ret(2, 2) = DetInternal(a1, a2, a4, b1, b2, b4, d1, d2, d4);
-	ret(3, 2) = -DetInternal(a1, a2, a4, b1, b2, b4, c1, c2, c4);
-
-	ret(0, 3) = -DetInternal(b1, b2, b3, c1, c2, c3, d1, d2, d3);
-	ret(1, 3) = DetInternal(a1, a2, a3, c1, c2, c3, d1, d2, d3);
-	ret(2, 3) = -DetInternal(a1, a2, a3, b1, b2, b3, d1, d2, d3);
-	ret(3, 3) = DetInternal(a1, a2, a3, b1, b2, b3, c1, c2, c3);
-
-	return ret;
-
-}
-
-Matrix4x4 C_Invert(const Matrix4x4& mat)
-{
-	float det = C_Determinant(mat);
-	Matrix4x4 ret;
-
-	if(fabsf(det) < 1e-11f)
-		ret = IdentityMatrix();
-	else
-	{
-		ret = C_Adjoint(mat);
-		ret = ret * (1.f / det);
-	}
-
-	return ret;
-}
 
 static uint32_t const SRGBTable[256] = {
 		0x00000000, 0x399f22b4, 0x3a1f22b4, 0x3a6eb40e, 0x3a9f22b4, 0x3ac6eb61, 0x3aeeb40e, 0x3b0b3e5d,
@@ -162,15 +52,15 @@ float SRGB_to_float(uint32_t val)
 
 float SRGB_to_float(float val)
 {
-	return *(float *) &SRGBTable[(uint8_t) (Clamp(val, 0.0f, 1.0f) * 255.1f)];
+	return *(float *) &SRGBTable[(uint8_t) (clamp(val, 0.0f, 1.0f) * 255.1f)];
 }
 
-Plane CreatePlaneFromPoints(size_t pointCount, Vector3 const* points)
+Plane CreatePlaneFromPoints(size_t pointCount, vec3 const* points)
 {
 	assert(pointCount >= 3);
 
 	// calculate centroid of point cloud
-	Vector3 centroid = points[0];
+	vec3 centroid = points[0];
 	for (size_t i = 1; i < pointCount; i++)
 	{
 		centroid += points[i];
@@ -181,7 +71,7 @@ Plane CreatePlaneFromPoints(size_t pointCount, Vector3 const* points)
 	double covMat[6] = { 0, 0, 0, 0, 0, 0 };
 	for (size_t i = 0; i < pointCount; i++)
 	{
-		Vector3 rel = points[i] - centroid;
+		vec3 rel = points[i] - centroid;
 		covMat[0] += rel.x * rel.x;
 		covMat[1] += rel.x * rel.y;
 		covMat[2] += rel.x * rel.z;
@@ -232,16 +122,16 @@ Plane CreatePlaneFromPoints(size_t pointCount, Vector3 const* points)
 		wd[2] += zaxis[2] * wz;
 	}
 
-	Vector3 weightedDir;
+	vec3 weightedDir;
 
 	// no dominate axis, try normalized centroid
 	double lensqr = wd[0] * wd[0] + wd[1] * wd[1] + wd[2] * wd[2];
 	if(lensqr < 1e-15f )
 	{
-		if (ApproxEqual(centroid, Vector3(0, 0, 0)))
+		if (ApproxEqual(centroid, vec3(0, 0, 0)))
 		{
 			// nothing to do but invent one...
-			weightedDir = Vector3(0, 1, 0);
+			weightedDir = vec3(0, 1, 0);
 		}
 		else
 		{
@@ -256,7 +146,7 @@ Plane CreatePlaneFromPoints(size_t pointCount, Vector3 const* points)
 		weightedDir.z = (float)(wd[2] / len);
 
 	}
-	return Plane(weightedDir, Dot(weightedDir, centroid));
+	return Plane(weightedDir, dot(weightedDir, centroid));
  }
 
 };

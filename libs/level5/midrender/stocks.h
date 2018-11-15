@@ -31,12 +31,13 @@ inline static auto positionOnlyVertexInput = ResourceManager::ResourceNameView("
 inline static auto passthroughVertexShader = ResourceManager::ResourceNameView("mem$passthroughVertexShader");
 
 // simple forward render stocks
-inline static auto simpleForwardRendererColourRT = ResourceManager::ResourceNameView("mem$simpleForwardRendererColourRT");
-inline static auto simpleForwardRendererDepthStencilRT = ResourceManager::ResourceNameView("mem$simpleForwardRendererDepthStencilRT");
-inline static auto simpleForwardRendererViewport = ResourceManager::ResourceNameView("mem$simpleForwardRendererViewport");
-inline static auto simpleForwardRendererRenderPass = ResourceManager::ResourceNameView("mem$simpleForwardRendererRenderPass");
-inline static auto simpleForwardRendererRenderTarget = ResourceManager::ResourceNameView("mem$simpleForwardRendererRenderTarget");
-inline static auto simpleForwardRendererDefaultPipeline = ResourceManager::ResourceNameView("mem$simpleForwardRendererDefaultPipeline");
+inline static auto simpleForwardColourRT = ResourceManager::ResourceNameView("mem$simpleForwardColourRT");
+inline static auto simpleForwardDepthStencilRT = ResourceManager::ResourceNameView("mem$simpleForwardDepthStencilRT");
+inline static auto simpleForwardViewport = ResourceManager::ResourceNameView("mem$simpleForwardViewport");
+inline static auto simpleForwardRenderPass = ResourceManager::ResourceNameView("mem$simpleForwardRenderPass");
+inline static auto simpleForwardRenderTarget = ResourceManager::ResourceNameView("mem$simpleForwardRenderTarget");
+inline static auto simpleForwardRasterState = ResourceManager::ResourceNameView("mem$simpleForwardRasterState");
+inline static auto simpleForwardGlobalBuffer = ResourceManager::ResourceNameView("mem$simpleForwardGlobalBuffer");
 
 }
 }

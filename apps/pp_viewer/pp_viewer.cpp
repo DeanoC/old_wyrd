@@ -17,15 +17,10 @@
 #include "render/rasterisationstate.h"
 #include "midrender/stocks.h"
 #include "midrender/imguibindings.h"
-
-static auto defaultBindingTableMemoryMapName = ResourceManager::ResourceNameView("mem$defaultBindingTableMemoryMap");
-static auto defaultBindingTableName = ResourceManager::ResourceNameView("mem$defaultBindingTable");
-static auto defaultRenderPipelineName = ResourceManager::ResourceNameView("mem$defaultRenderPipeline");
-
-static auto basicTriVertexBufferName = ResourceManager::ResourceNameView("mem$basicTriVertexBuffer");
-static auto basicTriVertexBuffer2Name = ResourceManager::ResourceNameView("mem$basicTriVertexBuffer2");
-static auto basicTriIndexBufferName = ResourceManager::ResourceNameView("mem$basicTriIndexBuffer");
-static auto pushColourFragmentShaderName = ResourceManager::ResourceNameView("mem$pushColourOutFragmentShader");
+#include "midrender/simpleforwardglobals.h"
+#include "midrender/simpleeye.h"
+#include "midrender/meshmodrenderer.h"
+#include "meshops/platonicsolids.h"
 
 struct App
 {
@@ -116,94 +111,14 @@ struct App
 													 display->getWidth(),
 													 display->getHeight());
 
-		Buffer::Create<float>(rm,
-							  basicTriVertexBufferName,
-							  Buffer::FromUsage(Usage::VertexRead | Usage::DMADst),
-							  {
-									  0.0f, 1.0f, 0.5f,
-									  1.0f, 1.0f, 0.5f,
-									  1.0f, 0.0f, 0.5f
-							  });
-
-		Buffer::Create<float>(rm,
-							  basicTriVertexBuffer2Name,
-							  Buffer::FromUsage(Usage::VertexRead | Usage::DMADst),
-							  {
-									  0.0f, 0.0f, 0.5f,
-									  1.0f, 1.0f, 0.5f,
-									  0.0f, 1.0f, 0.5f
-							  });
-
-		Buffer::Create<uint16_t>(rm,
-								 basicTriIndexBufferName,
-								 Buffer::FromUsage(Usage::IndexRead | Usage::DMADst),
-								 {
-										 0, 1, 2
-								 });
-
-		auto const hlslPushColourShaderSourceName = ResourceNameView("mem$hlslPushColourOutFragmentShaderSource"sv);
-		auto const glslPushColourShaderSourceName = ResourceNameView("mem$glslPushColourOutFragmentShaderSource"sv);
-
-		TextResource::Create(
-				rm,
-				hlslPushColourShaderSourceName,
-				"[[vk::push_constant]] cbuffer S { [[vk::offset(64)]] float4 colour; };\n"
-				"[[vk::location(0)]] float4 main()\n"
-				"{\n"
-				"		return colour;\n"
-				"}\n");
-
-		TextResource::CreateFromFile(
-				rm,
-				glslPushColourShaderSourceName,
-				"text/shaders/pushcolourout_frag.glsl");
-
-		SPIRVShader::Compile(
-				rm,
-				pushColourFragmentShaderName,
-				{rm->openByName<TextResourceId>(glslPushColourShaderSourceName)},
-				ShaderSourceLanguage::GLSL,
-				ShaderType::Fragment,
-				0);
-
-		BindingTableMemoryMap::Create(
-				rm,
-				defaultBindingTableMemoryMapName,
-				{}
-		);
-
-		BindingTable::Create(
-				rm,
-				defaultBindingTableName,
-				{rm->openByName<BindingTableMemoryMapId>(defaultBindingTableMemoryMapName)});
-
-
-		RenderPipeline::Create(
-				rm,
-				defaultRenderPipelineName,
-				Topology::Triangles,
-				RenderPipelineFlags::None,
-				DynamicPipelineState::None,
-				{
-						rm->openByName<BindingTableMemoryMapId>(defaultBindingTableMemoryMapName)
-				},
-				{
-						{0,  sizeof(float) * 16, ShaderType::Vertex}, // world matrix
-						{64, sizeof(float) * 4,  ShaderType::Fragment}, // colour
-				},
-				{
-						rm->openByName<SPIRVShaderId>(Stock::passthroughVertexShader),
-						rm->openByName<SPIRVShaderId>(pushColourFragmentShaderName),
-				},
-				rm->openByName<RasterisationStateId>(Stock::simpleForwardRendererDefaultPipeline),
-				rm->openByName<RenderPassId>(Stock::simpleForwardRendererRenderPass),
-				rm->openByName<ROPBlenderId>(Stock::singleOpaqueROPBlender),
-				rm->openByName<VertexInputId>(Stock::positionOnlyVertexInput),
-				rm->openByName<ViewportId>(Stock::simpleForwardRendererViewport)
-		);
-
-		imguiBindings.reset( new MidRender::ImguiBindings() );
+		imguiBindings.reset(new MidRender::ImguiBindings());
 		imguiBindings->init(rm);
+		meshModRenderer.reset(new MidRender::MeshModRenderer());
+		meshModRenderer->init(rm);
+
+		auto rootScene = std::make_shared<MeshMod::SceneNode>();
+		rootScene->addObject(MeshOps::PlatonicSolids::createCube());
+		solidSceneIndex = meshModRenderer->addScene(rootScene);
 	}
 
 	auto body() -> bool
@@ -214,56 +129,60 @@ struct App
 
 		// acquire the resources by name
 		auto& rm = resourceManager;
-		auto colourRT0 = rm->acquireByName<Texture>(Stock::simpleForwardRendererColourRT);
-		auto renderPass = rm->acquireByName<RenderPass>(Stock::simpleForwardRendererRenderPass);
-		auto renderTarget = rm->acquireByName<RenderTarget>(Stock::simpleForwardRendererRenderTarget);
-		auto renderPipeline = rm->acquireByName<RenderPipeline>(defaultRenderPipelineName);
+		auto colourRT0 = rm->acquireByName<Texture>(Stock::simpleForwardColourRT);
+		auto renderPass = rm->acquireByName<RenderPass>(Stock::simpleForwardRenderPass);
+		auto renderTarget = rm->acquireByName<RenderTarget>(Stock::simpleForwardRenderTarget);
 
-		auto vBuffer = rm->acquireByName<Buffer>(basicTriVertexBufferName);
-		auto vBuffer2 = rm->acquireByName<Buffer>(basicTriVertexBuffer2Name);
-		auto iBuffer = rm->acquireByName<Buffer>(basicTriIndexBufferName);
+		auto globalBuffer = rm->acquireByName<Buffer>(Stock::simpleForwardGlobalBuffer);
 
 		auto renderQueue = device->getGeneralQueue();
 		auto rEncoderPool = device->makeEncoderPool(true, CommandQueueFlavour::Render);
 
-		std::array<float, 4> const red{1.0f, 0.0f, 0.0f, 1.0f};
-		std::array<float, 4> const white{1.0f, 1.0f, 1.0f, 1.0f};
+		auto simpleEye = new SimpleEye();
+		simpleEye->setProjection(60.0f, 1280.0f / 720.0f, 0.01f);
+		Math::mat4x4 view = Math::lookAt(Math::vec3(0, 0, 4),
+										 Math::vec3(0, 0, 0),
+										 Math::vec3(0, 1, 0));
+		simpleEye->setView(view);
 
+		float yrot = 0.0f;
 		using namespace Core::bitmask;
-
 		do
 		{
 			rEncoderPool->reset();
+
+			Math::mat4x4 rootMatrix = Math::rotate(Math::identity<Math::mat4x4>(), yrot, Math::vec3(0, 1, 0));
+			yrot += 0.001f;
+			while(yrot > Math::two_pi<float>())
+			{
+				yrot -= Math::two_pi<float>();
+			}
+
+			SimpleForwardGlobals* globals = (SimpleForwardGlobals*) globalBuffer->map();
+			std::memcpy(globals->viewMatrix, &simpleEye->getView(), sizeof(float) * 16);
+			std::memcpy(globals->projectionMatrix, &simpleEye->getProjection(), sizeof(float) * 16);
+			auto viewProj = simpleEye->getProjection() * simpleEye->getView();
+			std::memcpy(globals->viewProjectionMatrix, &viewProj, sizeof(float) * 16);
+			globalBuffer->unmap();
+
 			imguiBindings->newFrame(display->getWidth(), display->getHeight());
 
 			bool show_demo_window = true;
 			bool show_app_about = true;
 
-			if (show_demo_window)
+			if(show_demo_window)
 				ImGui::ShowDemoWindow(&show_demo_window);
 			auto encoder = rEncoderPool->allocateEncoder(EncoderFlag::RenderEncoder);
 			auto renderEncoder = encoder->asRenderEncoder();
 
 			encoder->begin();
-			colourRT0->transitionToDMADest(encoder);
-			renderEncoder->clearTexture(colourRT0, {1.0f, 0.0f, 0.0f, 1.0f});
-
 			colourRT0->transitionToRenderTarget(encoder);
 			renderEncoder->beginRenderPass(renderPass, renderTarget);
-			renderEncoder->bind(renderPipeline);
-			renderEncoder->bindVertexBuffer(vBuffer);
-			renderEncoder->pushConstants(renderPipeline, PushConstantRange{64, 16, ShaderType::Fragment,}, &white);
-			renderEncoder->draw(3);
-			renderEncoder->bindVertexBuffer(vBuffer2);
-			renderEncoder->bindIndexBuffer(iBuffer);
-			renderEncoder->pushConstants(renderPipeline, PushConstantRange{64, 16, ShaderType::Fragment,}, &red);
-			renderEncoder->drawIndexed(3);
 
+			meshModRenderer->render(rootMatrix, solidSceneIndex, encoder);
 			imguiBindings->render(encoder);
 
 			renderEncoder->endRenderPass();
-
-
 			colourRT0->transitionToDMASrc(encoder);
 
 			encoder->end();
@@ -289,6 +208,8 @@ struct App
 	Render::Display::Ptr display;
 
 	std::unique_ptr<MidRender::ImguiBindings> imguiBindings;
+	std::unique_ptr<MidRender::MeshModRenderer> meshModRenderer;
+	MidRender::MeshModRenderer::SceneIndex solidSceneIndex;
 };
 
 int Main(Shell::ShellInterface& shell_)

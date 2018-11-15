@@ -25,7 +25,7 @@ static const uint32_t TacticalMapId = "TACM"_bundle_id;
 }
 extern enki::TaskScheduler g_EnkiTS;
 
-ITacticalMapBuilder::Ptr TacticalMap::allocateBuilder(Math::Vector2 const bottomLeft_, TileCoord_t width_,
+ITacticalMapBuilder::Ptr TacticalMap::allocateBuilder(Math::vec2 const bottomLeft_, TileCoord_t width_,
 													  TileCoord_t height_)
 {
 	return std::make_shared<TacticalMapBuilder>(bottomLeft_, width_, height_);
@@ -37,7 +37,7 @@ ITacticalMapStitcher::Ptr TacticalMap::allocateStitcher()
 }
 
 TacticalMap::ConstLevelDataPair TacticalMap::lookupAtWorld(
-		Math::Vector3 const& world_,
+		Math::vec3 const& world_,
 		float const range_, uint32_t
 		const levelMask_) const
 {
@@ -85,7 +85,7 @@ TacticalMap::ConstLevelDataPair TacticalMap::lookupAtWorld(
 }
 
 TacticalMap::LevelDataPair TacticalMap::mutateLookupAtWorld(
-		Math::Vector3 const& world_,
+		Math::vec3 const& world_,
 		float const range_,
 		uint32_t const levelMask_)
 {
@@ -94,7 +94,7 @@ TacticalMap::LevelDataPair TacticalMap::mutateLookupAtWorld(
 }
 
 bool TacticalMap::lookupVolumeAtWorld(
-		Math::Vector3 const& world_,
+		Math::vec3 const& world_,
 		float const range_,
 		uint32_t const levelMask_,
 		TacticalMapVolume* out_) const
@@ -111,7 +111,7 @@ bool TacticalMap::lookupVolumeAtWorld(
 
 	out_->floorNormal = level->floorPlane.normal();
 	out_->levelHeight = bottomLevel;
-	out_->roofNormal = Math::Vector3(0, 1, 0);
+	out_->roofNormal = Math::vec3(0, 1, 0);
 	if(levelData->flags & TacticalMapLevelFlags::RoofValid) level->roofPlane.normal();
 
 	out_->roofHeight = topLevel;
@@ -119,7 +119,7 @@ bool TacticalMap::lookupVolumeAtWorld(
 }
 
 bool TacticalMap::lookupLevelDataAtWorld(
-		Math::Vector3 const& world_,
+		Math::vec3 const& world_,
 		float const range_,
 		uint32_t const levelMask_,
 		TacticalMapLevelDataHeader* out_) const
@@ -157,10 +157,10 @@ void TacticalMap::damageStructure(Geometry::AABB const& box)
 		else izmax++;
 	}
 
-	ixmin = Math::Clamp<TileCoord_t>(ixmin, 0, width);
-	izmin = Math::Clamp<TileCoord_t>(izmin, 0, height);
-	ixmax = Math::Clamp<TileCoord_t>(ixmax, 0, width);
-	izmax = Math::Clamp<TileCoord_t>(izmax, 0, height);
+	ixmin = Math::clamp<TileCoord_t>(ixmin, 0, width);
+	izmin = Math::clamp<TileCoord_t>(izmin, 0, height);
+	ixmax = Math::clamp<TileCoord_t>(ixmax, 0, width);
+	izmax = Math::clamp<TileCoord_t>(izmax, 0, height);
 
 	using CoordPair = std::pair<TileCoord_t, TileCoord_t>;
 
@@ -179,8 +179,8 @@ void TacticalMap::damageStructure(Geometry::AABB const& box)
 
 				if(levelData->flags & TacticalMapLevelFlags::Destroyed) continue;
 
-				Math::Vector3 const mincentre(0, ymin - level.baseHeight, 0);
-				Math::Vector3 const maxcentre(0, ymax - level.baseHeight, 0);
+				Math::vec3 const mincentre(0, ymin - level.baseHeight, 0);
+				Math::vec3 const maxcentre(0, ymax - level.baseHeight, 0);
 
 				// distance from floor and roof
 				auto const& floorPlane = levels[levelIndex].floorPlane;
@@ -209,8 +209,8 @@ void TacticalMap::damageStructure(Geometry::AABB const& box)
 	{
 		auto[x, z] = tileStack.top();
 		tileStack.pop();
-		x = Clamp(x, TileCoord_t(0), TileCoord_t(getWidth() - 1));
-		z = Clamp(z, TileCoord_t(0), TileCoord_t(getHeight() - 1));
+		x = clamp(x, TileCoord_t(0), TileCoord_t(getWidth() - 1));
+		z = clamp(z, TileCoord_t(0), TileCoord_t(getHeight() - 1));
 
 		// ignore if tile has already been processed once in this collapse chain
 		if(auto const mXZ = MortonCurve(x, z);
@@ -226,7 +226,7 @@ void TacticalMap::damageStructure(Geometry::AABB const& box)
 			TacticalMapLevelDataHeader* levelData = getLevelData(tile, levelIndex);
 			if(levelData->flags & TacticalMapLevelFlags::Destroyed) continue;
 
-			Math::Vector3 const mincentre(0, ymin - level.baseHeight, 0);
+			Math::vec3 const mincentre(0, ymin - level.baseHeight, 0);
 
 			// distance from floor and roof
 			auto const& floorPlane = levels[levelIndex].floorPlane;

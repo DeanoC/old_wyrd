@@ -4,7 +4,6 @@
 
 #include "core/core.h"
 #include "core/utils.h"
-#include "math/vector_math_c.h"
 #include "render/commandqueue.h"
 #include "render/types.h"
 #include "render/resources.h"

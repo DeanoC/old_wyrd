@@ -28,6 +28,7 @@ set( wyrd_INCLUDES
 		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty
 		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/tbb/include
 		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/fmt/include
+		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glm
 		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/shaderc/libshaderc/include )
 
 add_subdirectory(thirdparty)

@@ -77,8 +77,8 @@ namespace MeshMod {
 			return objects[index];
 		}
 
-		void visitDescendents(Math::Matrix4x4 const& rootMatrix, std::function<void(SceneNode const&, Math::Matrix4x4 const&)> func) const;
-		void mutateDescendents(Math::Matrix4x4 const& rootMatrix, std::function<void(SceneNode&, Math::Matrix4x4 const&)> func);
+		void visitDescendents(Math::mat4x4 const& rootMatrix, std::function<void(SceneNode const&, Math::mat4x4 const&)> func) const;
+		void mutateDescendents(Math::mat4x4 const& rootMatrix, std::function<void(SceneNode&, Math::mat4x4 const&)> func);
 		void visitObjects(std::function<void(SceneObject::ConstPtr)> func) const;
 		void mutateObjects(std::function<void(SceneObject::Ptr)> func);
 

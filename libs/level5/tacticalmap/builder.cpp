@@ -13,7 +13,7 @@
 
 extern enki::TaskScheduler g_EnkiTS;
 
-TacticalMapBuilder::TacticalMapBuilder( Math::Vector2 const bottomLeft_,
+TacticalMapBuilder::TacticalMapBuilder( Math::vec2 const bottomLeft_,
 										TileCoord_t width_,
 										TileCoord_t height_ ) :
 		bottomLeft( std::floor(bottomLeft_.x + 0.5f), std::floor(bottomLeft_.y + 0.5f)),
@@ -41,7 +41,7 @@ TacticalMapTileBuilder::~TacticalMapTileBuilder()
 	boxes.clear();
 	polygons.clear();
 }
-#pragma optimize( "", off )
+
 TacticalMap::Ptr TacticalMapBuilder::build()
 {
 	using namespace MeshMod;
@@ -73,7 +73,7 @@ TacticalMap::Ptr TacticalMapBuilder::build()
 						for(auto vi : polyIndices)
 						{
 							auto const vpos = vertices.position( vi );
-							Math::Vector3 pos( vpos.x, vpos.y, vpos.z );
+							Math::vec3 pos( vpos.x, vpos.y, vpos.z );
 							polyBox.expandBy( pos );
 						}
 
@@ -217,7 +217,7 @@ TacticalMap::Ptr TacticalMapBuilder::build()
 				for (auto solidIndex : layer.destructionSolidIndices)
 				{
 					auto const& sbox = tileBuilder.structuralBoxs[solidIndex];
-					uint8_t si = (uint8_t)Math::Clamp(sbox.structuralIntegrity, 0, 255);
+					uint8_t si = (uint8_t)Math::clamp(sbox.structuralIntegrity, 0, 255);
 					structuralIntegrity = std::min(structuralIntegrity, si);
 
 					switch (sbox.structuralType)
@@ -306,7 +306,6 @@ TacticalMap::Ptr TacticalMapBuilder::build()
 		free(ptr);
 	});
 }
-#pragma optimize( "", on )
 
 void TacticalMapBuilder::insertBox( Geometry::AABB const& box,
 									std::function<void( TacticalMapTileBuilder& )> func )
@@ -331,10 +330,10 @@ void TacticalMapBuilder::insertBox( Geometry::AABB const& box,
 		else izmax++;
 	}
 
-	ixmin = Math::Clamp<TileCoord_t>(ixmin, 0, width);
-	izmin = Math::Clamp<TileCoord_t>(izmin, 0, height);
-	ixmax = Math::Clamp<TileCoord_t>(ixmax, 0, width);
-	izmax = Math::Clamp<TileCoord_t>(izmax, 0, height);
+	ixmin = Math::clamp<TileCoord_t>(ixmin, 0, width);
+	izmin = Math::clamp<TileCoord_t>(izmin, 0, height);
+	ixmax = Math::clamp<TileCoord_t>(ixmax, 0, width);
+	izmax = Math::clamp<TileCoord_t>(izmax, 0, height);
 
 	// write into tiles
 	for(auto z = izmin; z < izmax; ++z)
@@ -347,7 +346,7 @@ void TacticalMapBuilder::insertBox( Geometry::AABB const& box,
 	}
 }
 
-void TacticalMapBuilder::addMeshAt( MeshMod::MeshPtr const& mesh, TacticalMapLevelDataHeader const* levelData, Math::Matrix4x4 const& transform )
+void TacticalMapBuilder::addMeshAt( MeshMod::MeshPtr const& mesh, TacticalMapLevelDataHeader const* levelData, Math::mat4x4 const& transform )
 {
 	using namespace MeshMod;
 	Geometry::AABB wipAABB;
@@ -367,7 +366,7 @@ void TacticalMapBuilder::addMeshAt( MeshMod::MeshPtr const& mesh, TacticalMapLev
 	solids.emplace_back(wip, wipAABB, heapOffset);
 }
 
-void TacticalMapBuilder::addBoxAt( Geometry::AABB const& box, TacticalMapLevelDataHeader const* levelData, Math::Matrix4x4 const& transform )
+void TacticalMapBuilder::addBoxAt( Geometry::AABB const& box, TacticalMapLevelDataHeader const* levelData, Math::mat4x4 const& transform )
 {
 	auto heapOffset = tacticalLevelDataHeap.size();
 	tacticalLevelDataHeap.resize(heapOffset + tacticalLevelDataSize);
@@ -619,8 +618,8 @@ void TacticalMapBuilder::generatePlanesForTileAt( TileCoord_t x, TileCoord_t z )
 		auto const& solidIndexLayer = smoothLayerTexture->getLayer((layerIndex * 2) + 1);
 		auto& layer = tileBuilder.layers[layerIndex];
 
-		Math::Vector3 fPoints[fragmentSubSamples * fragmentSubSamples];
-		Math::Vector3 cPoints[fragmentSubSamples * fragmentSubSamples];
+		Math::vec3 fPoints[fragmentSubSamples * fragmentSubSamples];
+		Math::vec3 cPoints[fragmentSubSamples * fragmentSubSamples];
 		size_t fNumPoints = 0;
 		size_t cNumPoints = 0;
 		float minHeight = FLT_MAX;
@@ -644,13 +643,13 @@ void TacticalMapBuilder::generatePlanesForTileAt( TileCoord_t x, TileCoord_t z )
 
 				if(!std::isnan( floorHeight ))
 				{
-					fPoints[fNumPoints++] = Math::Vector3( fx, floorHeight, fz );
+					fPoints[fNumPoints++] = Math::vec3( fx, floorHeight, fz );
 					minHeight = std::min( minHeight, floorHeight );
 					maxHeight = std::max( maxHeight, floorHeight );
 				}
 				if(!std::isnan( ceilHeight ))
 				{
-					cPoints[cNumPoints++] = Math::Vector3( fx, ceilHeight, fz );
+					cPoints[cNumPoints++] = Math::vec3( fx, ceilHeight, fz );
 					minHeight = std::min( minHeight, ceilHeight );
 					maxHeight = std::max( maxHeight, ceilHeight );
 				}
@@ -662,8 +661,8 @@ void TacticalMapBuilder::generatePlanesForTileAt( TileCoord_t x, TileCoord_t z )
 		layer.ceilDominantSolidIndex = ceilSolidIndex;
 		layer.minHeight = minHeight;
 		layer.maxHeight = maxHeight;
-		Math::Vector3 bl(bottomLeft.x, 0, bottomLeft.y);
-		Math::Vector3 tr(bl + Math::Vector3(extentIncrement.x, 0, extentIncrement.y));
+		Math::vec3 bl(bottomLeft.x, 0, bottomLeft.y);
+		Math::vec3 tr(bl + Math::vec3(extentIncrement.x, 0, extentIncrement.y));
 		bl.y = layer.minHeight;
 		tr.y = layer.maxHeight;
 		// handle degenerate case
@@ -777,17 +776,17 @@ void TacticalMapBuilder::generateHeightFragmentsForTileAt( TileCoord_t x, TileCo
 	typedef std::tuple<Geometry::WaterTightRay, int, int> RayTuple;
 	RayTuple rayBundle[fragmentSubSamples * fragmentSubSamples];
 
-	Math::Vector2 const lb( bottomLeft.x + (x * extentIncrement.x),
+	Math::vec2 const lb( bottomLeft.x + (x * extentIncrement.x),
 							bottomLeft.y + (z * extentIncrement.y));
-	Math::Vector2 const inc( extentIncrement.x / fragmentSubSamples, extentIncrement.y / fragmentSubSamples );
+	Math::vec2 const inc( extentIncrement.x / fragmentSubSamples, extentIncrement.y / fragmentSubSamples );
 
-	static Math::Vector3 const rayDir( 0, 1, 0 );
-	static Math::Vector3 const upVector( 0, 1, 0 );
-	static Math::Vector3 const downVector( 0, -1, 0 );
+	static Math::vec3 const rayDir( 0, 1, 0 );
+	static Math::vec3 const upVector( 0, 1, 0 );
+	static Math::vec3 const downVector( 0, -1, 0 );
 
 	for(int sz = 0; sz < fragmentSubSamples; ++sz)
 	{
-		Math::Vector3 origin( lb.x, rayMinHeight, lb.y + (sz * inc.y));
+		Math::vec3 origin( lb.x, rayMinHeight, lb.y + (sz * inc.y));
 		for(int sx = 0; sx < fragmentSubSamples; ++sx)
 		{
 			rayBundle[sz * fragmentSubSamples + sx] = RayTuple( Geometry::WaterTightRay( origin, rayDir ), sx, sz );
@@ -836,10 +835,10 @@ void TacticalMapBuilder::generateHeightFragmentsForTileAt( TileCoord_t x, TileCo
 			polyVertIndices.clear();
 			polygons.getVertexIndices( polygonIndex, polyVertIndices );
 			assert( polyVertIndices.size() == 3 );
-			Math::Vector3 v0, v1, v2;
-			v0 = vertices.position( polyVertIndices[0] ).getVector3();
-			v1 = vertices.position( polyVertIndices[1] ).getVector3();
-			v2 = vertices.position( polyVertIndices[2] ).getVector3();
+			Math::vec3 v0, v1, v2;
+			v0 = vertices.position( polyVertIndices[0] ).getVec3();
+			v1 = vertices.position( polyVertIndices[1] ).getVec3();
+			v2 = vertices.position( polyVertIndices[2] ).getVec3();
 
 			// todo simd and parallel this raybundle
 			for(auto const[ray, sx, sz] : rayBundle)
@@ -1014,14 +1013,13 @@ void TacticalMapBuilder::calculateHeightMapMeanAndStandardDeviation( TacticalMap
 	getValidFragmentsForTile( tileBuilder );
 
 }
-#pragma optimize("", off)
 
 void TacticalMapBuilder::generateStructuralBoxesForTileAt( TileCoord_t x, TileCoord_t z )
 {
 	auto& tileBuilder = tileBuilders[z * width + x];
 
-	Math::Vector3 bl( bottomLeft.x, 0, bottomLeft.y );
-	Math::Vector3 tr( bl + Math::Vector3( extentIncrement.x, 0, extentIncrement.y ));
+	Math::vec3 bl( bottomLeft.x, 0, bottomLeft.y );
+	Math::vec3 tr( bl + Math::vec3( extentIncrement.x, 0, extentIncrement.y ));
 
 	// pass 1 determine structural type and calculate bonds
 	tileBuilder.structuralBoxs.clear();
@@ -1034,7 +1032,7 @@ void TacticalMapBuilder::generateStructuralBoxesForTileAt( TileCoord_t x, TileCo
 		sbox.structuralType = DetermineStructuralType(solid);
 
 		Geometry::AABB bbox = solid.aabb;
-		bbox.expandBy(Math::Vector3(1.01f, 1.01f, 1.01f));
+		bbox.expandBy(Math::vec3(1.01f, 1.01f, 1.01f));
 		for (size_t j = i + 1; j < tileBuilder.structuralBoxs.size(); j++)
 		{
 			TMapTBStructuralBox& osbox = tileBuilder.structuralBoxs[j];
@@ -1042,7 +1040,7 @@ void TacticalMapBuilder::generateStructuralBoxesForTileAt( TileCoord_t x, TileCo
 			Geometry::AABB obox = other.aabb;
 			if (bbox.intersects(obox))
 			{
-				Math::Vector3 dir = obox.getBoxCenter() - bbox.getBoxCenter();
+				Math::vec3 dir = obox.getBoxCenter() - bbox.getBoxCenter();
 				Cardinal cdir = ToCardinal(dir);
 				sbox.bonds.emplace_back(i, j, cdir);
 				osbox.bonds.emplace_back(j, i, Flip(cdir));
@@ -1097,7 +1095,7 @@ auto TacticalMapBuilder::DetermineStructuralType(WorldSolid const& solid_) -> St
 	auto const&[meshPtr, aabb, levelData] = solid_;
 
 	// use bounding bounds face area to determine wall or floor
-	Math::Vector3 const halfLen = aabb.getHalfLength();
+	Math::vec3 const halfLen = aabb.getHalfLength();
 	auto xyArea = halfLen.x * halfLen.y;
 	auto xzArea = halfLen.x * halfLen.z;
 	auto zyArea = halfLen.z * halfLen.y;
@@ -1111,5 +1109,3 @@ auto TacticalMapBuilder::DetermineStructuralType(WorldSolid const& solid_) -> St
 		return StructuralType::Wall;
 	}
 }
-
-#pragma optimize("", on)

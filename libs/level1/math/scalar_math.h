@@ -61,6 +61,8 @@ static constexpr auto pi() -> T { return T(3.14159265358979323846264338327950L);
 
 template<typename T, typename = typename std::enable_if<std::is_floating_point<T>{}>::type>
 static constexpr auto pi_over_2() -> T { return pi<T>() / T(2); }
+template<typename T, typename = typename std::enable_if < std::is_floating_point<T>{} > ::type >
+static constexpr auto two_pi() -> T { return T(2) * pi<T>(); }
 
 template<typename T>
 static constexpr auto square(T const val_) -> T { return val_ * val_; }
@@ -84,31 +86,25 @@ constexpr auto ApproxEqual(T const a_, T const b_, T const eps_ = T(1e-5)) -> bo
 }
 
 template<typename T, typename = typename std::enable_if<std::is_floating_point<T>{}>::type>
-CALL constexpr T Reciprocal(T a) { return T(1.0) / a; }
+constexpr T Reciprocal(T a) { return T(1.0) / a; }
 
 template<typename T>
-CALL constexpr int Sign(T val) { return (T(0) < val) - (val < T(0)); }
+constexpr int Sign(T val) { return (T(0) < val) - (val < T(0)); }
 
 
 //! Length^2 of a 1D Vector for orthogonality
 template<typename T, typename = typename std::enable_if<std::is_floating_point<T>{}>::type>
-CALL constexpr T LengthSquared(T a) { return a * a; }
+constexpr T LengthSquared(T a) { return a * a; }
 
 //! Length of a 1D Vector for orthogonality
 template<typename T, typename = typename std::enable_if<std::is_floating_point<T>{}>::type>
-CALL constexpr T Length(T a) { return a; }
+constexpr T Length(T a) { return a; }
 
 template<typename T, typename = typename std::enable_if<std::is_floating_point<T>{}>::type>
-CALL constexpr T ReciprocalSqrt(T a) { return T(1.0) / std::sqrt(a); }
+constexpr T ReciprocalSqrt(T a) { return T(1.0) / std::sqrt(a); }
 
-template<typename T>
-CALL constexpr T Max(const T a, const T b) { return (a > b) ? a : b; }
-
-template<typename T>
-CALL constexpr T Min(const T a, const T b) { return (a < b) ? a : b; }
-
-template<typename T>
-CALL constexpr T 	Clamp(const T a, const T mi, const T ma) { return Max(mi, Min(a, ma)); }
+template<typename T, typename = typename std::enable_if<std::is_floating_point<T>{}>::type>
+constexpr T Clamp(const T a, const T mi, const T ma) { return std::max(mi, std::min(a, ma)); }
 
 constexpr uint8_t s_LogTable256[] = {0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
 									 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
@@ -127,7 +123,7 @@ constexpr uint8_t s_LogTable256[] = {0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3
 /// or the number to shift 1 left by to get the nearest lower power of 2
 /// \param	v	The number to get the log2 of.
 /// \return	log2(v).
-CALL constexpr unsigned int log2(unsigned int v)
+constexpr unsigned int log2(unsigned int v)
 {
 	unsigned int r = 0;     // r will be lg(v)
 	unsigned int t = 0, tt = 0; // temporaries
@@ -377,6 +373,28 @@ static float half2float(uint16_t h_)
 	o.u |= (h.u & 0x8000) << 16;    // sign bit
 	return o.f;
 }
+
+// from D3DX_DXGIFormatConvert.inl
+constexpr float float_to_SRGB(float val)
+{
+	if(val < 0.0031308f)
+		val *= 12.92f;
+	else
+		val = 1.055f * powf(val, 1.0f / 2.4f) - 0.055f;
+	return val;
+}
+
+constexpr float SRGB_to_float_inexact(float val)
+{
+	if(val < 0.04045f)
+		val /= 12.92f;
+	else
+		val = pow((val + 0.055f) / 1.055f, 2.4f);
+	return val;
+}
+
+float SRGB_to_float(uint32_t val);
+float SRGB_to_float(float val);
 
 }   // namespace Maths
 

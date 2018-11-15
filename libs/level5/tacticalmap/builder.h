@@ -22,7 +22,7 @@ static int const fragmentSubSamples = 16; // ^2 samples per tile
 
 struct TMapTBHeightFragment
 {
-	Math::Vector3 n;
+	Math::vec3 n;
 	float t;
 	size_t solidIndex;
 };
@@ -112,16 +112,16 @@ public:
 
 
 	// these are public only for debug/vis purposes
-	static inline Math::Vector2 const extentIncrement = Math::Vector2(1, 1);
+	static inline Math::vec2 const extentIncrement = Math::vec2(1, 1);
 
-	TacticalMapBuilder(Math::Vector2 const bottomLeft_, TileCoord_t width_, TileCoord_t height_);
+	TacticalMapBuilder(Math::vec2 const bottomLeft_, TileCoord_t width_, TileCoord_t height_);
 
 	using FragmentTextureLayer = MeshOps::TextureLayer<TMapTBHeightFragment const *>;
 	using FragmentTexture = MeshOps::LayeredTexture;
 
 	int getWidth() const { return (int)width; }
 	int getHeight() const { return (int)height; }
-	Math::Vector2 const getBottomLeft() const { return bottomLeft; }
+	Math::vec2 const getBottomLeft() const { return bottomLeft; }
 
 	std::vector<WorldSolid> solids;
 
@@ -132,19 +132,19 @@ public:
 	void setMinimumHeight(float height_) final { rayMinHeight = height_; };
 	void setMaximumFloorInclination(float angleInRadians_) final { maxFloorInclination = angleInRadians_; };
 	void setLevelDataSize(uint32_t size_) final { tacticalLevelDataSize = size_; }
-	void addMeshAt(MeshMod::MeshPtr const& mesh, TacticalMapLevelDataHeader const* levelData, Math::Matrix4x4 const& transform) final;
-	void addBoxAt( Geometry::AABB const& box, TacticalMapLevelDataHeader const* levelData, Math::Matrix4x4 const& transform) final;
+	void addMeshAt(MeshMod::MeshPtr const& mesh, TacticalMapLevelDataHeader const* levelData, Math::mat4x4 const& transform) final;
+	void addBoxAt( Geometry::AABB const& box, TacticalMapLevelDataHeader const* levelData, Math::mat4x4 const& transform) final;
 	TacticalMap::Ptr build() override;
 
 private:
 
 
-	Math::Vector2 worldToLocal( Math::Vector3 const& world ) const;
-	void worldToLocal(Math::Vector3 const& world, TileCoord_t& outX, TileCoord_t &outY) const;
+	Math::vec2 worldToLocal( Math::vec3 const& world ) const;
+	void worldToLocal(Math::vec3 const& world, TileCoord_t& outX, TileCoord_t &outY) const;
 
 	TileCoord_t width;
 	TileCoord_t height;
-	Math::Vector2 bottomLeft;
+	Math::vec2 bottomLeft;
 	float minHeight, maxHeight;
 	float rayMinHeight = -10000.0f;
 	float maxFloorInclination = Math::degreesToRadians(30.0f);
@@ -170,15 +170,15 @@ private:
 	void insertBox( Geometry::AABB const& box, std::function<void(TacticalMapTileBuilder&)> func);
 };
 
-inline Math::Vector2 TacticalMapBuilder::worldToLocal( Math::Vector3 const& world ) const
+inline Math::vec2 TacticalMapBuilder::worldToLocal( Math::vec3 const& world ) const
 {
-	return Math::Vector2((world.x - bottomLeft.x), (world.z - bottomLeft.y));
+	return Math::vec2((world.x - bottomLeft.x), (world.z - bottomLeft.y));
 }
 
-inline void TacticalMapBuilder::worldToLocal(Math::Vector3 const& world, TileCoord_t& outX, TileCoord_t &outY) const
+inline void TacticalMapBuilder::worldToLocal(Math::vec3 const& world, TileCoord_t& outX, TileCoord_t &outY) const
 {
-	Math::Vector2  local = worldToLocal(world) + Math::Vector2(0.5f,0.5f);
-	local = Math::Clamp(local, { 0, 0 }, { (float)width, (float)height });
+	Math::vec2  local = worldToLocal(world) + Math::vec2(0.5f,0.5f);
+	local = Math::clamp(local, { 0, 0 }, { (float)width, (float)height });
 	outX = (TileCoord_t) std::floor(local.x);
 	outY = (TileCoord_t) std::floor(local.y);
 }

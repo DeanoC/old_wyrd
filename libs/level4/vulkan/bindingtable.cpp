@@ -2,7 +2,9 @@
 #include "vulkan/api.h"
 #include "resourcemanager/resourceman.h"
 #include "render/bindingtable.h"
+#include "render/buffer.h"
 #include "vulkan/bindingtable.h"
+#include "vulkan/buffer.h"
 #include "vulkan/types.h"
 #include "vulkan/device.h"
 #include "vulkan/texture.h"
@@ -116,6 +118,7 @@ auto BindingTable::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, De
 	s_stage = rm_.registerNextHandler(Render::BindingTableId,
 									  {sizeof(Vulkan::BindingTable), registerFunc, deleteFunc});
 }
+
 auto BindingTable::update(uint8_t memoryMapIndex_,
 			uint32_t bindingIndex_,
 			Render::TextureHandle const& texture_) -> void
@@ -143,8 +146,38 @@ auto BindingTable::update(uint8_t memoryMapIndex_,
 			&writer,
 			0,
 			nullptr);
-
 }
+
+auto BindingTable::update(uint8_t memoryMapIndex_,
+	uint32_t bindingIndex_,
+	Render::BufferHandle const& buffer_) -> void
+{
+	auto memoryMap = memoryMaps[memoryMapIndex_];
+	assert(bindingIndex_ < memoryMap->numBindingLayouts);
+	Render::BindingLayout const& layout = memoryMap->getBindingLayouts()[bindingIndex_];
+
+	VkWriteDescriptorSet writer{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+	writer.descriptorType = from(layout.type);
+	writer.descriptorCount = 1;
+	writer.dstBinding = bindingIndex_;
+	writer.dstSet = descriptorSets[memoryMapIndex_];
+	assert(writer.descriptorType == VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+	VkDescriptorBufferInfo bufferInfo{};
+	auto buffer = buffer_.acquire<Render::Buffer>();
+	auto vulkanBuffer = buffer->getStage<Buffer>(Buffer::s_stage);
+	bufferInfo.buffer = vulkanBuffer->buffer;
+	bufferInfo.offset = 0;
+	bufferInfo.range = buffer->sizeInBytes;
+	writer.pBufferInfo = &bufferInfo;
+
+	vkUpdateDescriptorSets(
+		1,
+		&writer,
+		0,
+		nullptr);
+}
+
 
 auto BindingTable::update(uint8_t memoryMapIndex_,
 			uint32_t bindingIndex_,

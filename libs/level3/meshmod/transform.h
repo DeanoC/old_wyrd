@@ -22,9 +22,9 @@ public:
 			scale( 1,1,1 ) 
 	{}
 	bool isIdentity() const {
-		if ( (Math::LengthSquared( position ) < 1e-5f) &&
-			 (1 - Math::LengthSquared(orientation) < 1e-5f) &&
-			 (3 - Math::LengthSquared( scale ) < 1e-5f) ) {
+		if ( (Math::dot( position, position ) < 1e-5f) &&
+			 (1 - Math::dot(orientation, orientation) < 1e-5f) &&
+			 (1 - Math::dot(scale, scale) < 1e-5f) ) {
 			return true;
 		} else {
 			return false;
@@ -32,21 +32,22 @@ public:
 	}
 
 	// just one of many options for this...
-	Math::Matrix4x4 MakeMatrix() const
+	Math::mat4x4 MakeMatrix() const
 	{
-		Math::Matrix4x4 transMat = Math::CreateTranslationMatrix(position);
-		Math::Matrix4x4 rotMat = Math::CreateRotationMatrix(orientation);
-		Math::Matrix4x4 scaleMat = Math::CreateScaleMatrix(scale);
+		using namespace Math;
+		mat4x4 transMat = translate(identity<mat4x4>(), position);
+		mat4x4 rotMat = toMat4(orientation);
+		mat4x4 scaleMat = Math::scale(identity<mat4x4>(), scale);
 
-		return scaleMat * rotMat * transMat;
+		return transMat * rotMat * scaleMat;
 	}
 
 	//! position
-	Math::Vector3		position;
+	Math::vec3		position;
 	//! orientation
-	Math::Quaternion	orientation;
+	Math::quat	orientation;
 	//! scale
-	Math::Vector3		scale;
+	Math::vec3		scale;
 };
 
 };

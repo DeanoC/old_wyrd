@@ -3,7 +3,6 @@
 #   define assert(x)if(!(x))printf(#x);
 #endif
 
-#define CALL		    __device__
 #define READONLY_MEM	__constant__
 #define LOCAL_MEM		__device__
 

@@ -40,9 +40,14 @@ struct BindingTable : public Render::IGpuBindingTable
 				Render::SamplerHandle const& sampler_) -> void final;
 
 	auto update(uint8_t memoryMapIndex_,
+				uint32_t bindingIndex_,
+				Render::BufferHandle const& buffer_) -> void final;
+
+	auto update(uint8_t memoryMapIndex_,
 						uint32_t bindingIndex_,
 						Render::TextureHandle const& texture_,
 						Render::SamplerHandle const& sampler_) -> void final;
+
 
 	auto update(uint8_t memoryMapIndex_,
 						uint32_t bindingIndex_,

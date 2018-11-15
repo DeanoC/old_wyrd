@@ -17,6 +17,7 @@
 #include "geometry/ray.h"
 #include "geometry/aabb.h"
 #include "geometry/kdtree.h"
+#include <array>
 
 using namespace Math;
 
@@ -71,9 +72,9 @@ KDTree::KDTree( const float* positionData, const unsigned int* indexData, const 
 
 	// get the bounds of the mesh
 	for( unsigned int i = 0; i < indexCount; i+=3 ) {
-		Vector3 a( positionData+ (indexData[i+0] * 3) );
-		Vector3 b( positionData+ (indexData[i+1] * 3) );
-		Vector3 c( positionData+ (indexData[i+2] * 3) );
+		Math::vec3 a = Math::Vec3FromArray( positionData+ (indexData[i+0] * 3) );
+		Math::vec3 b = Math::Vec3FromArray( positionData+ (indexData[i+1] * 3) );
+		Math::vec3 c = Math::Vec3FromArray( positionData+ (indexData[i+2] * 3) );
 		m_bounds.expandBy( a );
 		m_bounds.expandBy( b );
 		m_bounds.expandBy( c );
@@ -110,7 +111,7 @@ void KDTree::buildSubtree( KDTreeNode* node, FaceArray& faces, AABB const& bound
 		faces.clear();
 	} else {
 		// split along the largest AABB axis
-		Vector3 length = bounds.getMaxExtent() - bounds.getMinExtent();
+		vec3 length = bounds.getMaxExtent() - bounds.getMinExtent();
 		int axis;
 		if( length.x > length.y )
 			axis = ( length.x > length.z ) ? 0 : 2;
@@ -123,14 +124,14 @@ void KDTree::buildSubtree( KDTreeNode* node, FaceArray& faces, AABB const& bound
 		node->set( axis, coordinate );
 
 		// batch up the polygons "under" the boundary
-		Vector3 boundsMin = bounds.getMaxExtent();
-		Vector3 boundsMax = bounds.getMinExtent();
+		vec3 boundsMin = bounds.getMaxExtent();
+		vec3 boundsMax = bounds.getMinExtent();
 
-		Vector3 underMax = boundsMax;
+		vec3 underMax = boundsMax;
 		underMax[axis] = coordinate;
 		AABB underBounds( boundsMin, underMax );
 
-		Vector3 overMin = boundsMin;
+		vec3 overMin = boundsMin;
 		overMin[axis] = coordinate;
 		AABB overBounds( overMin, boundsMax );
 
@@ -160,16 +161,16 @@ void KDTree::partition( FaceArray const& faces, AABB& bounds, FaceArray& partiti
 		it != faces.end(); ++it ) {
 		// get the triangle vertex positions
 		unsigned int const face = *it;
-		Vector3 points[] = {
-			Vector3( m_data + 3*m_indices[3*face]  ), 
-			Vector3( m_data + 3*m_indices[3*face + 1] ), 
-			Vector3( m_data + 3*m_indices[3*face + 2] )
+		std::array<vec3,3> points {
+			Vec3FromArray( m_data + 3*m_indices[3*face]  ),
+			Vec3FromArray( m_data + 3*m_indices[3*face + 1] ),
+		    Vec3FromArray( m_data + 3*m_indices[3*face + 2] )
 		};
 
 		// compute the local bounds
 		AABB localBounds(
-			Min( points[0], Min( points[1], points[2] ) ), 
-			Max( points[0], Max( points[1], points[2] ) )
+			min( points[0], min( points[1], points[2] ) ),
+			max( points[0], max( points[1], points[2] ) )
 			);
 
 		// pass this face if it intersect the bounds
@@ -209,7 +210,7 @@ bool KDTree::intersectsRay( Ray const& ray, float maxRange, KDTREE_COLLISION* co
 	int nextStackIndex = 0;
 
 	// precompute some stuff
-	Math::Vector3 direction_rcp = Math::Reciprocal(ray.getDirection());
+	Math::vec3 direction_rcp = Math::Reciprocal(ray.getDirection());
 
 	// recurse
 	bool hit = false;
@@ -227,9 +228,9 @@ bool KDTree::intersectsRay( Ray const& ray, float maxRange, KDTREE_COLLISION* co
 
 					// test this triangle against the ray
 					float v, w, t;
-					const Vector3 v0( m_data + 3*m_indices[i0] );
-					const Vector3 v1( m_data + 3*m_indices[i1] );
-					const Vector3 v2( m_data + 3*m_indices[i2] );
+					const vec3 v0 = Vec3FromArray( m_data + 3*m_indices[i0] );
+					const vec3 v1 = Vec3FromArray( m_data + 3*m_indices[i1] );
+					const vec3 v2 = Vec3FromArray( m_data + 3*m_indices[i2] );
 					if( ray.intersectsTriangle( v0, v1, v2, v, w, t ) ) {
 						//mt_float range = std::abs( t );
 						float range = t;

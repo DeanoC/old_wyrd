@@ -22,8 +22,8 @@ float dn(float a) { return a>0.0f ? a*m : a*p; }
 //∗ fast rounding for positive numbers
 float Up(float a) { return a*p; }
 float Dn(float a) { return a*m; }
-Math::Vector3 Up(Math::Vector3 const& a) { return Math::Vector3(Up(a.x),Up(a.y),Up(a.z)); }
-Math::Vector3 Dn(Math::Vector3 const& a) { return Math::Vector3(Dn(a.x),Dn(a.y),Dn(a.z)); }
+Math::vec3 Up(Math::vec3 const& a) { return Math::vec3(Up(a.x),Up(a.y),Up(a.z)); }
+Math::vec3 Dn(Math::vec3 const& a) { return Math::vec3(Dn(a.x),Dn(a.y),Dn(a.z)); }
 
 uint32_t signmask(float x)
 {
@@ -53,7 +53,7 @@ namespace Geometry {
 WaterTightRay::WaterTightRay()
 {}
 
-WaterTightRay::WaterTightRay( Math::Vector3 const& origin_, Math::Vector3 const& direction_ )
+WaterTightRay::WaterTightRay( Math::vec3 const& origin_, Math::vec3 const& direction_ )
 		: origin( origin_ ),
 		  dir( direction_ ),
 		  rdir( Math::Reciprocal(direction_))
@@ -107,9 +107,9 @@ bool WaterTightRay::intersectsAABB( AABB const& aabbbox, float& min, float& max 
 	// distance calculations. Each floating−point operation
 	// is forced to be rounded in to the correct direction.
 	static float const eps = 5.0f * 2e-24f;
-	Vector3 lower = Dn(Abs(origin-aabbbox.getMinExtent()));
-	Vector3 upper = Up(Abs(origin-aabbbox.getMaxExtent()));
-	float max_z = Max(lower[kz],upper[kz]);
+	vec3 lower = Dn(abs(origin-aabbbox.getMinExtent()));
+	vec3 upper = Up(abs(origin-aabbbox.getMaxExtent()));
+	float max_z = Math::max(lower[kz], upper[kz]);
 	float err_near_x = Up(lower[kx]+max_z);
 	float err_near_y = Up(lower[ky]+max_z);
 	float org_near_x = up(origin[kx]+Up(eps*err_near_x));
@@ -148,15 +148,15 @@ bool WaterTightRay::intersectsAABB( AABB const& aabbbox, float& min, float& max 
 }
 
 bool WaterTightRay::intersectsTriangleBackFaceCull(
-	Math::Vector3 const& v0, Math::Vector3 const& v1, Math::Vector3 const& v2,
+	Math::vec3 const& v0, Math::vec3 const& v1, Math::vec3 const& v2,
 	float& v, float& w, float& t
 ) const
 {
 	using namespace Math;
 	// calculate vertices relative to ray origin
-	Vector3 const A = v0 - origin;
-	Vector3 const B = v1 - origin;
-	Vector3 const C = v2 - origin;
+	vec3 const A = v0 - origin;
+	vec3 const B = v1 - origin;
+	vec3 const C = v2 - origin;
 	// perform shear and scale of vertices ∗
 	float const Ax = A[kx] - shear.x * A[kz];
 	float const Ay = A[ky] - shear.y * A[kz];
@@ -218,15 +218,15 @@ bool WaterTightRay::intersectsTriangleBackFaceCull(
 	return true;
 }
 bool WaterTightRay::intersectsTriangle(
-		Math::Vector3 const& v0, Math::Vector3 const& v1, Math::Vector3 const& v2,
+		Math::vec3 const& v0, Math::vec3 const& v1, Math::vec3 const& v2,
 		float& v, float& w, float& t
 ) const
 {
 	using namespace Math;
 	// calculate vertices relative to ray origin
-	Vector3 const A = v0 - origin;
-	Vector3 const B = v1 - origin;
-	Vector3 const C = v2 - origin;
+	vec3 const A = v0 - origin;
+	vec3 const B = v1 - origin;
+	vec3 const C = v2 - origin;
 	// perform shear and scale of vertices ∗
 	float const Ax = A[kx] - shear.x * A[kz];
 	float const Ay = A[ky] - shear.y * A[kz];

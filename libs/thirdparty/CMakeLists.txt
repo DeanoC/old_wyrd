@@ -7,23 +7,6 @@ set( CITYHASH_SRC
 		cityhash/city.cc
 		cityhash/city.h
 		)
-set( CX_SRC
-		cx/cx_algorithm.h
-		cx/cx_array.h
-		cx/cx_counter.h
-		cx/cx_error.h
-		cx/cx_fnv1.h
-		cx/cx_guid.h
-		cx/cx_math.h
-		cx/cx_md5.h
-		cx/cx_murmur3.h
-		cx/cx_numeric.h
-		cx/cx_pcg32.h
-		cx/cx_sha256.h
-		cx/cx_strenc.h
-		cx/cx_typeid.h
-		cx/cx_utils.h
-		)
 
 set( FMT_SRC
 		fmt/src/format.cc
@@ -50,6 +33,8 @@ set(IMGUI_SRC
 		imgui/imgui_draw.cpp
 		imgui/imgui_widgets.cpp
 		)
+
+
 add_definitions(${wyrd_DEFINITIONS})
 include_directories(${wyrd_INCLUDES})
 
@@ -65,7 +50,6 @@ set( THIRDPARTY_LIBS ${THIRDPARTY_LIBS} tbb_static tbbmalloc_static)
 add_library( thirdparty STATIC
 		${CRC32C_SRC}
 		${CITYHASH_SRC}
-		${CX_SRC}
 		${FMT_SRC}
 		${LZ4_SRC}
 		${IMGUI_SRC}

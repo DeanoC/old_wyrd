@@ -1,8 +1,8 @@
-
 #include "core/core.h"
 #include "midrender/stocks.h"
 #include "resourcemanager/resourceman.h"
 #include "resourcemanager/textresource.h"
+#include "render/buffer.h"
 #include "render/shader.h"
 #include "render/texture.h"
 #include "render/types.h"
@@ -13,6 +13,7 @@
 #include "render/vertexinput.h"
 #include "render/viewport.h"
 #include "render/shader.h"
+#include "midrender/simpleforwardglobals.h"
 
 namespace MidRender {
 
@@ -22,7 +23,6 @@ auto Stocks::InitBasics(std::shared_ptr<ResourceManager::ResourceMan> const& rm_
 	using namespace ResourceManager;
 	using namespace std::literals;
 	using namespace Core::bitmask;
-
 
 	auto const glslPassthroughSourceName = ResourceNameView("mem$glslPassthroughShaderSource"sv);
 	TextResource::Create(
@@ -120,7 +120,7 @@ auto Stocks::InitSimpleForwardRenderer(std::shared_ptr<ResourceManager::Resource
 
 	Texture::Create(
 			rm_,
-			Stock::simpleForwardRendererColourRT,
+			Stock::simpleForwardColourRT,
 			TextureFlags::NoInit |
 			Texture::FromUsage(Usage::RopRead | Usage::RopWrite | Usage::DMASrc | Usage::DMADst),
 			width_, height_, 1, 1,
@@ -129,7 +129,7 @@ auto Stocks::InitSimpleForwardRenderer(std::shared_ptr<ResourceManager::Resource
 
 	Texture::Create(
 			rm_,
-			Stock::simpleForwardRendererDepthStencilRT,
+			Stock::simpleForwardDepthStencilRT,
 			TextureFlags::NoInit |
 			Texture::FromUsage(Usage::RopRead | Usage::RopWrite),
 			width_, height_, 1, 1,
@@ -138,7 +138,7 @@ auto Stocks::InitSimpleForwardRenderer(std::shared_ptr<ResourceManager::Resource
 
 	Viewport::Create(
 			rm_,
-			Stock::simpleForwardRendererViewport,
+			Stock::simpleForwardViewport,
 			{{
 					 {
 							 0, 0,
@@ -154,7 +154,7 @@ auto Stocks::InitSimpleForwardRenderer(std::shared_ptr<ResourceManager::Resource
 
 	RenderPass::Create(
 			rm_,
-			Stock::simpleForwardRendererRenderPass,
+			Stock::simpleForwardRenderPass,
 			{
 					{
 							LoadOp::Clear,
@@ -177,21 +177,30 @@ auto Stocks::InitSimpleForwardRenderer(std::shared_ptr<ResourceManager::Resource
 
 	RenderTarget::Create(
 			rm_,
-			Stock::simpleForwardRendererRenderTarget,
-			rm_->openByName<RenderPassId>(Stock::simpleForwardRendererRenderPass),
+			Stock::simpleForwardRenderTarget,
+			rm_->openByName<RenderPassId>(Stock::simpleForwardRenderPass),
 			{
-					{rm_->openByName<TextureId>(Stock::simpleForwardRendererColourRT)},
-					{rm_->openByName<TextureId>(Stock::simpleForwardRendererDepthStencilRT)},
+					{rm_->openByName<TextureId>(Stock::simpleForwardColourRT)},
+					{rm_->openByName<TextureId>(Stock::simpleForwardDepthStencilRT)},
 			},
 			{0, 0},
 			{width_, height_}
 	);
+
 	RasterisationState::Create(
 			rm_,
-			Stock::simpleForwardRendererDefaultPipeline,
+			Stock::simpleForwardRasterState,
 			RasterisationStateFlags::DepthTestEnable | RasterisationStateFlags::DepthWriteEnable
 	);
 
+	Buffer::Create(
+			rm_,
+			Stock::simpleForwardGlobalBuffer,
+			BufferFlags::InitZero |
+			BufferFlags::CPUDynamic |
+			Buffer::FromUsage(Usage::DMADst | Usage::ShaderRead),
+			sizeof(SimpleForwardGlobals)
+			);
 }
 
 }
