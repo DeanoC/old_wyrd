@@ -9,7 +9,7 @@ template<ResourceManager::ResourceId id_>
 template<typename type_>
 auto Image<id_>::putRaw(uint8_t *ptr_, type_ const value_) -> void
 {
-	type_ const v = Math::Clamp(value_, std::numeric_limits<type_>::min(), std::numeric_limits<type_>::max());
+	type_ const v = Math::clamp(value_, std::numeric_limits<type_>::min(), std::numeric_limits<type_>::max());
 
 	*((type_ *) ptr_) = v;
 }

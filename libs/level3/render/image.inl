@@ -117,7 +117,7 @@ template<ResourceManager::ResourceId id_>
 auto Image<id_>::setChannelAt(double value_, Channel channel_, unsigned int x_, unsigned int y_, unsigned int z_,
 							  unsigned int slice_) -> void
 {
-	assert((int) channel_ < GtfCracker::channelCount(format));
+	assert(unsigned int(channel_) < GtfCracker::channelCount(format));
 
 	auto index = calculateIndex(x_, y_, z_, slice_);
 

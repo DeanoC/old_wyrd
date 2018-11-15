@@ -117,7 +117,7 @@ struct App
 		meshModRenderer->init(rm);
 
 		auto rootScene = std::make_shared<MeshMod::SceneNode>();
-		rootScene->addObject(MeshOps::PlatonicSolids::createCube());
+		rootScene->addObject(MeshOps::PlatonicSolids::createIcosahedron());
 		solidSceneIndex = meshModRenderer->addScene(rootScene);
 	}
 
