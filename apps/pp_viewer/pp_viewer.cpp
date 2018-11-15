@@ -64,7 +64,7 @@ struct App
 		Shell::PresentableWindowConfig windowConfig;
 		windowConfig.width = 1280;
 		windowConfig.height = 720;
-		windowConfig.windowName = "GfxTest"s;
+		windowConfig.windowName = "pp_viewer"s;
 		windowConfig.fullscreen = false;
 		windowConfig.directInput = true;
 		auto window = shell.createPresentableWindow(windowConfig);
