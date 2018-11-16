@@ -68,9 +68,10 @@ public:
 	auto registerStorageHandler( IStorage::Ptr storage_ ) -> void;
 	auto getStorageForPrefix(std::string_view prefix_) -> IStorage::Ptr;
 	template<typename T>
-	auto placeInStorage(ResourceManager::ResourceNameView name_, T const& renderPass_) -> bool;
+	auto placeInStorage(ResourceManager::ResourceNameView name_, T const& renderPass_) -> void;
 	template<typename T>
-	auto placeInStorage(ResourceManager::ResourceNameView name_, std::shared_ptr<T> const& resource_) -> bool;
+	auto placeInStorage(ResourceManager::ResourceNameView name_, std::shared_ptr<T> const& resource_) -> void;
+	auto removeFromStorage(ResourceManager::ResourceNameView name_) -> void;
 
 	auto registerHandler(ResourceId id_,
 						 ResourceHandler funcs_,
@@ -140,13 +141,13 @@ protected:
 };
 
 template<typename T>
-auto ResourceMan::placeInStorage(ResourceManager::ResourceNameView name_, std::shared_ptr<T> const& resource_) -> bool
+auto ResourceMan::placeInStorage(ResourceManager::ResourceNameView name_, std::shared_ptr<T> const& resource_) -> void
 {
-	return placeInStorage(name_, *resource_.get());
+	placeInStorage(name_, *resource_.get());
 }
 
 template<typename T>
-auto ResourceMan::placeInStorage(ResourceManager::ResourceNameView name_, T const& resource_) -> bool
+auto ResourceMan::placeInStorage(ResourceManager::ResourceNameView name_, T const& resource_) -> void
 {
 	using namespace std::string_view_literals;
 
@@ -158,14 +159,14 @@ auto ResourceMan::placeInStorage(ResourceManager::ResourceNameView name_, T cons
 		case Core::QuickHash("mem"sv):
 		{
 			auto memstorage = std::static_pointer_cast<ResourceManager::MemStorage>(storage);
-			return memstorage->addMemory(
+			memstorage->addMemory(
 					std::string(name_.getName()),
 					T::Id, T::MajorVersion, T::MinorVersion, &resource_, resource_.getSize());
-			break;
+			return;
 		}
 		default:
 			LOG_S(ERROR) << "Unknown storage type for PlaceInStore";
-			return false;
+			return ;
 	}
 }
 

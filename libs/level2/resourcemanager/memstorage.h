@@ -42,7 +42,7 @@ struct MemStorage : public IStorage
 
 	// the memory added will be copied and managed
 	auto addMemory(std::string name_, ResourceId id_, uint16_t majorVersion_, uint16_t minorVersion_, void const* mem_,
-				   size_t size_) -> bool
+				   size_t size_) -> void
 	{
 		if(filenameToMemory.find(name_) != filenameToMemory.end())
 		{
@@ -54,7 +54,14 @@ struct MemStorage : public IStorage
 		std::memcpy(mem.data(), mem_, size_);
 
 		filenameToMemory[name_] = {id_, majorVersion_, minorVersion_, std::move(mem)};
-		return true;
+	}
+	auto removeMemory(std::string name_) -> void
+	{
+		auto const& it = filenameToMemory.find(name_);
+		if(it != filenameToMemory.end())
+		{
+			filenameToMemory.erase(it);
+		}
 	}
 
 	FilenameToMemory filenameToMemory;

@@ -316,5 +316,35 @@ auto ResourceMan::resolveLink(ResourceHandleBase& link_, ResourceNameView const&
 	link_.generation = indexToBase.at(index).generation;
 }
 
+auto ResourceMan::removeFromStorage(ResourceManager::ResourceNameView name_) -> void
+{
+	using namespace std::string_view_literals;
+
+	{
+		std::lock_guard guard(nameCacheLock);
+		auto it = nameToResourceIndex.find(name_);
+		if(it != nameToResourceIndex.end())
+		{
+			nameToResourceIndex.unsafe_erase(it);
+		}
+	}
+
+	auto storage = getStorageForPrefix(name_.getStorage());
+	assert(storage);
+
+
+	switch(Core::QuickHash(name_.getStorage()))
+	{
+		case Core::QuickHash("mem"sv):
+		{
+			auto memstorage = std::static_pointer_cast<ResourceManager::MemStorage>(storage);
+			memstorage->removeMemory(std::string(name_.getName()));
+			return;
+		}
+		default:
+			LOG_S(ERROR) << "Unknown storage type for PlaceInStore";
+			return;
+	}
+}
 
 } // end namespace
