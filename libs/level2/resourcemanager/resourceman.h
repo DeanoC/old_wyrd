@@ -58,6 +58,7 @@ public:
 
 	static auto Create() -> std::shared_ptr<ResourceMan>;
 
+
 	static auto GetFromIndex( uint32_t index ) -> std::shared_ptr<ResourceMan>;
 
 	static auto GetNameFromHandleBase( ResourceHandleBase const& base_ ) -> ResourceNameView;
@@ -78,6 +79,8 @@ public:
 	auto registerNextHandler(ResourceId id_,
 							 ResourceHandler funcs_) -> int;
 	auto removeHandler(ResourceId id_, int stage_) -> void;
+
+	auto flushCache() -> void;
 
 	template<ResourceId id_>
 	auto openByIndex(uint64_t const index_) -> ResourceHandle<id_>

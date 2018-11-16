@@ -48,11 +48,13 @@ auto BindingTableMemoryMap::RegisterResourceHandler(ResourceManager::ResourceMan
 
 	auto deleteFunc = [device_](int stage_, void* ptr_) -> bool
 	{
-		auto bindingTable = (Render::BindingTableMemoryMap*) ptr_;
-		auto vulkanBindingTable = bindingTable->getStage<Vulkan::BindingTableMemoryMap>(stage_);
+		auto bindingTableMM = (Render::BindingTableMemoryMap*) ptr_;
+		auto vulkanBindingTableMM = bindingTableMM->getStage<Vulkan::BindingTableMemoryMap>(stage_);
 
 		auto device = device_.lock();
 		if(!device) return false;
+
+		device->destroyDescriptorSetLayout(vulkanBindingTableMM->layout);
 
 		return true;
 	};

@@ -22,6 +22,8 @@
 #include "midrender/meshmodrenderer.h"
 #include "meshops/platonicsolids.h"
 
+#include "net/context.h"
+#include "server.h"
 struct App
 {
 	App(Shell::ShellInterface& shell_) :
@@ -34,7 +36,7 @@ struct App
 		using namespace Render;
 
 		Shell::ShellConfig shellConfig{};
-		shellConfig.appName = "Gfx Test";
+		shellConfig.appName = "pp_viewer"s;
 		shellConfig.wantConsoleOutput = false;
 		shellConfig.gpuComputeRequired = true;
 		shellConfig.gpuRenderRequired = true;
@@ -61,10 +63,11 @@ struct App
 		}
 		if(pickedGpuIndex == ~0) return false;
 
+		std::string windowName = "Phoeonix Pointer Remote Viewer"s;
 		Shell::PresentableWindowConfig windowConfig;
 		windowConfig.width = 1280;
 		windowConfig.height = 720;
-		windowConfig.windowName = "pp_viewer"s;
+		windowConfig.windowName =  windowName;
 		windowConfig.fullscreen = false;
 		windowConfig.directInput = true;
 		auto window = shell.createPresentableWindow(windowConfig);
@@ -80,17 +83,25 @@ struct App
 		device = gpuStable->createGpuDevice(pickedGpuIndex, config, resourceManager);
 		if(!device) return false;
 
-		display = device->getDisplay();
-
+		weakDisplay = device->getDisplay();
 
 		createResources();
 
+		server = std::make_unique<Server>();
 		return okay;
 	}
 
 	auto finish() -> void
 	{
-		display.reset();
+		server.reset();
+
+		imguiBindings->destroy();
+		imguiBindings.reset();
+		meshModRenderer->destroy();
+		meshModRenderer.reset();
+
+		resourceManager->flushCache();
+		weakDisplay.reset();
 		device.reset();
 		resourceManager.reset();
 	}
@@ -104,6 +115,7 @@ struct App
 		using namespace ResourceManager;
 		using namespace MidRender;
 
+		auto display = weakDisplay.lock();
 		// alias resourceManager name (why can't I use 'using' C++ standard body!)
 		auto& rm = resourceManager;
 		MidRender::Stocks::InitBasics(rm);
@@ -126,6 +138,8 @@ struct App
 		using namespace Render;
 		using namespace MidRender;;
 		using namespace std::string_view_literals;
+
+		auto display = weakDisplay.lock();
 
 		// acquire the resources by name
 		auto& rm = resourceManager;
@@ -190,6 +204,9 @@ struct App
 			renderQueue->enqueue(encoder);
 			renderQueue->submit();
 			renderQueue->stallTillIdle();
+
+			encoder.reset();
+
 			device->houseKeepTick();
 			display->present(colourRT0);
 			if(Input::g_Keyboard)
@@ -205,11 +222,12 @@ struct App
 	ResourceManager::ResourceMan::Ptr resourceManager;
 	Shell::ShellInterface& shell;
 	Render::Device::Ptr device;
-	Render::Display::Ptr display;
+	Render::Display::WeakPtr weakDisplay;
 
 	std::unique_ptr<MidRender::ImguiBindings> imguiBindings;
 	std::unique_ptr<MidRender::MeshModRenderer> meshModRenderer;
 	MidRender::MeshModRenderer::SceneIndex solidSceneIndex;
+	std::unique_ptr<Server> server;
 };
 
 int Main(Shell::ShellInterface& shell_)

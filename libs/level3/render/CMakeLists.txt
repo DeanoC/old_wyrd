@@ -40,6 +40,7 @@ set( RENDER_SRC
 		buffer.h sampler.cpp sampler.h)
 
 add_definitions(${wyrd_DEFINITIONS})
-include_directories( ${wyrd_INCLUDES})
+include_directories( ${wyrd_INCLUDES} ${shaderc_INCLUDES})
 
 add_library( render STATIC ${RENDER_SRC} )
+target_link_libraries(render shaderc )

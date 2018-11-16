@@ -7,7 +7,9 @@ set( LEVEL_LIBS
 		binny
 		math
 		input
+		net
 		)
+
 foreach(LIB ${LEVEL_LIBS})
 	add_subdirectory(${LIB})
 endforeach(LIB)

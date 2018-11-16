@@ -22,7 +22,7 @@ struct Device
 	using ConstWeakPtr = std::weak_ptr<Device const>;
 
 	virtual ~Device() = default;
-	virtual auto getDisplay() const -> std::shared_ptr<Display> = 0;
+	virtual auto getDisplay() const -> std::weak_ptr<Display> = 0;
 	virtual auto houseKeepTick() -> void = 0;
 
 	virtual auto makeEncoderPool(bool frameLifetime_, CommandQueueFlavour flavour_) -> std::shared_ptr<EncoderPool> = 0;

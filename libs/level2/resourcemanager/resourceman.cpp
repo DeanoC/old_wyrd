@@ -24,6 +24,7 @@ ResourceMan::~ResourceMan()
 {
 	assert(managerIndex < s_curResourceManagerCount);
 	// TODO reclaim the index
+	resourceCache.reset();
 }
 
 auto ResourceMan::Create() -> std::shared_ptr<ResourceMan>
@@ -105,6 +106,11 @@ auto ResourceMan::removeHandler(ResourceId id_, int stage_) -> void
 	{
 		typeToHandler[id_][stage_] = {0, nullptr, nullptr};
 	}
+}
+
+auto ResourceMan::flushCache() -> void
+{
+	resourceCache.reset();
 }
 
 auto ResourceMan::getIndexFromName(ResourceId id_, ResourceNameView const name_) -> uint64_t

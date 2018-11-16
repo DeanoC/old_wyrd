@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <limits>
+#include <algorithm>
 
 #if PLATFORM == WINDOWS
 #if COMPILER_VERSION < MS_VS2017 && !defined( MSC_FLOAT_HACK )
@@ -103,8 +104,12 @@ constexpr T Length(T a) { return a; }
 template<typename T, typename = typename std::enable_if<std::is_floating_point<T>{}>::type>
 constexpr T ReciprocalSqrt(T a) { return T(1.0) / std::sqrt(a); }
 
-template<typename T, typename = typename std::enable_if<std::is_floating_point<T>{}>::type>
-constexpr T Clamp(const T a, const T mi, const T ma) { return std::max(mi, std::min(a, ma)); }
+template<typename genType>
+constexpr genType Clamp(genType x, genType minVal, genType maxVal)
+{
+	static_assert(std::numeric_limits<genType>::is_iec559 || std::numeric_limits<genType>::is_integer, "'clamp' only accept floating-point or integer inputs");
+	return std::min(std::max(x, minVal), maxVal);
+}
 
 constexpr uint8_t s_LogTable256[] = {0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
 									 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,

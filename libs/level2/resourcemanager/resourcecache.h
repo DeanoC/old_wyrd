@@ -15,8 +15,8 @@ class ResourceCache
 {
 public:
 	auto lookup(uint64_t id_) -> std::shared_ptr<ResourceBase>;
-	void insert(uint64_t id_, std::shared_ptr<ResourceBase> const& resource_);
-
+	auto insert(uint64_t id_, std::shared_ptr<ResourceBase> const& resource_) ->void;
+	auto reset() -> void;
 private:
 	using IdToResource = tbb::concurrent_unordered_map<uint64_t, std::shared_ptr<ResourceBase>>;
 

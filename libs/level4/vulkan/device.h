@@ -50,7 +50,7 @@ public:
 	auto flushMemory(VmaAllocation const& alloc_) -> void;
 
 	// Render::Device interface
-	auto getDisplay() const -> std::shared_ptr<Render::Display> final;
+	auto getDisplay() const -> std::weak_ptr<Render::Display> final;
 	auto houseKeepTick() -> void final;
 
 	auto makeEncoderPool(bool frameLifetime_,

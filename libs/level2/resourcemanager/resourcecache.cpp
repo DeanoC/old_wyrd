@@ -40,5 +40,10 @@ void ResourceCache::insert(uint64_t id_, std::shared_ptr<ResourceBase> const& re
 	// will get here after the first is done so we can check we have the same data
 	assert(cache[id_] == resource_);
 }
+auto ResourceCache::reset() -> void
+{
+	std::lock_guard guard(updateMutex);
+	cache = IdToResource{};
+}
 
 }

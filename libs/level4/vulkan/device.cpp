@@ -385,6 +385,8 @@ Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
 
 Device::~Device()
 {
+	display.reset();
+
 	dmaEncoderPool.reset();
 
 	destroyDescriptorPool(descriptorPool);
@@ -398,7 +400,7 @@ Device::~Device()
 	vkDestroyDevice(device, &allocationCallbacks);
 }
 
-auto Device::getDisplay() const -> std::shared_ptr<Render::Display>
+auto Device::getDisplay() const -> std::weak_ptr<Render::Display>
 {
 	return std::static_pointer_cast<Render::Display>(display);
 };

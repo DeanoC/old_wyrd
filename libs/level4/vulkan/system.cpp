@@ -203,16 +203,15 @@ bool System::Init(std::string const& appName_,
 			VK_MAKE_VERSION(1, 0, 0),
 			0
 	};
-	VkInstanceCreateInfo instance_create_info = {
-			VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-			nullptr,
-			0,
-			&application_info,
-			static_cast<uint32_t>(validationLayers.size()),
-			validationLayers.data(),
-			static_cast<uint32_t>(instanceExtC.size()),
-			(instanceExtC.size() > 0) ? instanceExtC.data() : nullptr
-	};
+	VkInstanceCreateInfo instance_create_info = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
+	instance_create_info.pApplicationInfo = &application_info;
+	if constexpr (enableValidationLayers)
+	{
+		instance_create_info.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+		instance_create_info.ppEnabledLayerNames = validationLayers.data();
+	}
+	instance_create_info.enabledExtensionCount = static_cast<uint32_t>(instanceExtC.size());
+	instance_create_info.ppEnabledExtensionNames = (instanceExtC.size() > 0) ? instanceExtC.data() : nullptr;
 
 	CHK_F(vkCreateInstance(&instance_create_info, nullptr, &instance));
 
@@ -354,9 +353,8 @@ auto System::createGpuDevice(uint32_t index_,
 
 	if(surface != VK_NULL_HANDLE)
 	{
-		auto display = activeDisplays.emplace_back(
-				std::make_shared<Vulkan::Display>(
-						config_.width, config_.height, device, config_.window, surface));
+		auto display = std::make_shared<Vulkan::Display>(
+						config_.width, config_.height, device, config_.window, surface);
 
 		display->createSwapChain();
 		device->display = display;

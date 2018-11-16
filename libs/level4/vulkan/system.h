@@ -48,9 +48,8 @@ private:
 
 	std::set<std::string> extensions;
 
-	std::vector<std::shared_ptr<Vulkan::Display>> activeDisplays;
 
-	static constexpr bool enableValidationLayers = true;
+	static constexpr bool enableValidationLayers = false;
 	inline static std::array<const char*, 1> validationLayers = {
 			"VK_LAYER_LUNARG_standard_validation"
 	};
