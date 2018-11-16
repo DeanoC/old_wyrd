@@ -255,6 +255,7 @@ auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan> const& rm
 auto ImguiBindings::destroy() -> void
 {
 }
+
 auto ImguiBindings::newFrame(uint32_t width_, uint32_t height_) -> void
 {
 	ImGuiIO& io = ImGui::GetIO();
@@ -294,6 +295,7 @@ auto ImguiBindings::newFrame(uint32_t width_, uint32_t height_) -> void
 
 auto ImguiBindings::render(std::shared_ptr<Render::Encoder>& encoder_) -> void
 {
+	using namespace std::literals;
 	using namespace Render;
 	using namespace Core::bitmask;
 	using namespace ResourceManager;
@@ -310,14 +312,15 @@ auto ImguiBindings::render(std::shared_ptr<Render::Encoder>& encoder_) -> void
 	size_t const vertexSize = drawData->TotalVtxCount * sizeof(ImDrawVert);
 	size_t const indexSize = drawData->TotalIdxCount * sizeof(ImDrawIdx);
 
+	static ResourceName vertexBufferName("mem$ImguiVertexBuffer"s);
+	static ResourceName indexBufferName("mem$ImguiIndexBuffer"s);
 	if (allocatedVertexBufferSize < vertexSize)
 	{
-		// TODO add the ability to hint resource manager to dump the old resource
-		std::string name("mem$ImguiVertexBuffer_gen");
-		name += std::to_string(vertexBufferAllocGeneration++);
+		rm->removeFromStorage(vertexBufferName.getView());
+
 		auto handle = Buffer::Create(
 				rm,
-				ResourceNameView(name),
+				vertexBufferName.getView(),
 				BufferFlags::NoInit | BufferFlags::CPUDynamic |
 				Buffer::FromUsage(Usage::DMADst | Usage::VertexRead),
 				vertexSize);
@@ -327,11 +330,11 @@ auto ImguiBindings::render(std::shared_ptr<Render::Encoder>& encoder_) -> void
 
 	if (allocatedIndexBufferSize < indexSize)
 	{
-		std::string name("mem$ImguiIndexBuffer_gen");
-		name += std::to_string(indexBufferAllocGeneration++);
+		rm->removeFromStorage(indexBufferName.getView());
+
 		auto handle = Buffer::Create(
 				rm,
-				ResourceNameView(name),
+				indexBufferName.getView(),
 				BufferFlags::NoInit | BufferFlags::CPUDynamic |
 				Buffer::FromUsage(Usage::DMADst | Usage::IndexRead),
 				indexSize);

@@ -47,7 +47,7 @@ struct MemStorage : public IStorage
 		if(filenameToMemory.find(name_) != filenameToMemory.end())
 		{
 			LOG_S(ERROR) << name_ << " is already in memory storage";
-			return false;
+			return;
 		}
 
 		std::vector<uint8_t> mem(size_);
@@ -60,7 +60,7 @@ struct MemStorage : public IStorage
 		auto const& it = filenameToMemory.find(name_);
 		if(it != filenameToMemory.end())
 		{
-			filenameToMemory.erase(it);
+			filenameToMemory.unsafe_erase(it);
 		}
 	}
 

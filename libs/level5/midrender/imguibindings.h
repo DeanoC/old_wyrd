@@ -36,9 +36,6 @@ struct ImguiBindings
 	Render::BufferConstPtr vertexBuffer;
 	Render::BufferConstPtr indexBuffer;
 
-	uint32_t vertexBufferAllocGeneration = 0;
-	uint32_t indexBufferAllocGeneration = 0;
-
 	uint64_t time;
 	uint64_t ticksPerSecond;
 
