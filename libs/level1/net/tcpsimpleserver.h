@@ -10,6 +10,8 @@
 
 namespace Net {
 namespace Details { struct TcpSimpleServerImpl; }
+struct BasicPayload;
+
 
 // simple server doesn't do anything but call the callback when its gets
 // a client, so the function callback allows a limited form of cooperative
@@ -19,7 +21,7 @@ namespace Details { struct TcpSimpleServerImpl; }
 class TcpSimpleServer
 {
 public:
-	using ConnectionFunc = std::function<bool (int counter_, std::shared_ptr<TcpConnection>)>;
+	using ConnectionFunc = std::function<bool(Net::BasicPayload const&)>;
 
 	TcpSimpleServer(uint16_t port_,
 					ConnectionFunc connectionFunc_);

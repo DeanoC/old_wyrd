@@ -12,13 +12,14 @@ namespace Net::Details
 
 struct TcpResolverImpl
 {
-	TcpResolverImpl() : resolver(*GetIoContext().get()) {}
-	asio::ip::tcp::resolver resolver;
+	TcpResolverImpl(std::shared_ptr<asio::io_context> const& context_) : 
+		weakContext(context_),
+		resolver(*context_.get()) {}
 
-	[[no_discard]] auto connect(TcpConnectionImpl* connection_, std::string_view const& address_, std::string_view const& port_) -> bool
+	[[nodiscard]] auto connect(asio::ip::tcp::socket& socket_, std::string_view const& address_, std::string_view const& port_) -> bool
 	{
 		asio::error_code ec;
-		asio::connect(connection_->socket, resolver.resolve(address_, port_), ec);
+		asio::connect(socket_, resolver.resolve(address_, port_), ec);
 		if(ec)
 		{
 			LOG_S(WARNING) << "Connection error: " << ec.message();
@@ -29,6 +30,9 @@ struct TcpResolverImpl
 			return true;
 		}
 	}
+
+	std::weak_ptr<asio::io_context> weakContext;
+	asio::ip::tcp::resolver resolver;
 
 };
 

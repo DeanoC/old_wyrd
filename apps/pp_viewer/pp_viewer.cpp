@@ -211,6 +211,7 @@ struct App
 
 			encoder.reset();
 
+			client->update();
 			device->houseKeepTick();
 			display->present(colourRT0);
 			if(Input::g_Keyboard)

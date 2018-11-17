@@ -2,24 +2,27 @@
 #ifndef WYRD_NET_TCPCONNECTION_H
 #define WYRD_NET_TCPCONNECTION_H
 
+#include "core/core.h"
 #include <vector>
 #include <array>
 
 namespace Net
 {
-namespace Details { struct TcpConnectionImpl; }
+struct BasicPayload;
+enum class BasicPayloadType : uint32_t;
 
 class TcpConnection
 {
 public:
-	TcpConnection();
-	~TcpConnection();
+	virtual ~TcpConnection(){};
 
-	auto syncWrite( void const* data_, size_t const size_) -> void;
-	auto syncWrite( std::string const& string_) -> void;
+	virtual auto syncWrite( void const* data_, size_t const size_) -> void = 0;
+	virtual auto syncWrite( std::string const& string_) -> void = 0;
 
-	auto syncRead( void* buffer_, size_t const maxSize_ ) -> size_t;
-	auto syncRead( std::string& string_) -> void;
+	virtual auto syncRead( void* buffer_, size_t const maxSize_ ) -> size_t = 0;
+	virtual auto syncRead( std::string& string_) -> void = 0;
+
+	virtual auto syncWriteBasicPayload(uint32_t payloadSize, BasicPayloadType const type_, void const* data_) -> void = 0;
 
 	template<typename T> auto syncWrite(std::vector<T> const& vector_) -> void
 	{
@@ -54,15 +57,6 @@ public:
 		static_assert(S > 0);
 		return syncRead(array_.data(), sizeof(T) * array_.size());
 	}
-
-	auto getImpl() const -> Details::TcpConnectionImpl* const { return impl; };
-	auto getImpl() -> Details::TcpConnectionImpl* { return impl; };
-
-private:
-	auto readSize() -> size_t;
-	auto readPayload(void* data_, size_t size_) -> size_t;
-
-	Details::TcpConnectionImpl* impl;
 };
 
 }

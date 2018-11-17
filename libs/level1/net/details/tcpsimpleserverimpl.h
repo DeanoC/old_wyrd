@@ -12,11 +12,15 @@ namespace Net::Details {
 
 struct TcpSimpleServerImpl : public asio::coroutine
 {
-	std::shared_ptr<TcpConnection> connection;
+	TcpSimpleServerImpl(uint16_t port_, TcpSimpleServer::ConnectionFunc connectionFunc_);
+
+	std::shared_ptr<asio::ip::tcp::socket> socket;
 	std::shared_ptr<asio::ip::tcp::acceptor> acceptor;
 	TcpSimpleServer::ConnectionFunc func;
-	bool childWorking = true;
-	int counter = 0;
+	bool moreData;
+	std::shared_ptr<std::array<uint8_t, 8*1024>> buffer;
+	std::shared_ptr<std::vector<uint8_t>> bigBuffer;
+	uint32_t bigBufferHead;
 
 	void operator()( asio::error_code ec_ = asio::error_code(), std::size_t length_ = 0);
 };

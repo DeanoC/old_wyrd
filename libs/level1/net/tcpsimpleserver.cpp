@@ -17,13 +17,7 @@ TcpSimpleServer::TcpSimpleServer(
 		uint16_t port_,
 		ConnectionFunc connectionFunc_)
 {
-	using namespace asio;
-	using namespace asio::ip;
-	using namespace Details;
-
-	impl = new TcpSimpleServerImpl();
-	impl->acceptor = std::make_unique<tcp::acceptor>(*GetIoContext(), tcp::endpoint(tcp::v4(), port_));
-	impl->func = connectionFunc_;
+	impl = new Details::TcpSimpleServerImpl(port_, connectionFunc_);
 }
 TcpSimpleServer::~TcpSimpleServer()
 {
@@ -33,7 +27,7 @@ TcpSimpleServer::~TcpSimpleServer()
 auto TcpSimpleServer::start() -> void
 {
 	using namespace Details;
-	impl->operator()(); // start without errors or data
+	(*impl)(); // start without errors or data
 
 	// Wait for signals indicating time to shut down.
 	asio::signal_set signals(*GetIoContext());
@@ -44,6 +38,14 @@ auto TcpSimpleServer::start() -> void
 #endif // defined(SIGQUIT)
 	asio::io_context* ioContext = GetIoContext().get();
 	signals.async_wait(std::bind(&asio::io_context::stop, ioContext));
+
+	std::vector<std::shared_ptr<std::thread> > threads;
+	for (std::size_t i = 0; i < std::thread::hardware_concurrency(); ++i) {
+		threads.push_back(
+			std::make_shared<std::thread>(std::bind(&asio::io_context::run, GetIoContext().get())));
+		threads[i]->join();
+	}
+
 	GetIoContext()->run();
 }
 
@@ -54,7 +56,8 @@ auto TcpSimpleServer::stop() -> void
 	impl->acceptor->cancel();
 	impl->acceptor->close();
 	impl->acceptor.reset();
-	impl->connection.reset();
+	impl->socket.reset();
+//	impl->connection.reset();
 }
 
 
