@@ -1,13 +1,15 @@
-/** \file meshsorter.h
-	
-   (c) 2012 Dean Calver
- */
+#pragma once
+#ifndef WYRD_MESHOPS_MESHSORTER_H_
+#define WYRD_MESHOPS_MESHSORTER_H_
 
-#include <meshmod/vertexdata/vertexcontainers.h>
+#include "core/core.h"
+#include "meshmod/polygonsdata/polygoncontainers.h"
+#include "meshmod/vertexdata/vertexcontainers.h"
+#include "meshmod/vertexdata/positionvertex.h"
 
-#if !defined( MESHOPS_MESHSORTER_H_ )
-#define MESHOPS_MESHSORTER_H_
-
+namespace MeshMod {
+class Mesh;
+}
 
 namespace MeshOps {
 	/**
@@ -16,13 +18,13 @@ namespace MeshOps {
 	class MeshSorter {
 	public:
 
-		MeshSorter( const MeshMod::Mesh::Ptr& _mesh );
+		MeshSorter(std::shared_ptr<MeshMod::Mesh> const& _mesh);
 
 		std::shared_ptr<MeshMod::PolygonData::SortIndices> sortPolygonsByMaterialIndex();
-		std::shared_ptr<MeshMod::VertexData::SortIndices> sortVerticesByAxis( MeshMod::VertexData::Position::AXIS axis );
+		std::shared_ptr<MeshMod::VertexData::SortIndices> sortVerticesByAxis(MeshMod::VertexData::Axis axis);
 
 	private:
-		const MeshMod::Mesh::Ptr	mesh;
+		std::shared_ptr<MeshMod::Mesh> mesh;
 	};
 };
 

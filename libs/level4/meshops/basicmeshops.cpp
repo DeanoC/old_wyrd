@@ -10,23 +10,29 @@
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
-#include "meshops.h"
+#include "core/core.h"
+#include "meshops/basicmeshops.h"
+
+#include "geometry/aabb.h"
+#include "core/exception.h"
+#include "meshmod/scene.h"
+#include "meshmod/sceneobject.h"
+#include "meshmod/vertices.h"
+#include "meshmod/halfedges.h"
+#include "meshmod/polygons.h"
+#include "meshmod/mesh.h"
+#include "meshmod/vertexdata/vertexdata.h"
+#include "meshmod/vertexdata/uvvertex.h"
+#include "meshmod/vertexdata/positionvertex.h"
+#include "meshmod/vertexdata/normalvertex.h"
+#include "meshmod/vertexdata/pointrepvertex.h"
+#include "meshmod/halfedgedata/halfedgecontainers.h"
+#include "meshmod/polygonsdata/polygoncontainers.h"
+#include "meshops/meshsorter.h"
+
 #include <cassert>
 #include <algorithm>
 #include <set>
-
-#include <meshmod/vertices.h>
-#include <meshmod/halfedges.h>
-#include <meshmod/polygons.h>
-#include <meshmod/mesh.h>
-#include <meshmod/vertexdata/positionvertex.h>
-#include <meshmod/vertexdata/normalvertex.h>
-#include <meshmod/vertexdata/pointrepvertex.h>
-#include <meshmod/halfedgedata/halfedgecontainers.h>
-#include <geometry/aabb.h>
-#include <core/exception.h>
-#include <meshops/meshsorter.h>
-#include "basicmeshops.h"
 
 namespace MeshOps {
 

@@ -1,24 +1,16 @@
-///-------------------------------------------------------------------------------------------------
-/// \file	meshops\textureunit.cpp
-///
-/// \brief	Implements the textureunit class.
-///
-/// \details	
-///		textureunit description goes here
-///
-/// \remark	Copyright (c) 2011 Dean Calver. All rights reserved.
-/// \remark	mailto://deano@cloudpixies.com
-///
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//---------------------------------------------------------------------------
-// Local Defines
-//---------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------
-// Includes
-//---------------------------------------------------------------------------
-#include "meshops.h"
+#include "core/core.h"
+#include "meshmod/scene.h"
+#include "meshmod/sceneobject.h"
+#include "meshmod/vertices.h"
+#include "meshmod/halfedges.h"
+#include "meshmod/polygons.h"
+#include "meshmod/mesh.h"
+#include "meshmod/vertexdata/vertexdata.h"
+#include "meshmod/vertexdata/uvvertex.h"
+#include "meshmod/vertexdata/positionvertex.h"
+#include "meshmod/vertexdata/pointrepvertex.h"
+#include "meshmod/halfedgedata/halfedgecontainers.h"
+#include "meshmod/polygonsdata/polygoncontainers.h"
 #include "textureunit.h"
 #include <algorithm>
 

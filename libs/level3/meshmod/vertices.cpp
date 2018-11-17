@@ -50,7 +50,7 @@ namespace {
 struct AxisSortCompare
 {
 	AxisSortCompare(MeshMod::VertexData::Positions const& positions_,
-					MeshMod::VertexData::Position::AXIS axis_) :
+					MeshMod::VertexData::Axis axis_) :
 			positions(positions_),
 			axis(axis_) {}
 
@@ -62,7 +62,7 @@ struct AxisSortCompare
 
 private:
 	MeshMod::VertexData::Positions const& positions;
-	MeshMod::VertexData::Position::AXIS axis;
+	MeshMod::VertexData::Axis axis;
 };
 }
 /**
@@ -74,14 +74,14 @@ very slow. but I'm betting that in practice this will be fast enough for most
 data sets.
 @param fEpsilon how similar is similar?
 */
-void Vertices::createPointReps(VertexData::Position::AXIS axis, float fEpsilon)
+void Vertices::createPointReps(VertexData::Axis axis, float fEpsilon)
 {
 	static const char* axisNames[] = { "X axis", "Y axis", "Z axis" };
 
 	if (getCount() == 0) return;
 	if (verticesContainer.getSizeOfElementContainer() == 2) return;
 
-	auto& sortEle = *getVerticesContainer().getOrAddElements<VertexData::SortIndices>( axisNames[axis] );
+	auto& sortEle = *getVerticesContainer().getOrAddElements<VertexData::SortIndices>(axisNames[(uint8_t) axis]);
 
 	// fill sort mapper with identity mapping
 	VertexData::SortIndices::iterator idenIt = sortEle.elements.begin();
@@ -269,7 +269,7 @@ Collapse all similar position to a single one, ignores all other data similarity
 Generally do before you add any other data as it will potionally remove that other data
 @param fEpsilon how similar is similar?
 */
-void Vertices::removeAllSimilarPositions(VertexData::Position::AXIS axis, float fEpsilon)
+void Vertices::removeAllSimilarPositions(VertexData::Axis axis, float fEpsilon)
 {
 	// NOTE : I'm not sure I should do these 3 operations...
 	// but then this is a extremely destructive operations so

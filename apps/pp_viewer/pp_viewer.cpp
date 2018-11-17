@@ -20,7 +20,10 @@
 #include "midrender/simpleforwardglobals.h"
 #include "midrender/simpleeye.h"
 #include "midrender/meshmodrenderer.h"
+#include "meshmod/scenenode.h"
+#include "meshmod/mesh.h"
 #include "meshops/platonicsolids.h"
+#include "meshops/shapes.h"
 
 #include "server.h"
 #include "fakeclient.h"
@@ -133,7 +136,7 @@ struct App
 		meshModRenderer->init(rm);
 
 		auto rootScene = std::make_shared<MeshMod::SceneNode>();
-		rootScene->addObject(MeshOps::PlatonicSolids::createIcosahedron());
+		rootScene->addObject(MeshOps::Shapes::createDiamond());
 		solidSceneIndex = meshModRenderer->addScene(rootScene);
 	}
 

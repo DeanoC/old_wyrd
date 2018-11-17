@@ -14,6 +14,14 @@
 
 namespace MeshMod {
 namespace VertexData {
+
+enum class Axis : uint8_t
+{
+	X = 0,
+	Y = 1,
+	Z = 2,
+};
+
 //! a position is a 3-tuple representing a physical position, its
 //! a float per coordinate which should be enough for most applications
 //! As position is a 'special' vertex attribute, if you require more
@@ -23,12 +31,6 @@ namespace VertexData {
 //! \todo make accuracy a compile time option
 struct Position
 {
-	enum AXIS
-	{
-		X = 0,
-		Y = 1,
-		Z = 2,
-	};
 	//! each coordinate
 	float x, y, z;
 
@@ -40,30 +42,30 @@ struct Position
 	Position(const float x_, const float y_, const float z_) :
 			x(x_), y(y_), z(z_) {}
 
-	const float &get(AXIS _axis) const
+	const float& get(Axis _axis) const
 	{
 		switch(_axis)
 		{
 			default:
-			case X:
+			case Axis::X:
 				return x;
-			case Y:
+			case Axis::Y:
 				return y;
-			case Z:
+			case Axis::Z:
 				return z;
 		}
 	}
 
-	float &get(AXIS _axis)
+	float& get(Axis _axis)
 	{
 		switch(_axis)
 		{
 			default:
-			case X:
+			case Axis::X:
 				return x;
-			case Y:
+			case Axis::Y:
 				return y;
-			case Z:
+			case Axis::Z:
 				return z;
 		}
 	}
@@ -73,7 +75,7 @@ struct Position
 		return Math::vec3(x, y, z);
 	}
 
-	Position interpolate(const Position &b, const float t) const
+	Position interpolate(const Position& b, const float t) const
 	{
 		const float one_minus_t = 1.0f - t;
 		return Position((x * t) + (b.x * one_minus_t),
@@ -81,7 +83,7 @@ struct Position
 						(z * t) + (b.z * one_minus_t));
 	}
 
-	Position interpolate(const Position &b, const Position &c, const float u, const float v) const
+	Position interpolate(const Position& b, const Position& c, const float u, const float v) const
 	{
 		const float w = 1.0f - v - u;
 		return Position((x * u) + (b.x * v) + (c.x * w),
@@ -90,7 +92,7 @@ struct Position
 	}
 
 	//! is the position equal to the data passed in, using an epsilon parameter to decide
-	bool equal(const Position &other, const float epsilon = s_epsilon1e_5) const
+	bool equal(const Position& other, const float epsilon = s_epsilon1e_5) const
 	{
 
 		if((fabsf(x - other.x) < epsilon) &&
@@ -110,11 +112,11 @@ struct Position
 	bool isValid() const
 	{
 		// for float NAN we must use interger compares
-		const unsigned int im = *(reinterpret_cast<const unsigned int *>(&s_floatMarker));
+		const unsigned int im = *(reinterpret_cast<const unsigned int*>(&s_floatMarker));
 
-		const unsigned int ix = *(reinterpret_cast<const unsigned int *>(&x));
-		const unsigned int iy = *(reinterpret_cast<const unsigned int *>(&y));
-		const unsigned int iz = *(reinterpret_cast<const unsigned int *>(&z));
+		const unsigned int ix = *(reinterpret_cast<const unsigned int*>(&x));
+		const unsigned int iy = *(reinterpret_cast<const unsigned int*>(&y));
+		const unsigned int iz = *(reinterpret_cast<const unsigned int*>(&z));
 
 		// either our marker NAN return false;
 		if(ix == im || iy == im || iz == im)
@@ -125,8 +127,10 @@ struct Position
 	//! name used to get this kind of data
 	static const std::string getName() { return "Position"; };
 };
+
 //! position vertex Element (x,y,z)
 typedef BaseElements<Position, Vertex_, true, DerivedType::NotDerived> Positions;
 
-} } // end MeshMod
+}
+} // end MeshMod
 #endif // MESH_MOD_POSITION_VERTEX_H_

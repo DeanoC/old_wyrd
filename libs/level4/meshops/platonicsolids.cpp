@@ -1,16 +1,26 @@
-//
-// Created by Computer on 25/07/2018.
-//
-#include "meshops.h"
+#include "core/core.h"
+#include "geometry/aabb.h"
+#include "meshmod/scene.h"
+#include "meshmod/sceneobject.h"
+#include "meshmod/vertices.h"
+#include "meshmod/halfedges.h"
+#include "meshmod/polygons.h"
+#include "meshmod/mesh.h"
+#include "meshmod/vertexdata/vertexdata.h"
+#include "meshmod/vertexdata/uvvertex.h"
+#include "meshmod/vertexdata/positionvertex.h"
+#include "meshmod/vertexdata/pointrepvertex.h"
+#include "meshmod/halfedgedata/halfedgecontainers.h"
+#include "meshmod/polygonsdata/polygoncontainers.h"
 #include "math/vector_math.h"
-#include "platonicsolids.h"
+#include "meshops/platonicsolids.h"
 
 namespace MeshOps {
-MeshMod::Mesh::Ptr PlatonicSolids::createTetrahedon()
+auto PlatonicSolids::createTetrahedon() -> std::unique_ptr<MeshMod::Mesh>
 {
 	using namespace MeshMod;
 	using namespace Math;
-	Mesh::Ptr mesh = std::make_shared<Mesh>("Tetrahedron");
+	auto mesh = std::make_unique<Mesh>("Tetrahedron");
 
 	vec3 pos[4] = {
 			{1,  1,  1},
@@ -38,14 +48,14 @@ MeshMod::Mesh::Ptr PlatonicSolids::createTetrahedon()
 	assert(mesh->getPolygons().getCount() == 4);
 	assert(mesh->getHalfEdges().getCount()/2 == 6);
 
-	return mesh;
+	return std::move(mesh);
 }
 
-MeshMod::Mesh::Ptr PlatonicSolids::createOctahedron()
+auto PlatonicSolids::createOctahedron() -> std::unique_ptr<MeshMod::Mesh>
 {
 	using namespace MeshMod;
 	using namespace Math;
-	Mesh::Ptr mesh = std::make_shared<Mesh>("Octahedron");
+	auto mesh = std::make_unique<Mesh>("Octahedron");
 
 	static const vec3 pos[] = {
 			{-1, 0,  0},
@@ -80,14 +90,14 @@ MeshMod::Mesh::Ptr PlatonicSolids::createOctahedron()
 	assert(mesh->getPolygons().getCount() == 8);
 	assert(mesh->getHalfEdges().getCount()/2 == 12);
 
-	return mesh;
+	return std::move(mesh);
 }
 
-MeshMod::Mesh::Ptr PlatonicSolids::createCube()
+auto PlatonicSolids::createCube() -> std::unique_ptr<MeshMod::Mesh>
 {
 	using namespace MeshMod;
 	using namespace Math;
-	Mesh::Ptr mesh = std::make_shared<Mesh>("Cube");
+	auto mesh = std::make_unique<Mesh>("Cube");
 
 	static const vec3 pos[] = {
 			{-1,  1, -1},
@@ -123,18 +133,18 @@ MeshMod::Mesh::Ptr PlatonicSolids::createCube()
 	assert(mesh->getPolygons().getCount()  == 6);
 	assert(mesh->getHalfEdges().getCount()/2 == 12);
 
-	return mesh;
+	return std::move(mesh);
 
 }
 
-MeshMod::Mesh::Ptr PlatonicSolids::createIcosahedron()
+auto PlatonicSolids::createIcosahedron() -> std::unique_ptr<MeshMod::Mesh>
 {
 	using namespace MeshMod;
 	using namespace Math;
 
 	using namespace MeshMod;
 	using namespace Math;
-	Mesh::Ptr mesh = std::make_shared<Mesh>("Icosahedron");
+	auto mesh = std::make_unique<Mesh>("Icosahedron");
 
 	// Phi - the square root of 5 plus 1 divided by 2
 	double phi = (1.0 + sqrt(5.0)) * 0.5;
@@ -202,18 +212,12 @@ MeshMod::Mesh::Ptr PlatonicSolids::createIcosahedron()
 	return mesh;
 }
 
-MeshMod::Mesh::Ptr PlatonicSolids::createDodecahedron()
-{
-	assert(false); // TODO
-	return nullptr;
-}
 
-
-MeshMod::Mesh::Ptr PlatonicSolids::createBoxFrom(Geometry::AABB const& aabb)
+auto PlatonicSolids::createBoxFrom(Geometry::AABB const& aabb) -> std::unique_ptr<MeshMod::Mesh>
 {
 	using namespace MeshMod;
 	using namespace Math;
-	Mesh::Ptr mesh = std::make_shared<Mesh>("Cube");
+	auto mesh = std::make_unique<Mesh>("Box");
 
 	Math::vec3 const minBox = aabb.getMinExtent();
 	Math::vec3 const maxBox = aabb.getMaxExtent();
@@ -252,8 +256,7 @@ MeshMod::Mesh::Ptr PlatonicSolids::createBoxFrom(Geometry::AABB const& aabb)
 	assert(mesh->getPolygons().getCount() == 6);
 	assert(mesh->getHalfEdges().getCount() / 2 == 12);
 
-	return mesh;
-
+	return std::move(mesh);
 }
 
 }

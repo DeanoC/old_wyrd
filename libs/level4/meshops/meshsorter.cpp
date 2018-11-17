@@ -1,32 +1,25 @@
-/** \file meshsorter.cpp
-   Geometry Optimiser Mesh sorting operations.
-   (c) 2012 Deano Calver
- */
-
-//---------------------------------------------------------------------------
-// Local Defines
-//---------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------
-// Includes
-//---------------------------------------------------------------------------
-#include "meshops.h"
+#include "core/core.h"
+#include "meshops/meshsorter.h"
+#include "meshmod/scene.h"
+#include "meshmod/sceneobject.h"
+#include "meshmod/vertices.h"
+#include "meshmod/halfedges.h"
+#include "meshmod/polygons.h"
+#include "meshmod/mesh.h"
+#include "meshmod/vertexdata/vertexdata.h"
+#include "meshmod/vertexdata/uvvertex.h"
+#include "meshmod/vertexdata/positionvertex.h"
+#include "meshmod/vertexdata/pointrepvertex.h"
+#include "meshmod/halfedgedata/halfedgecontainers.h"
+#include "meshmod/polygonsdata/polygoncontainers.h"
 #include <cassert>
 #include <algorithm>
 #include <set>
-#include <meshmod/vertices.h>
-#include <meshmod/halfedges.h>
-#include <meshmod/polygons.h>
-#include <meshmod/mesh.h>
-#include <meshmod/vertexdata/positionvertex.h>
-#include <meshmod/vertexdata/pointrepvertex.h>
-#include <meshmod/halfedgedata/halfedgecontainers.h>
-#include "meshsorter.h"
 
 namespace MeshOps {
 
-MeshSorter::MeshSorter( const MeshMod::Mesh::Ptr& _mesh ) :
-	mesh( _mesh )
+MeshSorter::MeshSorter(std::shared_ptr<MeshMod::Mesh> const& mesh_) :
+		mesh(mesh_)
 {
 }
 
@@ -46,7 +39,7 @@ public:
 //! get the original version via the index
 struct AxisSortCompare {
 	std::shared_ptr<MeshMod::VertexData::Positions> posElement;
-	MeshMod::VertexData::Position::AXIS axis;
+	MeshMod::VertexData::Axis axis;
 
 	/// function to sort by position[axis]
 	bool operator() ( const MeshMod::VertexData::SortIndex& a, const MeshMod::VertexData::SortIndex& b) const {
@@ -89,7 +82,8 @@ std::shared_ptr<MeshMod::PolygonData::SortIndices> MeshSorter::sortPolygonsByMat
 
 /**
 */
-std::shared_ptr<MeshMod::VertexData::SortIndices> MeshSorter::sortVerticesByAxis( MeshMod::VertexData::Position::AXIS axis ) {
+std::shared_ptr<MeshMod::VertexData::SortIndices> MeshSorter::sortVerticesByAxis(MeshMod::VertexData::Axis axis)
+{
 	using namespace MeshMod;
 	// we create a sort mapper, that which vertex would be here if sort by
 	// indicated type
@@ -98,7 +92,7 @@ std::shared_ptr<MeshMod::VertexData::SortIndices> MeshSorter::sortVerticesByAxis
 	static const char* axisNames[] = { "X axis", "Y axis", "Z axis" };
 
 	VerticesElementsContainer& vertCon = mesh->getVertices().getVerticesContainer();
-	auto sortEle = vertCon.getOrAddElements<VertexData::SortIndices>( axisNames[axis] );
+	auto sortEle = vertCon.getOrAddElements<VertexData::SortIndices>(axisNames[(uint8_t) axis]);
 
 	// fill sort mapper with identity mapping
 	VertexData::SortIndices::iterator idenIt = sortEle->elements.begin();

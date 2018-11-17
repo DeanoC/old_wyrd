@@ -3,7 +3,12 @@
 #define MESHOPS_RAYCASTER_H_
 
 #include "geometry/kdtree.h"
-#include "layeredtexture.h"
+#include "meshops/layeredtexture.h"
+
+namespace MeshMod {
+class Mesh;
+}
+
 
 namespace MeshOps {
 
@@ -59,18 +64,18 @@ public:
 	/// \param	_targetMesh		  	The transfer mesh. 
 	/// \param	doAllVertexSources	(optional) do all target mesh vertex sources. 
 	////////////////////////////////////////////////////////////////////////////////////////////////////
-	void setTargetMesh( const MeshMod::Mesh::Ptr _targetMesh, bool doAllVertexSources = true );
+	void setTargetMesh(std::shared_ptr<MeshMod::Mesh> _targetMesh, bool doAllVertexSources = true);
 
 	// base mesh API
-	void setBaseMesh( MeshMod::Mesh::Ptr _baseMesh, std::string const& uvSetName );
+	void setBaseMesh(std::shared_ptr<MeshMod::Mesh> _baseMesh, std::string const& uvSetName);
 	void setMaxDisplacement( float _maxDisplacement ) { maxDisplacement = _maxDisplacement; }
 	void setSubSampleCount( unsigned int _subSampleCount ) { subSampleCount = _subSampleCount; }
 
 	void transferTo( LayeredTexture& image );
 private:
 	std::map<std::string, TRANSFORM_TYPE> targetVertexSources;
-	MeshMod::Mesh::Ptr	targetMesh;
-	MeshMod::Mesh::Ptr	baseMesh;
+	std::shared_ptr<MeshMod::Mesh> targetMesh;
+	std::shared_ptr<MeshMod::Mesh> baseMesh;
 	std::string			traceUVSetName;
 	unsigned int		subSampleCount;
 	float				maxDisplacement;

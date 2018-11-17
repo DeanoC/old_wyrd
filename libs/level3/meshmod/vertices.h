@@ -76,9 +76,9 @@ public:
 	// return false if similar vertex was available, true if not
 	bool moveToSimilarIfPossible(VertexIndex index);
 
-	void createPointReps(VertexData::Position::AXIS axis = VertexData::Position::AXIS::X, float fEpsilon = 1e-5f);
+	void createPointReps(VertexData::Axis axis = VertexData::Axis::X, float fEpsilon = 1e-5f);
 
-	void removeAllSimilarPositions(VertexData::Position::AXIS axis = VertexData::Position::AXIS::X, float fEpsilon = 1e-5f);
+	void removeAllSimilarPositions(VertexData::Axis axis = VertexData::Axis::X, float fEpsilon = 1e-5f);
 
 protected:
 	// MM_INVALID_INDEX if no new index

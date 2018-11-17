@@ -19,12 +19,12 @@
 
 #include "core/quick_hash.h"
 #include "meshmod/meshmod.h"
-#include "meshops/meshops.h"
 #include "meshmod/vertices.h"
 #include "meshmod/halfedges.h"
 #include "meshmod/polygons.h"
 #include "meshmod/mesh.h"
 #include "meshmod/vertexdata/normalvertex.h"
+#include "meshmod/vertexdata/uvvertex.h"
 #include "tinygltf/tiny_gltf.h"
 #include "gltf.h"
 #include <stack>

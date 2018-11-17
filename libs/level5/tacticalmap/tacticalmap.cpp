@@ -1,14 +1,9 @@
-//
-// Created by Computer on 01/08/2018.
-//
-#include <algorithm>
-#include <sstream>
-#include <array>
-#include <unordered_set>
-#include <stack>
-
+#include "core/core.h"
+#include "meshmod/vertices.h"
+#include "meshmod/halfedges.h"
+#include "meshmod/polygons.h"
+#include "meshmod/mesh.h"
 #include "meshops/basicmeshops.h"
-#include "meshops/meshops.h"
 #include "geometry/ray.h"
 #include "geometry/watertightray.h"
 #include "enkiTS/src/TaskScheduler.h"
@@ -18,6 +13,11 @@
 #include "tacticalmap.h"
 #include "binny/bundle.h"
 #include "binny/bundlewriter.h"
+#include <algorithm>
+#include <sstream>
+#include <array>
+#include <unordered_set>
+#include <stack>
 
 namespace {
 using namespace Binny;

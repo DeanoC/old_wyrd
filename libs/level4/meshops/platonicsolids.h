@@ -1,24 +1,31 @@
 #pragma once
-#ifndef MESHOPS_PLATONICSOLIDS_H
-#define MESHOPS_PLATONICSOLIDS_H
+#ifndef WYRD_MESHOPS_PLATONICSOLIDS_H
+#define WYRD_MESHOPS_PLATONICSOLIDS_H
 
-#include "meshops/meshops.h"
-#include "geometry/aabb.h"
+#include "core/core.h"
+
+namespace Geometry {
+class AABB;
+}
+namespace MeshMod {
+class Mesh;
+}
+
 namespace MeshOps {
 
 class PlatonicSolids {
 public:
-	static MeshMod::Mesh::Ptr createTetrahedon();
-	static MeshMod::Mesh::Ptr createOctahedron();
-	static MeshMod::Mesh::Ptr createCube();
-	static MeshMod::Mesh::Ptr createIcosahedron();
-	static MeshMod::Mesh::Ptr createDodecahedron();
+	static auto createTetrahedon() -> std::unique_ptr<MeshMod::Mesh>;
+	static auto createOctahedron() -> std::unique_ptr<MeshMod::Mesh>;
+	static auto createCube() -> std::unique_ptr<MeshMod::Mesh>;
+	static auto createIcosahedron() -> std::unique_ptr<MeshMod::Mesh>;
+	// TODO	static auto createDodecahedron() -> std::unique_ptr<MeshMod::Mesh>;
 
-	static MeshMod::Mesh::Ptr createBoxFrom(Geometry::AABB const& box);
+	static auto createBoxFrom(Geometry::AABB const& box) -> std::unique_ptr<MeshMod::Mesh>;
 
 private:
 };
 
 }
 
-#endif //MESHOPS_PLATONICSOLIDS_H
+#endif //WYRD_MESHOPS_PLATONICSOLIDS_H

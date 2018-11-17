@@ -1,11 +1,53 @@
-file( GLOB MESHOPS_SRC
-		*.cpp
-		*.c
-		*.h
-		*.inl
-		VHACD_Lib/public/*.h
-		VHACD_Lib/inc/*.h
-		VHACD_Lib/src/*.cpp )
+set(MESHOPS_SRC
+		basicmeshops.cpp
+		basicmeshops.h
+		convexhullcomputer.cpp
+		convexhullcomputer.h
+		gltf.cpp
+		gltf.h
+		layeredtexture.h
+		meshsorter.cpp
+		meshsorter.h
+		platonicsolids.cpp
+		platonicsolids.h
+		raycaster.cpp
+		raycaster.h
+		shapes.cpp
+		shapes.h
+		textureunit.cpp
+		textureunit.h
+		VHACD_Lib/public/VHACD.h
+		VHACD_Lib/inc/btAlignedAllocator.h
+		VHACD_Lib/inc/btAlignedObjectArray.h
+		VHACD_Lib/inc/btConvexHullComputer.h
+		VHACD_Lib/inc/btMinMax.h
+		VHACD_Lib/inc/btScalar.h
+		VHACD_Lib/inc/btVector3.h
+		VHACD_Lib/inc/FloatMath.h
+		VHACD_Lib/inc/vhacdCircularList.h
+		VHACD_Lib/inc/vhacdCircularList.inl
+		VHACD_Lib/inc/vhacdICHull.h
+		VHACD_Lib/inc/vhacdManifoldMesh.h
+		VHACD_Lib/inc/vhacdMesh.h
+		VHACD_Lib/inc/vhacdMutex.h
+		VHACD_Lib/inc/vhacdRaycastMesh.h
+		VHACD_Lib/inc/vhacdSArray.h
+		VHACD_Lib/inc/vhacdTimer.h
+		VHACD_Lib/inc/vhacdVector.h
+		VHACD_Lib/inc/vhacdVector.inl
+		VHACD_Lib/inc/vhacdVHACD.h
+		VHACD_Lib/inc/vhacdVolume.h
+		VHACD_Lib/src/btAlignedAllocator.cpp
+		VHACD_Lib/src/btConvexHullComputer.cpp
+		VHACD_Lib/src/FloatMath.cpp
+		VHACD_Lib/src/FloatMath.inl
+		VHACD_Lib/src/VHACD.cpp
+		VHACD_Lib/src/VHACD-ASYNC.cpp
+		VHACD_Lib/src/vhacdICHull.cpp
+		VHACD_Lib/src/vhacdManifoldMesh.cpp
+		VHACD_Lib/src/vhacdMesh.cpp
+		VHACD_Lib/src/vhacdRaycastMesh.cpp
+		VHACD_Lib/src/vhacdVolume.cpp)
 
 add_definitions(${wyrd_DEFINITIONS})
 include_directories(
@@ -13,4 +55,4 @@ include_directories(
 		${CMAKE_CURRENT_SOURCE_DIR}/VHACD_Lib/inc
 		)
 
-add_library( meshops STATIC ${MESHOPS_SRC} )
+add_library(meshops STATIC ${MESHOPS_SRC} shapes.cpp shapes.h)
