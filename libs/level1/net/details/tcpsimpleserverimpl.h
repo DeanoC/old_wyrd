@@ -17,10 +17,14 @@ struct TcpSimpleServerImpl : public asio::coroutine
 	std::shared_ptr<asio::ip::tcp::socket> socket;
 	std::shared_ptr<asio::ip::tcp::acceptor> acceptor;
 	TcpSimpleServer::ConnectionFunc func;
-	bool moreData;
-	std::shared_ptr<std::array<uint8_t, 8*1024>> buffer;
-	std::shared_ptr<std::vector<uint8_t>> bigBuffer;
-	uint32_t bigBufferHead;
+
+	std::shared_ptr<std::array<uint8_t, 8 * 1024>> receiveBuffer;
+	std::shared_ptr<std::vector<uint8_t>> asmBuffer;
+
+	uint32_t receiveHead;
+	uint32_t asmHead;
+	uint32_t packetSize;
+	uint32_t len;
 
 	void operator()( asio::error_code ec_ = asio::error_code(), std::size_t length_ = 0);
 };

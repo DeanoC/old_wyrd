@@ -31,31 +31,41 @@ void TcpSimpleServerImpl::operator()(asio::error_code ec_, std::size_t length_)
 			} while(is_parent());
 			// parent portion
 			// child only portion
-			buffer.reset(new std::array<uint8_t,8 *1024>());
-			bigBuffer.reset(new std::vector<uint8_t>());
 
+			receiveBuffer.reset(new std::array<uint8_t, 8 * 1024>());
+			asmBuffer.reset(new std::vector<uint8_t>());
+
+			receiveHead = 0;
 			do
 			{
-				yield socket->async_read_some(asio::buffer(*buffer), *this);
+				packetSize = 0;
 
-				// first 4 bytes are size so tell us how much we need to read
-				// doesn't include the 8 bytes of the header itself
-				// also include a simple end of buffer check not really serious
-				// but hopefully pick up a few bugs...
-				bigBuffer->resize(*((uint32_t*) buffer->data()) + 8 + 4);
-				std::memset(bigBuffer->data(), 0xDC, bigBuffer->size());
-				std::memcpy(bigBuffer->data(), buffer->data(), length_);
-				bigBufferHead = (uint32_t)length_;
-
-				while(bigBufferHead < (bigBuffer->size()-4))
+				// starting a packet or still recieving parts it
+				while(packetSize == 0 || asmHead < packetSize)
 				{
-					yield socket->async_read_some(asio::buffer(*buffer), *this);
-					length_ = std::min(bigBuffer->size() - bigBufferHead, length_);
-					std::memcpy(bigBuffer->data() + bigBufferHead, buffer->data(), length_);
-					bigBufferHead += (uint32_t)length_;
+					if(receiveHead >= length_)
+					{
+						yield
+																socket->async_read_some(asio::buffer(*receiveBuffer),
+																						*this);
+						receiveHead = 0;
+					}
+
+					if(asmHead >= packetSize)
+					{
+						// 8 byte header + the payload
+						packetSize = 8 + *((uint32_t*) (receiveBuffer->data() + receiveHead));
+						asmBuffer->resize(packetSize);
+						std::memset(asmBuffer->data(), 0xDC, asmBuffer->size());
+						asmHead = 0;
+					}
+
+					len = std::min(packetSize - asmHead, (uint32_t) length_ - receiveHead);
+					std::memcpy(asmBuffer->data() + asmHead, receiveBuffer->data() + receiveHead, len);
+					asmHead += len;
+					receiveHead += len;
 				}
-				assert(*(uint32_t*)(bigBuffer->data() + bigBufferHead) == 0xDCDCDCDC);
-			} while( func(*(BasicPayload*) bigBuffer->data()));
+			} while(func(*(BasicPayload*) asmBuffer->data()));
 
 			socket->shutdown(asio::ip::tcp::socket::shutdown_both, ec_);
 			socket.reset();
