@@ -1,8 +1,10 @@
 #include "core/core.h"
-#include "net/context.h"
+#include "net/details/context.h"
 #include "asio.hpp"
-namespace Net
+
+namespace Net::Details
 {
+
 namespace
 {
 std::shared_ptr<asio::io_context> context;

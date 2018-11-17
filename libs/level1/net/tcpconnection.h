@@ -5,27 +5,13 @@
 #include <vector>
 #include <array>
 
-namespace asio {
-
-class io_context;
-template <typename Protocol> class basic_stream_socket;
-
-namespace ip
-{
-class tcp;
-typedef basic_stream_socket<tcp> tcpsocket;
-} // end ip
-
-} // end asio
-
 namespace Net
 {
+namespace Details { struct TcpConnectionImpl; }
 
 class TcpConnection
 {
 public:
-	using InternalSocket = void*;
-
 	TcpConnection();
 	~TcpConnection();
 
@@ -69,14 +55,14 @@ public:
 		return syncRead(array_.data(), sizeof(T) * array_.size());
 	}
 
-	auto getSocket() const -> InternalSocket const;
-	auto getSocket() -> InternalSocket;
+	auto getImpl() const -> Details::TcpConnectionImpl* const { return impl; };
+	auto getImpl() -> Details::TcpConnectionImpl* { return impl; };
 
 private:
 	auto readSize() -> size_t;
 	auto readPayload(void* data_, size_t size_) -> size_t;
 
-	struct TcpConnectionImpl* impl;
+	Details::TcpConnectionImpl* impl;
 };
 
 }

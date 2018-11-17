@@ -22,8 +22,9 @@
 #include "midrender/meshmodrenderer.h"
 #include "meshops/platonicsolids.h"
 
-#include "net/context.h"
 #include "server.h"
+#include "fakeclient.h"
+
 struct App
 {
 	App(Shell::ShellInterface& shell_) :
@@ -88,11 +89,14 @@ struct App
 		createResources();
 
 		server = std::make_unique<Server>();
+		client = std::make_unique<FakeClient>();
+
 		return okay;
 	}
 
 	auto finish() -> void
 	{
+		client.reset();
 		server.reset();
 
 		imguiBindings->destroy();
@@ -228,6 +232,7 @@ struct App
 	std::unique_ptr<MidRender::MeshModRenderer> meshModRenderer;
 	MidRender::MeshModRenderer::SceneIndex solidSceneIndex;
 	std::unique_ptr<Server> server;
+	std::unique_ptr<FakeClient> client;
 };
 
 int Main(Shell::ShellInterface& shell_)

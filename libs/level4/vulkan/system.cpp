@@ -229,12 +229,13 @@ bool System::Init(std::string const& appName_,
 	VkDebugReportCallbackCreateInfoEXT debugCreateInfo{};
 	debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
 	debugCreateInfo.pfnCallback = debug_callback;
-	debugCreateInfo.flags = VK_DEBUG_REPORT_INFORMATION_BIT_EXT |
-							VK_DEBUG_REPORT_WARNING_BIT_EXT |
-							VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
-							VK_DEBUG_REPORT_ERROR_BIT_EXT |
-							VK_DEBUG_REPORT_DEBUG_BIT_EXT;
-	vkCreateDebugReportCallbackEXT(instance, &debugCreateInfo, nullptr, &debugCallbackHandle);
+	debugCreateInfo.flags = 0 |
+							// VK_DEBUG_REPORT_INFORMATION_BIT_EXT |
+							//VK_DEBUG_REPORT_WARNING_BIT_EXT |
+							//VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
+							//VK_DEBUG_REPORT_DEBUG_BIT_EXT |
+							VK_DEBUG_REPORT_ERROR_BIT_EXT;
+		vkCreateDebugReportCallbackEXT(instance, &debugCreateInfo, nullptr, &debugCallbackHandle);
 
 	uint32_t physDeviceCount;
 	CHK_F(vkEnumeratePhysicalDevices(instance, &physDeviceCount, nullptr));

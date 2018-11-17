@@ -2,21 +2,17 @@
 // Created by Computer on 16/11/2018.
 //
 #include "core/core.h"
-#include "net/context.h"
+#include "net/details/context.h"
 #include "net/tcpconnection.h"
+#include "net/details/tcpconnectionimpl.h"
 #include "asio.hpp"
 
 namespace Net {
 
-struct TcpConnectionImpl
-{
-	TcpConnectionImpl(asio::ip::tcp::socket&& socket_) : socket(std::move(socket_)) {};
-	asio::ip::tcp::socket socket;
-};
 
 TcpConnection::TcpConnection()
 {
-	impl = new TcpConnectionImpl(asio::ip::tcp::socket(*GetIoContext().get()));
+	impl = new Details::TcpConnectionImpl();
 }
 TcpConnection::~TcpConnection()
 {
@@ -76,16 +72,6 @@ auto TcpConnection::syncRead(std::string& string_) -> void
 	size_t size = readSize();
 	string_.resize(size);
 	readPayload(string_.data(), size);
-}
-
-auto TcpConnection::getSocket() const -> InternalSocket const
-{
-	return &impl->socket;
-}
-
-auto TcpConnection::getSocket() -> InternalSocket
-{
-	return &impl->socket;
 }
 
 }

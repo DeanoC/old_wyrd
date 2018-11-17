@@ -9,6 +9,7 @@
 #include <atomic>
 
 namespace Net {
+namespace Details { struct TcpSimpleServerImpl; }
 
 // simple server doesn't do anything but call the callback when its gets
 // a client, so the function callback allows a limited form of cooperative
@@ -30,7 +31,7 @@ public:
 	auto stop() -> void;
 
 private:
-	struct TcpSimpleServerImpl* impl;
+	struct Details::TcpSimpleServerImpl* impl;
 };
 
 }

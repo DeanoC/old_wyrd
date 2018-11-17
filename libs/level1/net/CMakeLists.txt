@@ -1,6 +1,16 @@
 set( NET_SRC
 		tcpconnection.cpp
-		tcpconnection.h tcpsimpleserver.cpp tcpsimpleserver.h context.h context.cpp)
+		tcpconnection.h
+		tcpsimpleserver.cpp
+		tcpsimpleserver.h
+		tcpresolver.cpp
+		tcpresolver.h
+		details/context.h
+		details/context.cpp
+		details/tcpconnectionimpl.h
+		details/tcpsimpleserverimpl.cpp
+		details/tcpsimpleserverimpl.h
+		details/tcpresolverimpl.h)
 
 add_definitions(${wyrd_DEFINITIONS})
 include_directories( ${wyrd_INCLUDES} )

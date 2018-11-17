@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(PP_VIEWER_SOURCE
 		pp_viewer.cpp
 		server.cpp
-		server.h)
+		server.h fakeclient.cpp fakeclient.h)
 include_directories( ${wyrd_INCLUDES})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/live)
