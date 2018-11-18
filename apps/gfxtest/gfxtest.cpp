@@ -21,6 +21,8 @@
 #include "midrender/simpleeye.h"
 #include "midrender/meshmodrenderer.h"
 #include "meshops/platonicsolids.h"
+#include "meshmod/mesh.h"
+#include "meshmod/scenenode.h"
 
 struct App
 {

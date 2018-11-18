@@ -15,6 +15,8 @@ public:
 	auto render() -> void;
 
 protected:
+	auto log() -> void;
+
 	auto pause() -> void;
 
 	auto play() -> void;

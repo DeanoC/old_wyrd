@@ -4,6 +4,7 @@
 
 #include "core/core.h"
 #include <vector>
+#include <mutex>
 
 namespace Replay {
 
@@ -26,8 +27,11 @@ public:
 
 	auto getCurrentTime() const -> double { return currentTime; }
 
+	auto getRange(double const startTime_, double const endTime_) const -> std::vector<Item>;
 protected:
-	std::vector<Item> items;
+	using ItemContainer = std::vector<Item>;
+	ItemContainer items;
+	mutable std::mutex lookupMutex;
 
 	double currentTime;
 };

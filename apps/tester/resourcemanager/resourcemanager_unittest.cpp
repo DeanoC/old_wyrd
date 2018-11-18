@@ -47,10 +47,8 @@ SCENARIO("Resource Manager has mem storage", "[resourcemanager]")
 							}, [](int, void*) -> bool
 							 { return true; }});
 
-		bool ok0 = memstorage->addMemory("test"s, "TEST"_resource_id, 0, 0, TestTxt0, strlen(TestTxt0) + 1);
-		REQUIRE(ok0);
-		bool ok1 = memstorage->addMemory("test2"s, "TEST"_resource_id, 0, 0, TestTxt0, strlen(TestTxt0) + 1);
-		REQUIRE(ok1);
+		memstorage->addMemory("test"s, "TEST"_resource_id, 0, 0, TestTxt0, strlen(TestTxt0) + 1);
+		memstorage->addMemory("test2"s, "TEST"_resource_id, 0, 0, TestTxt0, strlen(TestTxt0) + 1);
 
 		WHEN("resource handles are opened")
 		{
@@ -104,10 +102,8 @@ SCENARIO("Resource Manager has mem storage", "[resourcemanager]")
 
 			REQUIRE(stage == 1);
 
-			bool okay0 = memstorage->addMemory("testr"s, TextResource::Id, 0, 0, TestTxt0, strlen(TestTxt0) + 1);
-			REQUIRE(okay0);
-			bool okay1 = memstorage->addMemory("testr2"s, TextResource::Id, 0, 0, TestTxt0, strlen(TestTxt0) + 1);
-			REQUIRE(okay1);
+			memstorage->addMemory("testr"s, TextResource::Id, 0, 0, TestTxt0, strlen(TestTxt0) + 1);
+			memstorage->addMemory("testr2"s, TextResource::Id, 0, 0, TestTxt0, strlen(TestTxt0) + 1);
 
 			auto h0 = rm->openByName<TextResource::Id>("mem$testr"sv);
 			auto h1 = rm->openByName<TextResource::Id>("mem$testr2"sv);

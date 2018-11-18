@@ -45,8 +45,7 @@ void TcpSimpleServerImpl::operator()(asio::error_code ec_, std::size_t length_)
 				{
 					if(receiveHead >= length_)
 					{
-						yield
-																socket->async_read_some(asio::buffer(*receiveBuffer),
+						yield socket->async_read_some(asio::buffer(*receiveBuffer),
 																						*this);
 						receiveHead = 0;
 					}
