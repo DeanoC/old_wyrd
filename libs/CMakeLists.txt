@@ -46,6 +46,7 @@ add_subdirectory(level2)
 add_subdirectory(level3)
 add_subdirectory(level4)
 add_subdirectory(level5)
+add_subdirectory(level6)
 
 add_definitions(${wyrd_DEFINITIONS})
 include_directories( ${wyrd_INCLUDES})

@@ -5,9 +5,10 @@
 #include "net/tcpconnection.h"
 #include "net/basicpayload.h"
 
-namespace
-{
-auto connection(Net::BasicPayload const& payload_) -> bool
+#include "timing/tickerclock.h"
+#include "replay/replay.h"
+
+auto Server::connection(Net::BasicPayload const& payload_) -> bool
 {
 	using namespace std::literals;
 	using namespace Net;
@@ -16,16 +17,19 @@ auto connection(Net::BasicPayload const& payload_) -> bool
 
 	assert(payload_.size < 255u);
 	assert(payload_.type == "TEST"_basic_payload_type);
-	LOG_S(INFO)<< (char const*)payload_.getPayload();
+	replay->add((uint32_t)payload_.type, (char const*)payload_.getPayload());
 
 	return true;
 }
 
-}
-
-Server::Server()
+Server::Server(std::shared_ptr<Replay::Replay> const& replay_) :
+	replay(replay_)
 {
-	server = std::make_shared<Net::TcpSimpleServer>(6666, &connection);
+	using namespace Net;
+	using namespace std::placeholders;
+
+	TcpSimpleServer::ConnectionFunc func = std::bind(&Server::connection, this, _1);
+	server = std::make_shared<Net::TcpSimpleServer>(6666, func);
 
 	serverThread = std::thread(
 			[](std::shared_ptr<Net::TcpSimpleServer> server){

@@ -35,8 +35,6 @@ public:
 		return (!keyHeld(key) && keyDown(key));
 	}
 
-
-
 	static constexpr uint32_t MaxKeyCount = 512;
 	bool const* getKeyDownBitmap() const { return keyDownBitMap.data(); }
 
@@ -46,7 +44,7 @@ protected:
 	static constexpr uint16_t KeyDownMask = 0xFF;
 
 	std::array<uint16_t, MaxKeyCount> keyDataState;
-	std::array<bool, MaxKeyCount> keyDownBitMap; // most for imgui
+	std::array<bool, MaxKeyCount> keyDownBitMap{}; // most for imgui
 };
 
 // if no keyboard is available will be nullptr

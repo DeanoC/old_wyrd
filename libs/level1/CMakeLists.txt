@@ -8,6 +8,7 @@ set( LEVEL_LIBS
 		math
 		input
 		net
+		timing
 		)
 
 foreach(LIB ${LEVEL_LIBS})

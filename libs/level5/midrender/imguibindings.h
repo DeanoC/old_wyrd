@@ -4,7 +4,7 @@
 
 #include "core/core.h"
 #include "render/resources.h"
-
+#include "IconFontCppHeaders/IconsFontAwesome5.h"
 #include "imgui/imgui.h"
 
 namespace ResourceManager { class ResourceMan; }

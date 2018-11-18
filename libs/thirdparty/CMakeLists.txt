@@ -128,6 +128,18 @@ set(ASIO_SRC
 		asio/include/asio/write_at.hpp
 		asio/include/asio/yield.hpp
 		)
+set(ICONFONTCPPHEADERS_SRC
+		IconFontCppHeaders/IconsFontAwesome4.h
+		IconFontCppHeaders/IconsFontAwesome5.h
+		IconFontCppHeaders/IconsFontAwesome5Brands.h
+		IconFontCppHeaders/IconsFontAwesome5Pro.h
+		IconFontCppHeaders/IconsFontAwesome5ProBrands.h
+		IconFontCppHeaders/IconsForkAwesome.h
+		IconFontCppHeaders/IconsIonicons.h
+		IconFontCppHeaders/IconsKenney.h
+		IconFontCppHeaders/IconsMaterialDesign.h
+		IconFontCppHeaders/IconsMaterialDesignIcons.h
+		)
 
 add_definitions(${wyrd_DEFINITIONS})
 include_directories(${wyrd_INCLUDES})
@@ -157,6 +169,7 @@ add_library( thirdparty STATIC
 		${CITYHASH_SRC}
 		${FMT_SRC}
 		${LZ4_SRC}
+		${ICONFONTCPPHEADERS_SRC}
 		)
 target_link_libraries(thirdparty ${THIRDPARTY_LIBS})
 

@@ -4,12 +4,10 @@
 
 #include "core/core.h"
 #include "resourcemanager/resourceid.h"
+#include "resourcemanager/resourcehandle.h"
 
 namespace ResourceManager {
 class ResourceMan;
-
-template<ResourceId>
-struct ResourceHandle;
 }
 
 namespace Render {
@@ -29,6 +27,7 @@ struct Viewport;
 struct VertexInput;
 struct Buffer;
 struct RasterisationState;
+struct Encoder;
 
 auto RegisterResourceHandlers(ResourceManager::ResourceMan& rm_) -> void;
 

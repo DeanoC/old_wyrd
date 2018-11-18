@@ -25,6 +25,10 @@
 #include "meshops/platonicsolids.h"
 #include "meshops/shapes.h"
 
+#include "timing/tickerclock.h"
+#include "replay/replay.h"
+#include "replay/gui.h"
+
 #include "server.h"
 #include "fakeclient.h"
 
@@ -71,7 +75,7 @@ struct App
 		Shell::PresentableWindowConfig windowConfig;
 		windowConfig.width = 1280;
 		windowConfig.height = 720;
-		windowConfig.windowName =  windowName;
+		windowConfig.windowName = windowName;
 		windowConfig.fullscreen = false;
 		windowConfig.directInput = true;
 		auto window = shell.createPresentableWindow(windowConfig);
@@ -91,7 +95,10 @@ struct App
 
 		createResources();
 
-		server = std::make_unique<Server>();
+		tickerClock = std::make_unique<Timing::TickerClock>();
+		replay = std::make_shared<Replay::Replay>();
+		replayGui = std::make_unique<Replay::Gui>(replay);
+		server = std::make_unique<Server>(replay);
 		client = std::make_unique<FakeClient>();
 
 		return okay;
@@ -101,6 +108,9 @@ struct App
 	{
 		client.reset();
 		server.reset();
+		replayGui.reset();
+		replay.reset();
+		tickerClock.reset();
 
 		imguiBindings->destroy();
 		imguiBindings.reset();
@@ -165,15 +175,19 @@ struct App
 										 Math::vec3(0, 0, 0),
 										 Math::vec3(0, 1, 0));
 		simpleEye->setView(view);
+		tickerClock->update();
 
 		float yrot = 0.0f;
 		using namespace Core::bitmask;
 		do
 		{
+			auto deltaT = tickerClock->update();
+			replay->update(deltaT);
+
 			rEncoderPool->reset();
 
 			Math::mat4x4 rootMatrix = Math::rotate(Math::identity<Math::mat4x4>(), yrot, Math::vec3(0, 1, 0));
-			yrot += 0.001f;
+			yrot += Math::degreesToRadians(90.0f) * float(deltaT);
 			while(yrot > Math::two_pi<float>())
 			{
 				yrot -= Math::two_pi<float>();
@@ -187,6 +201,8 @@ struct App
 			globalBuffer->unmap();
 
 			imguiBindings->newFrame(display->getWidth(), display->getHeight());
+
+			replayGui->render();
 
 			bool show_demo_window = true;
 			bool show_app_about = true;
@@ -237,6 +253,10 @@ struct App
 	MidRender::MeshModRenderer::SceneIndex solidSceneIndex;
 	std::unique_ptr<Server> server;
 	std::unique_ptr<FakeClient> client;
+
+	std::shared_ptr<Replay::Replay> replay;
+	std::unique_ptr<Replay::Gui> replayGui;
+	std::unique_ptr<Timing::TickerClock> tickerClock;
 };
 
 int Main(Shell::ShellInterface& shell_)

@@ -1,5 +1,6 @@
 
 #include "core/core.h"
+#include "midrender/imguibindings.h"
 #include "input/keyboard.h"
 #include "input/mouse.h"
 #include "render/bindingtable.h"
@@ -14,7 +15,7 @@
 #include "render/viewport.h"
 #include "midrender/stocks.h"
 #include "resourcemanager/resourceman.h"
-#include "midrender/imguibindings.h"
+#include "IconFontCppHeaders/IconsFontAwesome5.h"
 
 namespace MidRender {
 
@@ -184,6 +185,10 @@ auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan> const& rm
 
 	ImGuiIO& io = ImGui::GetIO();
 //	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	io.Fonts->AddFontDefault();
+	static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+	ImFontConfig icons_config; icons_config.MergeMode = true; icons_config.PixelSnapH = true;
+	io.Fonts->AddFontFromFileTTF( "fonts/" FONT_ICON_FILE_NAME_FAS, 16.0f, &icons_config, icons_ranges );
 
 	unsigned char* pixels;
 	int width, height;

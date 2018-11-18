@@ -157,7 +157,7 @@ namespace util {
         return ((end1.x-start.x)*(end2.y-start.y)-(end2.x-start.x)*(end1.y-start.y));
     }
 
-    // Timing functions are based on TBB to always obtain wall-clock time
+    // timing functions are based on TBB to always obtain wall-clock time
     typedef tbb::tick_count my_time_t;
 
     my_time_t gettime() {
