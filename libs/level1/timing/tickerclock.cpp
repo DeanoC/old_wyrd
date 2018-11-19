@@ -17,6 +17,7 @@ TickerClock::TickerClock() :
 #else
 	static_assert(false, "No TickerClock implementation on this platform")
 #endif
+	update(); // set the baseline
 }
 
 /// Updates internal 'frame' time ; returns delta time in seconds

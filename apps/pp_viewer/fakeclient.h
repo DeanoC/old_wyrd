@@ -5,7 +5,7 @@
 #include "core/core.h"
 
 namespace Net { class TcpConnection; }
-namespace Timing { class TickerClock; }
+namespace Timing { class Pulsar; }
 
 class FakeClient
 {
@@ -16,8 +16,7 @@ public:
 	auto update() -> void;
 
 private:
-	double timeElapsed;
-	std::unique_ptr<Timing::TickerClock> ticker;
+	std::unique_ptr<Timing::Pulsar> pulsar;
 	std::unique_ptr<Net::TcpConnection> connection;
 };
 
