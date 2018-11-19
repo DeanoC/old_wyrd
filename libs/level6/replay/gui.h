@@ -2,8 +2,9 @@
 #ifndef WYRD_REPLAY_GUI_H
 #define WYRD_REPLAY_GUI_H
 
+#include "core/core.h"
+#include "replay/replay.h"
 namespace Replay {
-class Replay;
 
 // assumes imgui is already setup
 class Gui
@@ -25,6 +26,7 @@ protected:
 	bool windowOpen = true;
 
 	double viewerTime;
+	ItemType logFilter;
 };
 
 }

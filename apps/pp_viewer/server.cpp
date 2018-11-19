@@ -12,12 +12,13 @@ auto Server::connection(Net::BasicPayload const& payload_) -> bool
 {
 	using namespace std::literals;
 	using namespace Net;
+	using namespace Replay;
 
 	if(payload_.type == "STOP"_basic_payload_type) return false;
 
 	assert(payload_.size < 255u);
 	assert(payload_.type == "TEST"_basic_payload_type);
-	replay->add((uint32_t)payload_.type, (char const*)payload_.getPayload());
+	replay->add(ItemType(payload_.type), (char const*)payload_.getPayload());
 
 	return true;
 }

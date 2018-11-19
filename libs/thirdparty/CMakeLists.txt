@@ -140,6 +140,7 @@ set(ICONFONTCPPHEADERS_SRC
 		IconFontCppHeaders/IconsMaterialDesign.h
 		IconFontCppHeaders/IconsMaterialDesignIcons.h
 		)
+set( NLOHMANN_SRC nlohmann/json.h)
 
 add_definitions(${wyrd_DEFINITIONS})
 include_directories(${wyrd_INCLUDES})
@@ -170,6 +171,7 @@ add_library( thirdparty STATIC
 		${FMT_SRC}
 		${LZ4_SRC}
 		${ICONFONTCPPHEADERS_SRC}
+		${NLOHMANN_SRC}
 		)
 target_link_libraries(thirdparty ${THIRDPARTY_LIBS})
 

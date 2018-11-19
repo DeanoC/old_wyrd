@@ -15,7 +15,7 @@ auto Replay::update(double deltaT_) -> void
 	currentTime += deltaT_;
 }
 
-auto Replay::add(uint32_t type_, std::string const& data_) -> void
+auto Replay::add(ItemType type_, std::string const& data_) -> void
 {
 	std::lock_guard guard(lookupMutex);
 	items.emplace_back(Item{currentTime, type_, data_});
@@ -30,7 +30,7 @@ auto Replay::add(uint32_t type_, std::string const& data_) -> void
 			});
 }
 
-auto Replay::getRange(double const startTime_, double const endTime_) const -> std::vector<Item>
+auto Replay::getRange(double const startTime_, double const endTime_, ItemType typeFilter_) const -> std::vector<Item>
 {
 	std::lock_guard guard(lookupMutex);
 
@@ -46,6 +46,10 @@ auto Replay::getRange(double const startTime_, double const endTime_) const -> s
 	for (auto it = lower; it != upper; ++it )
 	{
 		auto const& item = *it;
+		if(typeFilter_ != ItemType(0))
+		{
+			if(item.type != typeFilter_) continue;
+		}
 		out.push_back(*it);
 	}
 

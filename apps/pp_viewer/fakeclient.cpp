@@ -3,12 +3,18 @@
 #include "net/tcpconnection.h"
 #include "net/tcpresolver.h"
 #include "net/basicpayload.h"
+#include "timing/tickerclock.h"
 
 FakeClient::FakeClient()
 {
 	using namespace std::literals;
 	Net::TcpResolver resolver;
 	connection = resolver.connect("localhost"sv, 6666);
+
+	ticker = std::make_unique<Timing::TickerClock>();
+	ticker->update();
+
+	timeElapsed = 0;
 }
 
 FakeClient::~FakeClient()
@@ -21,6 +27,13 @@ FakeClient::~FakeClient()
 auto FakeClient::update() -> void
 {
 	using namespace Net;
-	auto testString = "Testing123";
-	connection->syncWriteBasicPayload((uint32_t)(strlen(testString) + 1),"TEST"_basic_payload_type, testString);
+	timeElapsed += ticker->update();
+
+	// once per second send a test packet
+	if(timeElapsed > 1.0)
+	{
+		auto testString = "Testing";
+		connection->syncWriteBasicPayload((uint32_t) (strlen(testString) + 1), "TEST"_basic_payload_type, testString);
+		timeElapsed -= 1.0;
+	}
 }

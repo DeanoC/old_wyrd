@@ -8,10 +8,12 @@
 
 namespace Replay {
 
+enum class ItemType : uint32_t;
+
 struct Item
 {
 	double timeStamp;
-	uint32_t id;
+	ItemType type;
 	std::string data;
 };
 
@@ -23,11 +25,14 @@ public:
 
 	auto update(double deltaT_) -> void;
 
-	auto add(uint32_t type_, std::string const& data_) -> void;
+	auto add(ItemType type_, std::string const& data_) -> void;
 
 	auto getCurrentTime() const -> double { return currentTime; }
 
-	auto getRange(double const startTime_, double const endTime_) const -> std::vector<Item>;
+	// returns a range of item between the start time and end time
+	// if typeFilter != 0 only grabs items of that type
+	auto getRange(double const startTime_, double const endTime_, ItemType typeFilter_ = ItemType(0)) const -> std::vector<Item>;
+
 protected:
 	using ItemContainer = std::vector<Item>;
 	ItemContainer items;
@@ -39,3 +44,5 @@ protected:
 }
 
 #endif //WYRD_REPLAY_REPLAY_H
+
+
