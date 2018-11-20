@@ -222,7 +222,7 @@ struct App
 
 	std::unique_ptr<MidRender::ImguiBindings> imguiBindings;
 	std::unique_ptr<MidRender::MeshModRenderer> meshModRenderer;
-	MidRender::MeshModRenderer::SceneIndex solidSceneIndex;
+	MidRender::SceneIndex solidSceneIndex;
 };
 
 int Main(Shell::ShellInterface& shell_)

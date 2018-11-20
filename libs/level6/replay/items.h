@@ -30,7 +30,7 @@ constexpr ItemType TestType = "TEST"_item_type;
 
 // text = string
 // level = optional [info|warning|error]
-// posision = optional float * 3 position in world space
+// position = optional float * 3 position in world space
 constexpr ItemType LogType = "LOG"_item_type;
 
 

@@ -1,13 +1,13 @@
 option(BUILD_GFXTEST "Build the gfxtest apps." ON)
-option(BUILD_PP_VIEWER "Build the pp_viewer apps." ON)
+option(BUILD_REPLAY "Build the replay app." ON)
 
 if(BUILD_GFXTEST)
 	add_subdirectory(gfxtest)
 endif(BUILD_GFXTEST)
 
-if(BUILD_PP_VIEWER)
-	add_subdirectory(pp_viewer)
-endif(BUILD_PP_VIEWER)
+if(BUILD_REPLAY)
+	add_subdirectory(replay)
+endif(BUILD_REPLAY)
 
 if(BUILD_TESTER)
 	add_subdirectory(tester)
