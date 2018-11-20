@@ -1,3 +1,4 @@
+#include <cctype>
 #include "core/core.h"
 #include "replay/gui.h"
 #include "replay/replay.h"
@@ -157,7 +158,23 @@ auto Gui::log() -> void
 					std::string level = "info";
 					if(j.find("level") != j.cend())
 					{
+						auto jlevel = j["level"];
+						if(jlevel.is_string())
+						{
+							std::string stringLevel = jlevel.get<std::string>();
+							std::transform(
+									stringLevel.cbegin(),
+									stringLevel.cend(),
+									stringLevel.begin(), &tolower);
 
+							switch(Core::QuickHash(stringLevel))
+							{
+								default:
+								case "info"_hash: level = "info"; break;
+								case "warning"_hash: level = "warning"; break;
+								case "error"_hash: level = "error"; break;
+							}
+						}
 					}
 
 					bool hasPosition = false;
