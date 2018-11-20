@@ -24,7 +24,7 @@ auto ConsoleApp::sysInit(int argc_, char** argv_) -> void
 	loguru::g_stderr_verbosity = 0;    // 0 (INFO) by default.
 	loguru::g_colorlogtostderr = true; // If you don't want color in your terminal.
 	loguru::g_flush_interval_ms = 0;    // Unbuffered (0) by default.
-	loguru::g_preamble = true; // Prefix each log line with date, time etc?
+	loguru::g_preamble = false; // Prefix each log line with date, time etc?
 
 	// Turn off individual parts of the preamble
 	loguru::g_preamble_date = false; // The date field

@@ -25,6 +25,7 @@
 #include "meshops/platonicsolids.h"
 #include "meshops/shapes.h"
 
+#include "clipp/clipp.h"
 #include "timing/tickerclock.h"
 #include "replay/replay.h"
 #include "replay/gui.h"
@@ -42,6 +43,26 @@ struct App
 		using namespace std::string_literals;
 		using namespace Core::bitmask;
 		using namespace Render;
+
+		bool useFakeClient = false;
+		bool showHelp = false;
+		auto cli = clipp::with_prefixes_short_long(
+				"-", "--",
+				clipp::option("fc", "fakeclient").set(useFakeClient).doc("use a test fake client"),
+				clipp::option("h", "help").set(showHelp).doc("show the help")
+		);
+
+		clipp::parse(
+				shell.getArguments().cbegin(),
+				shell.getArguments().cend(),
+				cli);
+
+		if(showHelp)
+		{
+			LOG_S(INFO) << clipp::make_man_page(cli, shell.getArguments()[0]);
+			return false;
+		}
+
 
 		Shell::ShellConfig shellConfig{};
 		shellConfig.appName = "pp_viewer"s;
@@ -99,7 +120,12 @@ struct App
 		replay = std::make_shared<Replay::Replay>();
 		replayGui = std::make_unique<Replay::Gui>(resourceManager, replay);
 		server = std::make_unique<Server>(replay);
-//		client = std::make_unique<FakeClient>();
+
+		if(useFakeClient)
+		{
+			LOG_S(INFO) << "Using a fake client for testing!";
+			client = std::make_unique<FakeClient>();
+		}
 
 		return okay;
 	}
