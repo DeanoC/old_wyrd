@@ -16,6 +16,7 @@
 #include "midrender/stocks.h"
 #include "resourcemanager/resourceman.h"
 #include "IconFontCppHeaders/IconsFontAwesome5.h"
+#include "timing/tickerclock.h"
 
 namespace MidRender {
 
@@ -250,11 +251,7 @@ auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan> const& rm
 	io.KeyMap[ImGuiKey_Y] = (uint16_t) Key::KT_Y;
 	io.KeyMap[ImGuiKey_Z] = (uint16_t) Key::KT_Z;
 
-	// TODO cross platform timers
-#if PLATFORM == WINDOWS
-	::QueryPerformanceFrequency((LARGE_INTEGER *)&ticksPerSecond);
-	::QueryPerformanceCounter((LARGE_INTEGER *)&time);
-#endif
+	tickerClock = std::make_unique<Timing::TickerClock>();
 }
 
 auto ImguiBindings::destroy() -> void
@@ -267,14 +264,7 @@ auto ImguiBindings::newFrame(uint32_t width_, uint32_t height_) -> void
 	io.DisplaySize.x = width_;
 	io.DisplaySize.y = height_;
 
-	// TODO cross platform timers
-#if PLATFORM == WINDOWS
-	// Setup time step
-	uint64_t current_time;
-	::QueryPerformanceCounter((LARGE_INTEGER *)&current_time);
-	io.DeltaTime = (float)(current_time - time) / ticksPerSecond;
-	time = current_time;
-#endif
+	io.DeltaTime = (float) tickerClock->update();
 
 	using namespace Input;
 	if(g_Keyboard != nullptr)

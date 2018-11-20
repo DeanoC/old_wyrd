@@ -8,6 +8,7 @@
 #include "imgui/imgui.h"
 
 namespace ResourceManager { class ResourceMan; }
+namespace Timing { class TickerClock; }
 
 namespace MidRender {
 struct Encoder;
@@ -36,8 +37,7 @@ struct ImguiBindings
 	Render::BufferConstPtr vertexBuffer;
 	Render::BufferConstPtr indexBuffer;
 
-	uint64_t time;
-	uint64_t ticksPerSecond;
+	std::unique_ptr<Timing::TickerClock> tickerClock;
 
 	ImGuiContext* context;
 };
