@@ -5,7 +5,7 @@
 #include "core/core.h"
 
 namespace Net { class TcpConnection; }
-namespace Timing { class Pulsar; }
+namespace Timing { class Pulsars; }
 
 class FakeClient
 {
@@ -16,7 +16,7 @@ public:
 	auto update() -> void;
 
 private:
-	std::unique_ptr<Timing::Pulsar> pulsar;
+	std::unique_ptr<Timing::Pulsars> pulsars;
 	std::unique_ptr<Net::TcpConnection> connection;
 };
 

@@ -97,7 +97,7 @@ struct App
 
 		tickerClock = std::make_unique<Timing::TickerClock>();
 		replay = std::make_shared<Replay::Replay>();
-		replayGui = std::make_unique<Replay::Gui>(replay);
+		replayGui = std::make_unique<Replay::Gui>(resourceManager, replay);
 		server = std::make_unique<Server>(replay);
 		client = std::make_unique<FakeClient>();
 
@@ -114,8 +114,6 @@ struct App
 
 		imguiBindings->destroy();
 		imguiBindings.reset();
-		meshModRenderer->destroy();
-		meshModRenderer.reset();
 
 		resourceManager->flushCache();
 		weakDisplay.reset();
@@ -142,12 +140,8 @@ struct App
 
 		imguiBindings.reset(new MidRender::ImguiBindings());
 		imguiBindings->init(rm);
-		meshModRenderer.reset(new MidRender::MeshModRenderer());
-		meshModRenderer->init(rm);
 
-		auto rootScene = std::make_shared<MeshMod::SceneNode>();
-		rootScene->addObject(MeshOps::Shapes::createDiamond());
-		solidSceneIndex = meshModRenderer->addScene(rootScene);
+
 	}
 
 	auto body() -> bool
@@ -177,7 +171,6 @@ struct App
 		simpleEye->setView(view);
 		tickerClock->update();
 
-		float yrot = 0.0f;
 		using namespace Core::bitmask;
 		do
 		{
@@ -185,13 +178,6 @@ struct App
 			replay->update(deltaT);
 
 			rEncoderPool->reset();
-
-			Math::mat4x4 rootMatrix = Math::rotate(Math::identity<Math::mat4x4>(), yrot, Math::vec3(0, 1, 0));
-			yrot += Math::degreesToRadians(90.0f) * float(deltaT);
-			while(yrot > Math::two_pi<float>())
-			{
-				yrot -= Math::two_pi<float>();
-			}
 
 			SimpleForwardGlobals* globals = (SimpleForwardGlobals*) globalBuffer->map();
 			std::memcpy(globals->viewMatrix, &simpleEye->getView(), sizeof(float) * 16);
@@ -201,8 +187,6 @@ struct App
 			globalBuffer->unmap();
 
 			imguiBindings->newFrame(display->getWidth(), display->getHeight());
-
-			replayGui->render();
 
 			bool show_demo_window = true;
 			bool show_app_about = true;
@@ -216,7 +200,7 @@ struct App
 			colourRT0->transitionToRenderTarget(encoder);
 			renderEncoder->beginRenderPass(renderPass, renderTarget);
 
-			meshModRenderer->render(rootMatrix, solidSceneIndex, encoder);
+			replayGui->render(deltaT, encoder);
 			imguiBindings->render(encoder);
 
 			renderEncoder->endRenderPass();
@@ -249,8 +233,6 @@ struct App
 	Render::Display::WeakPtr weakDisplay;
 
 	std::unique_ptr<MidRender::ImguiBindings> imguiBindings;
-	std::unique_ptr<MidRender::MeshModRenderer> meshModRenderer;
-	MidRender::MeshModRenderer::SceneIndex solidSceneIndex;
 	std::unique_ptr<Server> server;
 	std::unique_ptr<FakeClient> client;
 

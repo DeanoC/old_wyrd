@@ -15,11 +15,12 @@ namespace Render { struct Encoder; }
 
 namespace MidRender {
 
+enum class MeshIndex : uint32_t;
+enum class SceneIndex : uint32_t;
+
 class MeshModRenderer
 {
 public:
-	enum class MeshIndex : uint32_t;
-	enum class SceneIndex : uint32_t;
 
 	struct RenderData
 	{
@@ -44,7 +45,7 @@ public:
 	auto addMeshMod(std::shared_ptr<MeshMod::Mesh> const& mesh_, bool colourUsingPolygonNormal_) -> MeshIndex;
 	auto addScene(std::shared_ptr<MeshMod::SceneNode> const& rootNode) -> SceneIndex;
 
-	auto render(Math::mat4x4 const& rootMatrix_, SceneIndex index_, std::shared_ptr<Render::Encoder>& encoder_) -> void;
+	auto render(Math::mat4x4 const& rootMatrix_, SceneIndex index_, std::shared_ptr<Render::Encoder> const& encoder_) -> void;
 
 protected:
 	std::shared_ptr<ResourceManager::ResourceMan> rm;

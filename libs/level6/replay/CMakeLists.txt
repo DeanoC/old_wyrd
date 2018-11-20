@@ -3,7 +3,6 @@ set( REPLAY_SRC
 		replay.h
 		gui.cpp
 		gui.h
-		items.cpp
 		items.h
 		propertyeditor.h
 )

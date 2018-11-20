@@ -253,8 +253,8 @@ auto MeshModRenderer::addScene(std::shared_ptr<MeshMod::SceneNode> const& rootNo
 
 auto MeshModRenderer::render(
 	Math::mat4x4 const& rootMatrix_,
-	MeshModRenderer::SceneIndex index_, 
-	std::shared_ptr<Render::Encoder>& encoder_) -> void
+	SceneIndex index_,
+	std::shared_ptr<Render::Encoder> const& encoder_) -> void
 {
 	using namespace Render;
 	if(index_ == InvalidSceneIndex) return;

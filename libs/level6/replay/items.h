@@ -4,6 +4,8 @@
 
 #include "core/core.h"
 #include "nlohmann/json.h"
+#include "math/vector_math.h"
+
 namespace Replay
 {
 enum class ItemType : uint32_t;
@@ -21,22 +23,16 @@ constexpr ItemType operator "" _item_type(char const* s, size_t count)
 	return (ItemType) res;
 }
 
-constexpr ItemType TestType = "TEST"_item_type;
 // test data is a C (null terminated) string
+constexpr ItemType TestType = "TEST"_item_type;
 
-constexpr ItemType LogType = "LOG"_item_type;
-// Log type data is a json object with the following fields
-// <optional> level = [INFO|WARNING|ERROR] <default = ERROR>
-// <optional> group = string <default = "">
+// payloads all json objects with indicated fields
+
 // text = string
-struct LogItem
-{
-	LogItem(nlohmann::json const& in_);
+// level = optional [info|warning|error]
+// posision = optional float * 3 position in world space
+constexpr ItemType LogType = "LOG"_item_type;
 
-	enum class Level { Info, Warning, Error } level = Level::Error;
-	std::string group;
-	std::string text;
-};
 
 } // end items;
 
