@@ -23,7 +23,7 @@ FakeClient::FakeClient()
 										  testString);
 	});
 
-/*	pulsars->add(0.5, [this]
+	pulsars->add(0.3, [this]
 	{
 		using namespace Net;
 		using namespace nlohmann;
@@ -31,16 +31,18 @@ FakeClient::FakeClient()
 
 		static float counter = 0.0f;
 		counter += 0.1f;
+		if(counter > 1.0f) counter = -1.0f;
+
 		json log;
 		log["text"] = "TestText";
 		log["level"] = "Error";
-		log["position"] = "[0, " + std::to_string(counter) + ", 1]";
+		log["position"] = "[0, " + std::to_string(counter) + ", -1]";
 		std::string logString = log.dump();
 		connection->syncWriteBasicPayload(
 			(uint32_t)logString.size()+1,
 			(BasicPayloadType)LogType,
 			logString.data());
-	});*/
+	});
 
 	pulsars->add(0.5, [this]
 	{

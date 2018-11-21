@@ -208,7 +208,8 @@ auto Gui::log() -> void
 			ImGuiWindowFlags_NoMove |
 			ImGuiWindowFlags_NoResize;
 	ImGui::SetNextWindowPos(ImVec2(20, 600), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSize(ImVec2(1260, 160), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(1200, 100), ImGuiCond_FirstUseEver);
+
 	ImGui::Begin("Log", nullptr, logWindowFlags);
 
 	int tmpLF = int(logFilter);
