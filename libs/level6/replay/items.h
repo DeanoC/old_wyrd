@@ -33,6 +33,25 @@ constexpr ItemType TestType = "TEST"_item_type;
 // position = optional float * 3 position in world space
 constexpr ItemType LogType = "LOG"_item_type;
 
+// SMSH has two forms
+// first is the actual data, second is just the name
+// if the second is used, it either uses a previous defined
+// mesh of the same name or a standard mesh
+// name = string
+// positioncount = number
+// position = array of numbers (3 per positionCount)
+// trianglecount = number
+// indices = array of numbers (3 per triangleCount)
+constexpr ItemType SimpleMeshType = "SMSH"_item_type;
+
+// name = string
+// meshname = string
+// enable = optional bool (default = true)
+// position = optional vec3
+// scale = optional vec3
+// rotation = optional vec3 (xyz euler)
+constexpr ItemType MeshObjectType = "MSHO"_item_type;
+
 
 } // end items;
 

@@ -23,7 +23,7 @@ FakeClient::FakeClient()
 										  testString);
 	});
 
-	pulsars->add(0.5, [this]
+/*	pulsars->add(0.5, [this]
 	{
 		using namespace Net;
 		using namespace nlohmann;
@@ -40,8 +40,50 @@ FakeClient::FakeClient()
 			(uint32_t)logString.size()+1,
 			(BasicPayloadType)LogType,
 			logString.data());
-	});
+	});*/
 
+	pulsars->add(0.5, [this]
+	{
+		using namespace Net;
+		using namespace nlohmann;
+		using namespace Replay::Items;
+
+		static bool meshSent = false;
+		if(meshSent == false)
+		{
+			json mesh;
+			mesh["name"] = "TestMesh";
+			mesh["positioncount"] = 3;
+			mesh["positions"] = {
+					0.0f, 1.0f, 0.0f,
+					1.0f, 1.0f, 0.0f,
+					1.0f, 0.0f, 0.0f,
+						};
+			mesh["trianglecount"] = 1;
+			mesh["indices"] = {0, 1, 2};
+
+			std::string meshString = mesh.dump();
+			connection->syncWriteBasicPayload(
+							(uint32_t)meshString.size()+1,
+							(BasicPayloadType)Replay::Items::SimpleMeshType,
+							meshString.data());
+			meshSent = true;
+		} else
+		{
+			json object;
+			object["name"] = "Object1";
+			object["meshname"] = "TestMesh";
+			object["position"] = { 1.0f, 1.0f, 1.0f };
+
+			std::string objectString = object.dump();
+			connection->syncWriteBasicPayload(
+					(uint32_t)objectString.size()+1,
+					(BasicPayloadType)Replay::Items::MeshObjectType,
+					objectString.data());
+
+		}
+
+	});
 }
 
 FakeClient::~FakeClient()
