@@ -308,10 +308,10 @@ auto Gui::decodeLog(Item const& item_) -> void
 			}
 		}
 
-		logString = fmt::v5::format("({}s):[{}]{}",
-									item_.timeStamp,
-									level,
-									text);
+		logString = fmt::format("({}s):[{}]{}",
+								item_.timeStamp,
+								level,
+								text);
 		if(j.find("position") != j.cend() && ImGui::IsItemHovered())
 		{
 			glm::vec3 pos = GetVec("position"s, j);
@@ -322,10 +322,10 @@ auto Gui::decodeLog(Item const& item_) -> void
 
 	} catch(json::parse_error error)
 	{
-		auto logString = fmt::v5::format("({}s):!ERROR!Log Parse error {} from {}",
-										 item_.timeStamp,
-										 error.what(),
-										 item_.data);
+		auto logString = fmt::format("({}s):!ERROR!Log Parse error {} from {}",
+									 item_.timeStamp,
+									 error.what(),
+									 item_.data);
 		LOG_S(WARNING) << logString;
 		ImGui::Text(logString.c_str());
 	}
