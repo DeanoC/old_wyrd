@@ -12,6 +12,9 @@ Replay::Replay() : currentTime(0.0)
 
 auto Replay::update(double deltaT_) -> void
 {
+	// don't start timer until we get out first bit of data
+	if(items.empty()) return;
+
 	currentTime += deltaT_;
 }
 

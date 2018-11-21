@@ -70,10 +70,14 @@ FakeClient::FakeClient()
 			meshSent = true;
 		} else
 		{
+			static float counter = 0.0f;
+			counter += 0.1f;
+			if(counter > 1.0f) counter = -1.0f;
+
 			json object;
 			object["name"] = "Object1";
 			object["meshname"] = "TestMesh";
-			object["position"] = { 1.0f, 1.0f, 1.0f };
+			object["position"] = {counter, 0.0f, 1.0f};
 
 			std::string objectString = object.dump();
 			connection->syncWriteBasicPayload(

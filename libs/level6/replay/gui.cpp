@@ -13,6 +13,7 @@
 #include "meshmod/polygons.h"
 #include "meshmod/scene.h"
 #include "meshmod/vertices.h"
+#include "meshops/platonicsolids.h"
 #include "meshops/shapes.h"
 
 
@@ -27,10 +28,16 @@ Gui::Gui(std::shared_ptr<ResourceManager::ResourceMan> const& rm_,
 	meshModRenderer.reset(new MidRender::MeshModRenderer());
 	meshModRenderer->init(rm);
 
-	auto rootScene = std::make_shared<MeshMod::SceneNode>();
-	rootScene->addObject(MeshOps::Shapes::createDiamond());
-	diamondSceneIndex = meshModRenderer->addScene(rootScene);
-
+	{
+		auto rootScene = std::make_shared<MeshMod::SceneNode>();
+		rootScene->addObject(MeshOps::Shapes::createDiamond());
+		diamondSceneIndex = meshModRenderer->addScene(rootScene);
+	}
+	{
+		auto rootScene = std::make_shared<MeshMod::SceneNode>();
+		rootScene->addObject(MeshOps::PlatonicSolids::createIcosahedron());
+		fallbackSceneIndex = meshModRenderer->addScene(rootScene);
+	}
 }
 
 Gui::~Gui()
@@ -86,6 +93,8 @@ auto Gui::render(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder
 		ImGui::End();
 	}
 
+	log();
+
 	processReplaySection();
 
 	switch(mainView)
@@ -102,6 +111,7 @@ auto Gui::render(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder
 
 auto Gui::sceneView(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void
 {
+
 	for(auto const& marker : spatialMarkers)
 	{
 		auto translationMat = translate(glm::identity<glm::mat4x4>(), marker.position);
@@ -113,6 +123,16 @@ auto Gui::sceneView(double deltaT_, std::shared_ptr<Render::Encoder> const& enco
 		}
 
 		meshModRenderer->render(rootMat, diamondSceneIndex, encoder_);
+	}
+	for(auto const&[name, meshObject] : meshObjectMap)
+	{
+		auto tranMat = translate(glm::identity<glm::mat4x4>(), meshObject.position);
+		auto rotXMat = rotate(tranMat, meshObject.rotation.x, glm::vec3(1, 0, 0));
+		auto rotYMat = rotate(rotXMat, meshObject.rotation.y, glm::vec3(0, 1, 0));
+		auto rotZMat = rotate(rotYMat, meshObject.rotation.z, glm::vec3(0, 0, 1));
+		auto rootMat = scale(rotZMat, meshObject.scale);
+
+		meshModRenderer->render(rootMat, meshObject.index, encoder_);
 	}
 }
 
@@ -159,8 +179,25 @@ auto Gui::menu() -> void
 		ImGui::EndMenuBar();
 	}
 }
-
 auto Gui::processReplaySection() -> void
+{
+	double const time = (viewerTime < 0.0) ? replay->getCurrentTime() : viewerTime;
+
+	// TODO add callback system to replay so mesh get processed when the packet is
+	// received.
+	auto smItems = replay->getRange(time - 1.0, time, Items::SimpleMeshType);
+	for(auto const& item : smItems)
+	{
+		decodeSimpleMesh(item);
+	}
+	auto moItems = replay->getRange(time - 1.0, time, Items::MeshObjectType);
+	for(auto const& item : moItems)
+	{
+		decodeMeshObject(item);
+	}
+}
+
+auto Gui::log() -> void
 {
 	using namespace nlohmann;
 	using namespace std::literals;
@@ -196,36 +233,17 @@ auto Gui::processReplaySection() -> void
 			auto logString = fmt::format("({}s)[{}]: {}", item.timeStamp, typeString, item.data);
 			ImGui::Text(logString.c_str());
 		}
-
-		switch(item.type)
+		if(item.type == Items::LogType)
 		{
-			default:
-			case Items::TestType: break;
-
-			case Items::LogType:
-			{
-				DecodeLog(item);
-				break;
-			}
-			case Items::SimpleMeshType:
-			{
-				DecodeSimpleMesh(item);
-				break;
-			}
-			case Items::MeshObjectType:
-			{
-				DecodeMeshObject(item);
-				break;
-			}
+			decodeLog(item);
 		}
-
 	}
 	ImGui::EndChild();
 	ImGui::End();
 
 }
 
-auto Gui::getVec(std::string const& field_, nlohmann::json const& j_) -> Math::vec3
+auto Gui::GetVec(std::string const& field_, nlohmann::json const& j_) -> Math::vec3
 {
 	using namespace nlohmann;
 
@@ -251,14 +269,14 @@ auto Gui::getVec(std::string const& field_, nlohmann::json const& j_) -> Math::v
 	return pos;
 }
 
-auto Gui::DecodeLog(Item const& item) -> void
+auto Gui::decodeLog(Item const& item_) -> void
 {
 	using namespace nlohmann;
 	using namespace std::literals;
 
 	try
 	{
-		nlohmann::json const j = json::parse(item.data);
+		nlohmann::json const j = json::parse(item_.data);
 		auto text = j["text"];
 		std::string logString;
 		std::string level = "info";
@@ -289,20 +307,14 @@ auto Gui::DecodeLog(Item const& item) -> void
 			}
 		}
 
-		bool hasPosition = false;
-		glm::vec3 position{};
-		if(j.find("position") != j.cend())
-		{
-			hasPosition = true;
-		}
 		logString = fmt::v5::format("({}s):[{}]{}",
-									item.timeStamp,
+									item_.timeStamp,
 									level,
 									text);
-		if(hasPosition && ImGui::IsItemHovered())
+		if(j.find("position") != j.cend() && ImGui::IsItemHovered())
 		{
-			glm::vec3 pos = getVec("position"s, j);
-			logString += fmt::v5::format(" {},{},{}", pos.x, pos.y, pos.z);
+			glm::vec3 pos = GetVec("position"s, j);
+			logString += fmt::format(" {},{},{}", pos.x, pos.y, pos.z);
 			spatialMarkers.push_back({pos});
 		}
 		ImGui::Text(logString.c_str());
@@ -310,22 +322,22 @@ auto Gui::DecodeLog(Item const& item) -> void
 	} catch(json::parse_error error)
 	{
 		auto logString = fmt::v5::format("({}s):!ERROR!Log Parse error {} from {}",
-										 item.timeStamp,
+										 item_.timeStamp,
 										 error.what(),
-										 item.data);
+										 item_.data);
 		LOG_S(WARNING) << logString;
 		ImGui::Text(logString.c_str());
 	}
 }
 
-auto Gui::DecodeSimpleMesh(Item const& item) -> void
+auto Gui::decodeSimpleMesh(Item const& item_) -> void
 {
 	using namespace nlohmann;
 	using namespace std::literals;
 
 	try
 	{
-		nlohmann::json const j = json::parse(item.data);
+		nlohmann::json const j = json::parse(item_.data);
 		auto jname = j["name"];
 		auto name = jname.get<std::string>();
 		// check cache
@@ -376,31 +388,59 @@ auto Gui::DecodeSimpleMesh(Item const& item) -> void
 
 	} catch(json::parse_error error)
 	{
-		auto logString = fmt::v5::format("({}s):!ERROR!Log Parse error {} from {}",
-										 item.timeStamp,
-										 error.what(),
-										 item.data);
+		auto logString = fmt::format("({}s):!ERROR!Log Parse error {} from {}",
+									 item_.timeStamp,
+									 error.what(),
+									 item_.data);
 		LOG_S(WARNING) << logString;
-		ImGui::Text(logString.c_str());
 	}
 }
-auto Gui::DecodeMeshObject(Item const& item) -> void
+
+auto Gui::decodeMeshObject(Item const& item_) -> void
 {
 	using namespace nlohmann;
 	using namespace std::literals;
 
 	try
 	{
-		nlohmann::json const j = json::parse(item.data);
+		nlohmann::json const j = json::parse(item_.data);
+		auto name = j["name"].get<std::string>();
+
+		MeshObject& o = meshObjectMap[name];
+		if(o.index == MidRender::SceneIndex(~0))
+		{
+			o.index = fallbackSceneIndex;
+		}
+
+		if(j.find("meshname") != j.end())
+		{
+			auto meshname = j["meshname"].get<std::string>();
+			auto meshIt = meshMap.find(meshname);
+			if(meshIt != meshMap.end())
+			{
+				o.index = meshIt->second;
+			}
+		}
+		if(j.find("position") != j.end())
+		{
+			o.position = GetVec("position", j);
+		}
+		if(j.find("rotation") != j.end())
+		{
+			o.scale = GetVec("rotation", j);
+		}
+		if(j.find("scale") != j.end())
+		{
+			o.scale = GetVec("scale", j);
+		}
 
 	} catch(json::parse_error error)
 	{
-		auto logString = fmt::v5::format("({}s):!ERROR!Log Parse error {} from {}",
-										 item.timeStamp,
-										 error.what(),
-										 item.data);
+		auto logString = fmt::format("({}s):!ERROR!Log Parse error {} from {}",
+									 item_.timeStamp,
+									 error.what(),
+									 item_.data);
 		LOG_S(WARNING) << logString;
-		ImGui::Text(logString.c_str());
 	}
 
 }

@@ -45,7 +45,7 @@ constexpr ItemType LogType = "LOG"_item_type;
 constexpr ItemType SimpleMeshType = "SMSH"_item_type;
 
 // name = string
-// meshname = string
+// meshname = optional string
 // enable = optional bool (default = true)
 // position = optional vec3
 // scale = optional vec3

@@ -36,15 +36,17 @@ protected:
 	{
 		Math::vec3 position;
 	};
+	struct MeshObject
+	{
+		MidRender::SceneIndex index = MidRender::SceneIndex(~0);
+		Math::vec3 position{0, 0, 0};
+		Math::vec3 rotation{0, 0, 0};
+		Math::vec3 scale{1, 1, 1};
+	};
+
 	using SpatialMarkers = std::vector<SpatialMarker>;
 	using MeshMap = std::unordered_map<std::string, MidRender::SceneIndex>;
-
-	auto menu() -> void;
-	auto processReplaySection() -> void;
-
-	auto pause() -> void;
-
-	auto play() -> void;
+	using MeshObjectMap = std::unordered_map<std::string, MeshObject>;
 
 	std::shared_ptr<Replay> replay;
 	bool windowOpen = true;
@@ -53,10 +55,13 @@ protected:
 	std::unique_ptr<MidRender::MeshModRenderer> meshModRenderer;
 
 	MidRender::SceneIndex diamondSceneIndex;
+	MidRender::SceneIndex fallbackSceneIndex;
+
 	float yrot = 0.0f;
 	SpatialMarkers spatialMarkers;
 
 	MeshMap meshMap;
+	MeshObjectMap meshObjectMap;
 
 	double viewerTime;
 	ItemType logFilter;
@@ -66,10 +71,16 @@ protected:
 	} mainView = MainViewType::Scene;
 
 
-	static auto getVec(std::string const& field_, nlohmann::json const& j_) -> Math::vec3;
-	auto DecodeLog(Item const& item) -> void;
-	auto DecodeSimpleMesh(Item const&) -> void;
-	auto DecodeMeshObject(Item const&) -> void;
+	static auto GetVec(std::string const& field_, nlohmann::json const& j_) -> Math::vec3;
+	auto menu() -> void;
+	auto processReplaySection() -> void;
+	auto log() -> void;
+	auto pause() -> void;
+	auto play() -> void;
+
+	auto decodeLog(Item const& item_) -> void;
+	auto decodeSimpleMesh(Item const& item_) -> void;
+	auto decodeMeshObject(Item const& item_) -> void;
 
 	auto sceneView(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void;
 	auto meshView(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void;
