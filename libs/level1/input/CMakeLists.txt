@@ -3,7 +3,9 @@ set( INPUT_SRC
 		keylist.h
 		keyboard.h
 		windows.cpp
-		mouse.h)
+		mouse.h
+		vpadlistener.h
+		provider.h keyboardmouselistenerimpl.cpp keyboardmouselistenerimpl.h)
 
 add_definitions(${wyrd_DEFINITIONS})
 include_directories( ${wyrd_INCLUDES})

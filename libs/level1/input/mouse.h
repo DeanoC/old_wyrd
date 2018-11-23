@@ -28,6 +28,13 @@ public:
 	float getAbsMouseX() const { return absMousePos[0]; };
 	float getAbsMouseY() const { return absMousePos[1]; };
 
+	// once per frame clearConsumedState should be called
+	// the first client that takes the input and doesn't want
+	// anybody else should call inputConsumed
+	auto clearConsumedState() -> void { inputConsumedFlag = false; }
+	auto inputConsumed() -> void { inputConsumedFlag = true; }
+	auto isInputConsumed() const -> bool { return inputConsumedFlag; }
+
 protected:
 	static constexpr uint16_t ButtonDownFlag = 0x8000;
 	static constexpr uint16_t ButtonHeldFlag = 0x4000;
@@ -37,6 +44,8 @@ protected:
 	std::array<uint16_t, MaxMouseButtons> buttonState;
 	std::array<float,2> absMousePos;
 	std::array<float,2> mouseWheel;
+
+	bool inputConsumedFlag = false;
 };
 
 // if no keyboard is available will be nullptr

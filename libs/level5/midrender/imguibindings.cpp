@@ -185,7 +185,7 @@ auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan> const& rm
 	context = ImGui::CreateContext();
 
 	ImGuiIO& io = ImGui::GetIO();
-//	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 	io.Fonts->AddFontDefault();
 	static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
 	ImFontConfig icons_config; icons_config.MergeMode = true; icons_config.PixelSnapH = true;
@@ -269,6 +269,7 @@ auto ImguiBindings::newFrame(uint32_t width_, uint32_t height_) -> void
 	using namespace Input;
 	if(g_Keyboard != nullptr)
 	{
+		g_Keyboard->clearConsumedState();
 		std::memcpy(io.KeysDown, g_Keyboard->getKeyDownBitmap(), sizeof(bool) * Keyboard::MaxKeyCount);
 		io.KeyCtrl = (g_Keyboard->keyDown(Key::KT_LCONTROL) || g_Keyboard->keyDown(Key::KT_RCONTROL));
 		io.KeyAlt = (g_Keyboard->keyDown(Key::KT_LMENU) || g_Keyboard->keyDown(Key::KT_RMENU));
@@ -278,6 +279,7 @@ auto ImguiBindings::newFrame(uint32_t width_, uint32_t height_) -> void
 	}
 	if(g_Mouse != nullptr)
 	{
+		g_Mouse->clearConsumedState();
 		io.MousePos.x = g_Mouse->getAbsMouseX();
 		io.MousePos.y = g_Mouse->getAbsMouseY();
 		io.MouseDown[0] = g_Mouse->buttonDown(MouseButton::Left);
@@ -286,6 +288,9 @@ auto ImguiBindings::newFrame(uint32_t width_, uint32_t height_) -> void
 	}
 
 	ImGui::NewFrame();
+	if(g_Keyboard && io.WantCaptureKeyboard) g_Keyboard->inputConsumed();
+	if(g_Mouse && io.WantCaptureMouse) g_Mouse->inputConsumed();
+
 }
 
 auto ImguiBindings::render(std::shared_ptr<Render::Encoder>& encoder_) -> void
