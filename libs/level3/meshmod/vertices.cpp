@@ -121,6 +121,9 @@ void Vertices::createPointReps(VertexData::Axis axis, float fEpsilon)
 			// ignore deleted vertices
 			if(!isValid(siBackIndex))
 			{
+				if(siBackIt == sortEle.cbegin())
+					break;
+
 				--siBackIt;
 				continue;
 			}

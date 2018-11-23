@@ -186,6 +186,41 @@ void Polygons::getVertexIndices(PolygonIndex const faceIndex, VertexIndexContain
 		halfEdgeIndex = halfEdge.next;
 	} while(halfEdgeIndex != firstHalfEdgeIndex);
 }
+
+auto Polygons::getVertexCount(PolygonIndex const faceIndex_) const -> size_t
+{
+	if(faceIndex_ == MM_INVALID_INDEX) return 0;
+
+	auto const& vertices = owner.getVertices();
+	auto const& halfEdges = owner.getHalfEdges();
+	auto const& polys = polygons();
+	auto const& hes = halfEdges.halfEdges();
+
+	HalfEdgeIndex const firstHalfEdgeIndex = polys[faceIndex_].anyHalfEdge;
+	HalfEdgeIndex halfEdgeIndex = firstHalfEdgeIndex;
+	if(halfEdgeIndex == MM_INVALID_INDEX) return 0;
+
+	size_t vertexCount = 0;
+	do
+	{
+		if(!halfEdges.isValid(halfEdgeIndex)) break;
+
+		auto const& halfEdge = hes[halfEdgeIndex];
+		if(vertices.isValid(halfEdge.startVertexIndex))
+		{
+			vertexCount++;
+		}
+
+		assert((halfEdgeIndex == firstHalfEdgeIndex) ||
+			   (halfEdgeIndex != halfEdge.next));
+
+		halfEdgeIndex = halfEdge.next;
+	} while(halfEdgeIndex != firstHalfEdgeIndex);
+
+	return vertexCount;
+}
+
+
 void Polygons::visitVertices(PolygonIndex const polygonIndex, std::function<void(VertexIndex const)> const& func) const
 {
 	VertexIndexContainer polyIndices;

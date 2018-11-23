@@ -56,6 +56,9 @@ public:
 	//! retrieves all the vertices making up a face.
 	void getVertexIndices(PolygonIndex const index, VertexIndexContainer& vertexList) const;
 
+	// get the vertex count for a particular polygon
+	auto getVertexCount(PolygonIndex const index) const -> size_t;
+
 	//! retrieves the indices of all polygons that share an edge with the input polygon.
 	void getSurroundingPolygonIndices(PolygonIndex const index, PolygonIndexContainer &polygonIndexContainer) const;
 

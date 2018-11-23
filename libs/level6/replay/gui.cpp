@@ -1,4 +1,3 @@
-#include <cctype>
 #include "core/core.h"
 #include "replay/gui.h"
 #include "replay/replay.h"
@@ -15,7 +14,7 @@
 #include "meshmod/vertices.h"
 #include "meshops/platonicsolids.h"
 #include "meshops/shapes.h"
-
+#include <cctype>
 
 namespace Replay {
 Gui::Gui(std::shared_ptr<ResourceManager::ResourceMan> const& rm_,

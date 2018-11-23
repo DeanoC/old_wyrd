@@ -122,6 +122,7 @@ void Mesh::updateFromEdits()
 			vertices.createPointReps();
 		}
 
+		// TODO fix cleanAndRepack
 //		cleanAndRepack();
 
 		if(maintain & Maintenance::EdgeConnections)

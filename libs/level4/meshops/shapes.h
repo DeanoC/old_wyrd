@@ -13,6 +13,7 @@ class Shapes
 {
 public:
 	static auto createDiamond() -> std::unique_ptr<MeshMod::Mesh>;
+	static auto createSphere(uint32_t subdivisionSteps_ = 2u) -> std::unique_ptr<MeshMod::Mesh>;
 
 };
 

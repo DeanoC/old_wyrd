@@ -30,13 +30,15 @@
 #include "meshmod/polygonsdata/polygoncontainers.h"
 #include "meshops/meshsorter.h"
 
+#include "fmt/format.h"
+
 #include <cassert>
 #include <algorithm>
 #include <set>
 
 namespace MeshOps {
 
-DECLARE_EXCEPTION( BasicMeshOp, "Cannot process mesh with this op" );
+DECLARE_EXCEPTION(BasicMeshOp, "Cannot process mesh with this op");
 
 /**
 Compute and stores triangle plane equations.
@@ -45,7 +47,8 @@ polygons may produce incorrect plane equations.
 
 If any lines or point faces are in the mesh the planeequation for that face will be the default
 */
-auto BasicMeshOps::computeFacePlaneEquations(MeshMod::Mesh::Ptr const& mesh, bool replaceExisting, bool zeroBad, bool fixBad ) -> void
+auto BasicMeshOps::computeFacePlaneEquations(MeshMod::Mesh::Ptr const& mesh, bool replaceExisting, bool zeroBad,
+											 bool fixBad) -> void
 {
 	using namespace MeshMod;
 	using namespace Math;
@@ -73,75 +76,75 @@ auto BasicMeshOps::computeFacePlaneEquations(MeshMod::Mesh::Ptr const& mesh, boo
 	PolygonData::PlaneEquations::iterator faceIt = peEle->elements.begin();
 	while(faceIt != peEle->elements.end())
 	{
-		const PolygonIndex faceNum = (PolygonIndex) std::distance( peEle->elements.begin(), faceIt );
+		const PolygonIndex faceNum = (PolygonIndex) std::distance(peEle->elements.begin(), faceIt);
 
 		VertexIndexContainer faceVert;
-		polygons.getVertexIndices( faceNum, faceVert );
+		polygons.getVertexIndices(faceNum, faceVert);
 
 		// only makes sense for triangles or polygons (TODO should use newell method for polygons)
 		if(faceVert.size() >= 3)
 		{
-			vec3 const a( positions[faceVert[0]].getVec3());
-			vec3 const b( positions[faceVert[1]].getVec3());
-			vec3 const c( positions[faceVert[2]].getVec3());
+			vec3 const a(positions[faceVert[0]].getVec3());
+			vec3 const b(positions[faceVert[1]].getVec3());
+			vec3 const c(positions[faceVert[2]].getVec3());
 
 			vec3 const dba = b - a;
 			vec3 const dbc = b - c;
 
-			vec3 cross = Math::cross( dba, dbc );
-			vec3 nc = Normalise( cross );
+			vec3 cross = Math::cross(dba, dbc);
+			vec3 nc = Normalise(cross);
 
-			if(IsFinite( nc ))
+			if(IsFinite(nc))
 			{
 				// d = distance along the plane normal to a vertex (all are on the plane if planar)
-				float d = dot( nc, b );
-				(*peEle)[faceNum].planeEq = Math::Plane( nc, -d );
+				float d = dot(nc, b);
+				(*peEle)[faceNum].planeEq = Math::Plane(nc, -d);
 			} else
 			{
 				if(zeroBad)
 				{
-					(*peEle)[faceNum].planeEq = Math::Plane( 0, 0, 0, 0 );
+					(*peEle)[faceNum].planeEq = Math::Plane(0, 0, 0, 0);
 				} else if(fixBad)
 				{
 					// polygon has degenerated to a line or point
 					// therefore fake a normal (any will do) and project a vertex
 					// it will give a plane going throught the line or point (best we can do)
-					nc = vec3( 1, 0, 0 ); // any normal would do, randome would be better tbh...
-					float d = dot( nc, b );
-					(*peEle)[faceNum].planeEq = Math::Plane( nc, -d );
+					nc = vec3(1, 0, 0); // any normal would do, randome would be better tbh...
+					float d = dot(nc, b);
+					(*peEle)[faceNum].planeEq = Math::Plane(nc, -d);
 				} else
 				{
-					CoreThrowException( BasicMeshOp, "Bad plane equation" );
+					CoreThrowException(BasicMeshOp, "Bad plane equation");
 				}
 			}
 		} else
 		{
 			if(zeroBad)
 			{
-				(*peEle)[faceNum].planeEq = Math::Plane( 0, 0, 0, 0 );
+				(*peEle)[faceNum].planeEq = Math::Plane(0, 0, 0, 0);
 			} else if(fixBad && faceVert.size() >= 1)
 			{
-				vec3 a( positions[faceVert[0]].getVec3());
+				vec3 a(positions[faceVert[0]].getVec3());
 				// line or point cannot have a plane equation
 				// therefore fake a normal (any will do) and project a vertex
 				// it will give a plane going throught the line or point (best we can do)
-				vec3 nc( 1, 0, 0 ); // any normal would do, randome would be better tbh...
-				float d = dot( nc, a );
-				(*peEle)[faceNum].planeEq = Math::Plane( nc, -d );
+				vec3 nc(1, 0, 0); // any normal would do, randome would be better tbh...
+				float d = dot(nc, a);
+				(*peEle)[faceNum].planeEq = Math::Plane(nc, -d);
 			}
 		}
 
 		++faceIt;
 	}
 
-	mesh->updateEditState( Mesh::TopologyAttributesEdits );
+	mesh->updateEditState(Mesh::TopologyAttributesEdits);
 }
 
 
 /**
 Computes and returns the axis aligned box from the meshes position
 */
-auto BasicMeshOps::computeAABB(MeshMod::Mesh::ConstPtr const& mesh, Geometry::AABB& aabb ) -> void
+auto BasicMeshOps::computeAABB(MeshMod::Mesh::ConstPtr const& mesh, Geometry::AABB& aabb) -> void
 {
 	using namespace MeshMod;
 
@@ -150,7 +153,7 @@ auto BasicMeshOps::computeAABB(MeshMod::Mesh::ConstPtr const& mesh, Geometry::AA
 	aabb = Geometry::AABB(); // reset aabb
 	for(auto const& pos : positions)
 	{
-		aabb.expandBy( pos.getVec3());
+		aabb.expandBy(pos.getVec3());
 	}
 }
 
@@ -170,7 +173,7 @@ auto BasicMeshOps::ngulate(MeshMod::Mesh::Ptr const& mesh) -> void
 	{
 		HalfEdgeIndexContainer faceHalfEdges;
 
-		polygons.getHalfEdgeIndices( polygonIndex, faceHalfEdges );
+		polygons.getHalfEdgeIndices(polygonIndex, faceHalfEdges);
 		if(faceHalfEdges.size() > n)
 		{
 
@@ -187,62 +190,62 @@ auto BasicMeshOps::ngulate(MeshMod::Mesh::Ptr const& mesh) -> void
 
 				if(i != 0)
 				{
-					triIndex = (PolygonIndex) polygons.getPolygonsContainer().cloneElement(polygonIndex ); // clone original
+					triIndex = (PolygonIndex) polygons.getPolygonsContainer().cloneElement(polygonIndex); // clone original
 				} else
 				{
 					// reuse original poly if first triangle
 					triIndex = (MeshMod::PolygonIndex) polygonIndex;
 				}
-				PolygonData::Polygon& triFace = polygons.polygon( triIndex );
+				PolygonData::Polygon& triFace = polygons.polygon(triIndex);
 
 				// start edge
 				if(i > 0)
 				{
-					HalfEdgeData::HalfEdge& he0 = halfEdges.halfEdge( hei0 );
+					HalfEdgeData::HalfEdge& he0 = halfEdges.halfEdge(hei0);
 					// insert a new half edge (reverse the last tri last edge)
-					hei0 = halfEdges.add( he0.endVertexIndex, he0.startVertexIndex, triIndex );
+					hei0 = halfEdges.add(he0.endVertexIndex, he0.startVertexIndex, triIndex);
 
 					// check
-					HalfEdgeData::HalfEdge& he1 = halfEdges.halfEdge( hei1 );
-					assert( halfEdges.halfEdge( hei0 ).endVertexIndex == he1.startVertexIndex );
+					HalfEdgeData::HalfEdge& he1 = halfEdges.halfEdge(hei1);
+					assert(halfEdges.halfEdge(hei0).endVertexIndex == he1.startVertexIndex);
 				} else
 				{
 					// just check
-					HalfEdgeData::HalfEdge& he0 = halfEdges.halfEdge( hei0 );
-					HalfEdgeData::HalfEdge& he1 = halfEdges.halfEdge( hei1 );
-					assert( he0.endVertexIndex == he1.startVertexIndex );
+					HalfEdgeData::HalfEdge& he0 = halfEdges.halfEdge(hei0);
+					HalfEdgeData::HalfEdge& he1 = halfEdges.halfEdge(hei1);
+					assert(he0.endVertexIndex == he1.startVertexIndex);
 				}
 
 				// end edge (do we need a new one or can we use the original polys edge)
 				if(i != faceHalfEdges.size() - 3)
 				{
-					HalfEdgeData::HalfEdge& he0 = halfEdges.halfEdge( hei0 );
-					HalfEdgeData::HalfEdge& he1 = halfEdges.halfEdge( hei1 );
+					HalfEdgeData::HalfEdge& he0 = halfEdges.halfEdge(hei0);
+					HalfEdgeData::HalfEdge& he1 = halfEdges.halfEdge(hei1);
 
 					// insert a new edge
-					hei2 = halfEdges.add( he1.endVertexIndex,
-										  he0.startVertexIndex,
-										  triIndex );
+					hei2 = halfEdges.add(he1.endVertexIndex,
+										 he0.startVertexIndex,
+										 triIndex);
 
 				} else
 				{
 					hei2 = faceHalfEdges[faceHalfEdges.size() - 1];
 
-					HalfEdgeData::HalfEdge& he1 = halfEdges.halfEdge( hei1 );
-					HalfEdgeData::HalfEdge& he2 = halfEdges.halfEdge( hei2 );
-					assert( he1.endVertexIndex == he2.startVertexIndex );
+					HalfEdgeData::HalfEdge& he1 = halfEdges.halfEdge(hei1);
+					HalfEdgeData::HalfEdge& he2 = halfEdges.halfEdge(hei2);
+					assert(he1.endVertexIndex == he2.startVertexIndex);
 				}
 
 				triFace.anyHalfEdge = hei0; // repoint first edge
 				// make half edge point to correct triangle
-				halfEdges.halfEdge( hei0 ).polygonIndex = triIndex;
-				halfEdges.halfEdge( hei1 ).polygonIndex = triIndex;
-				halfEdges.halfEdge( hei2 ).polygonIndex = triIndex;
+				halfEdges.halfEdge(hei0).polygonIndex = triIndex;
+				halfEdges.halfEdge(hei1).polygonIndex = triIndex;
+				halfEdges.halfEdge(hei2).polygonIndex = triIndex;
 
 				// connect edges (complete the cycle list)
-				halfEdges.halfEdge( hei0 ).next = hei1;
-				halfEdges.halfEdge( hei1 ).next = hei2;
-				halfEdges.halfEdge( hei2 ).next = hei0;
+				halfEdges.halfEdge(hei0).next = hei1;
+				halfEdges.halfEdge(hei1).next = hei2;
+				halfEdges.halfEdge(hei2).next = hei0;
 
 				// update edge indices (next edge)
 				hei0 = hei2;
@@ -277,7 +280,7 @@ Computes and store per vertex normals.
 If the object already has vertex normals they will be kept if replaceExising == false.
 Simple average lighting normal.
 */
-auto BasicMeshOps::computeVertexNormals(MeshMod::Mesh::Ptr const& mesh, bool replaceExisting ) -> void
+auto BasicMeshOps::computeVertexNormals(MeshMod::Mesh::Ptr const& mesh, bool replaceExisting) -> void
 {
 	using namespace MeshMod;
 
@@ -299,25 +302,25 @@ auto BasicMeshOps::computeVertexNormals(MeshMod::Mesh::Ptr const& mesh, bool rep
 	}
 
 	// clear normals
-	std::fill( normEle->begin(), normEle->end(), VertexData::Normal( 0, 0, 0 ));
+	std::fill(normEle->begin(), normEle->end(), VertexData::Normal(0, 0, 0));
 
-	computeFacePlaneEquations( mesh, replaceExisting );
+	computeFacePlaneEquations(mesh, replaceExisting);
 
 	auto planeEle = polyCon.getElements<PolygonData::PlaneEquations>();
-	assert( planeEle );
+	assert(planeEle);
 
 	// add the poly equation to every vertex in every face
 	for(auto planeEqIt = planeEle->cbegin(); planeEqIt != planeEle->cend(); ++planeEqIt)
 	{
-		PolygonIndex const polygonIndex = planeEle->distance<PolygonIndex>( planeEqIt );
+		PolygonIndex const polygonIndex = planeEle->distance<PolygonIndex>(planeEqIt);
 
 		VertexIndexContainer vertList;
-		polygons.getVertexIndices( polygonIndex, vertList );
+		polygons.getVertexIndices(polygonIndex, vertList);
 
 		for(auto const& vert : vertList)
 		{
 			VertexIndexContainer simVertList;
-			vertices.getSimilarVertexIndices( vert, simVertList );
+			vertices.getSimilarVertexIndices(vert, simVertList);
 			for(auto const& simVert : simVertList)
 			{
 				(*normEle)[simVert].x += (*planeEqIt).planeEq.a;
@@ -330,8 +333,8 @@ auto BasicMeshOps::computeVertexNormals(MeshMod::Mesh::Ptr const& mesh, bool rep
 	// now normalise all normals
 	for(auto normIt = normEle->begin(); normIt != normEle->cend(); ++normIt)
 	{
-		VertexIndex const vertexIndex = normEle->distance<VertexIndex>( normIt );
-		if(!vertices.isValid( vertexIndex ))
+		VertexIndex const vertexIndex = normEle->distance<VertexIndex>(normIt);
+		if(!vertices.isValid(vertexIndex))
 		{
 			// invalid vertex so set normal to NAN
 			(*normIt).x = s_floatMarker;
@@ -343,7 +346,7 @@ auto BasicMeshOps::computeVertexNormals(MeshMod::Mesh::Ptr const& mesh, bool rep
 			float norm = ((*normIt).x * (*normIt).x) +
 						 ((*normIt).y * (*normIt).y) +
 						 ((*normIt).z * (*normIt).z);
-			norm = sqrtf( norm );
+			norm = sqrtf(norm);
 
 			(*normIt).x = -(*normIt).x / norm;
 			(*normIt).y = -(*normIt).y / norm;
@@ -351,18 +354,19 @@ auto BasicMeshOps::computeVertexNormals(MeshMod::Mesh::Ptr const& mesh, bool rep
 		}
 	}
 
-	mesh->updateEditState( Mesh::VertexAttributeEdits );
+	mesh->updateEditState(Mesh::VertexAttributeEdits);
 }
 
 /**
 Computes and store per vertex normals.
 Based on mesh libs version with fixing and handling of slivers
 */
-auto BasicMeshOps::computeVertexNormalsEx(MeshMod::Mesh::Ptr const& mesh, bool replaceExisting, bool zeroBad, bool fixBad ) -> void
+auto BasicMeshOps::computeVertexNormalsEx(MeshMod::Mesh::Ptr const& mesh, bool replaceExisting, bool zeroBad,
+										  bool fixBad) -> void
 {
 	if(zeroBad && fixBad)
 	{
-		CoreThrowException( BasicMeshOp, "Cannot both zero and fix bad normals" );
+		CoreThrowException(BasicMeshOp, "Cannot both zero and fix bad normals");
 	}
 
 	using namespace MeshMod;
@@ -386,16 +390,16 @@ auto BasicMeshOps::computeVertexNormalsEx(MeshMod::Mesh::Ptr const& mesh, bool r
 	}
 
 	// clear normals
-	std::fill( normEle->elements.begin(), normEle->elements.end(), VertexData::Normal( 0, 0, 0 ));
+	std::fill(normEle->elements.begin(), normEle->elements.end(), VertexData::Normal(0, 0, 0));
 
-	computeFacePlaneEquations( mesh, replaceExisting, zeroBad, fixBad );
+	computeFacePlaneEquations(mesh, replaceExisting, zeroBad, fixBad);
 
 	auto const& hes = halfEdges.halfEdges();
 	auto const& planeEqs = polygons.getAttributes<PolygonData::PlaneEquations>();
 	auto& normals = vertices.getOrAddAttributes<VertexData::Normals>();
 
 	HalfEdgeIndexContainer vertexHalfEdges;
-	vertexHalfEdges.reserve( 10 );
+	vertexHalfEdges.reserve(10);
 
 	// each normal try to generate a fair normal (TODO smoothing group polygons)
 	// fix or zero bad normals, fix try using simplier plane equation generator
@@ -404,34 +408,34 @@ auto BasicMeshOps::computeVertexNormalsEx(MeshMod::Mesh::Ptr const& mesh, bool r
 	for(auto& normal : normals)
 	{
 		// get the vertex and edges connected to this vertex
-		auto const vertexIndex = normals.distance<VertexIndex>( normal );
+		auto const vertexIndex = normals.distance<VertexIndex>(normal);
 
 		vertexHalfEdges.clear();
-		vertices.getVertexHalfEdges( vertexIndex, vertexHalfEdges );
+		vertices.getVertexHalfEdges(vertexIndex, vertexHalfEdges);
 
-		Math::vec3 vertexNormal( 0, 0, 0 );
+		Math::vec3 vertexNormal(0, 0, 0);
 
 		// TODO smoothing groups
 		for(auto heIt = vertexHalfEdges.cbegin(); heIt != vertexHalfEdges.cend(); ++heIt)
 		{
-			const HalfEdgeData::HalfEdge& he = hes.get( *heIt );
-			const PolygonData::PlaneEquation& pe = planeEqs.get( he.polygonIndex );
+			const HalfEdgeData::HalfEdge& he = hes.get(*heIt);
+			const PolygonData::PlaneEquation& pe = planeEqs.get(he.polygonIndex);
 			Math::vec3 localNormal = pe.planeEq.normal();
 
 			// get opposing indices
 			const HalfEdgeIndex i1 = ((*heIt) + 1) % (HalfEdgeIndex) vertexHalfEdges.size();
 			const HalfEdgeIndex i2 = ((*heIt) + 2) % (HalfEdgeIndex) vertexHalfEdges.size();
-			const HalfEdgeData::HalfEdge& he1 = hes.get( i1 );
-			const HalfEdgeData::HalfEdge& he2 = hes.get( i2 );
-			const PolygonData::PlaneEquation& pe1 = planeEqs.get( he1.polygonIndex );
-			const PolygonData::PlaneEquation& pe2 = planeEqs.get( he2.polygonIndex );
+			const HalfEdgeData::HalfEdge& he1 = hes.get(i1);
+			const HalfEdgeData::HalfEdge& he2 = hes.get(i2);
+			const PolygonData::PlaneEquation& pe1 = planeEqs.get(he1.polygonIndex);
+			const PolygonData::PlaneEquation& pe2 = planeEqs.get(he2.polygonIndex);
 
 			Math::vec3 e1 = Normalise(pe1.planeEq.normal());
 			Math::vec3 e2 = Normalise(pe2.planeEq.normal());
 
 			// compute the angle and only accumulate at non-sliver angles
-			const float angle = std::acos( -dot( e1, e2 ) / (Math::Length( e1 ) * Math::Length( e2 )));
-			if(std::isfinite( angle ))
+			const float angle = std::acos(-dot(e1, e2) / (Math::Length(e1) * Math::Length(e2)));
+			if(std::isfinite(angle))
 			{
 				// accumulate the normal
 				vertexNormal += localNormal * angle;
@@ -439,55 +443,152 @@ auto BasicMeshOps::computeVertexNormalsEx(MeshMod::Mesh::Ptr const& mesh, bool r
 		}
 
 		// normalise it
-		vertexNormal = Math::Normalise( vertexNormal );
+		vertexNormal = Math::Normalise(vertexNormal);
 
 		// check it's finite
-		if(!IsFinite( vertexNormal ))
+		if(!IsFinite(vertexNormal))
 		{
 			// either fix it using simplier plane equation average, zero or ignore
 			if(zeroBad)
 			{
-				vertexNormal = Math::vec3( 0, 0, 0 );
+				vertexNormal = Math::vec3(0, 0, 0);
 			} else if(fixBad)
 			{
 				HalfEdgeIndexContainer::const_iterator edgeIt = vertexHalfEdges.begin();
-				vertexNormal = Math::vec3( 0, 0, 0 );
+				vertexNormal = Math::vec3(0, 0, 0);
 				while(edgeIt != vertexHalfEdges.end())
 				{
-					const HalfEdgeData::HalfEdge& he = hes.get( *edgeIt );
-					const PolygonData::PlaneEquation& pe = planeEqs.get( he.polygonIndex );
+					const HalfEdgeData::HalfEdge& he = hes.get(*edgeIt);
+					const PolygonData::PlaneEquation& pe = planeEqs.get(he.polygonIndex);
 					vertexNormal += pe.planeEq.normal();
 					++edgeIt;
 				}
 				// normalise it
-				vertexNormal = Math::Normalise( vertexNormal );
+				vertexNormal = Math::Normalise(vertexNormal);
 			}
 		}
 
 		// remove denormals here at source, to ensure none enter the pipe at source
-		if(!std::isnormal( normal.x )) normal.x = float( 0 );
-		if(!std::isnormal( normal.y )) normal.y = float( 0 );
-		if(!std::isnormal( normal.z )) normal.z = float( 0 );
+		if(!std::isnormal(normal.x)) normal.x = float(0);
+		if(!std::isnormal(normal.y)) normal.y = float(0);
+		if(!std::isnormal(normal.z)) normal.z = float(0);
 
 		normal.x += vertexNormal.x;
 		normal.y += vertexNormal.y;
 		normal.z += vertexNormal.z;
 	}
-	mesh->updateEditState( Mesh::VertexAttributeEdits );
+	mesh->updateEditState(Mesh::VertexAttributeEdits);
 
 }
 
-auto BasicMeshOps::transform(MeshMod::Mesh::Ptr const& mesh, Math::mat4x4 const& transform ) -> void
+auto BasicMeshOps::transform(MeshMod::Mesh::Ptr const& mesh, Math::mat4x4 const& transform) -> void
 {
 	auto& vertices = mesh->getVertices();
 	for(auto& vertex : vertices.positions())
 	{
-		Math::vec3 pos = Math::TransformAndProject( transform, vertex.getVec3() );
+		Math::vec3 pos = Math::TransformAndProject(transform, vertex.getVec3());
 		vertex.x = pos.x;
 		vertex.y = pos.y;
 		vertex.z = pos.z;
 	}
-	mesh->updateEditState( MeshMod::Mesh::PositionEdits );
+	mesh->updateEditState(MeshMod::Mesh::PositionEdits);
 }
+
+auto BasicMeshOps::isTriangleMesh(std::shared_ptr<MeshMod::Mesh const> const& mesh_) -> bool
+{
+	using namespace MeshMod;
+	using namespace Math;
+
+	Polygons const& polygons = mesh_->getPolygons();
+
+	bool isTriangle = true;
+
+	polygons.visitAll(
+			[&polygons, &isTriangle](PolygonIndex const polygonIndex_)
+			{
+				if(polygons.getVertexCount(polygonIndex_) != 3)
+					isTriangle = false;
+			});
+
+	return isTriangle;
+
+}
+
+auto BasicMeshOps::tesselate4(std::shared_ptr<MeshMod::Mesh const> const& mesh_) -> std::unique_ptr<MeshMod::Mesh>
+{
+	using namespace MeshMod;
+	using namespace Math;
+
+	std::string const newName = fmt::format("{}_t", mesh_->getName());
+	auto tessMesh = std::make_unique<Mesh>(newName);
+
+	VertexIndexContainer vertexIndexContainer;
+	vertexIndexContainer.reserve(3);
+
+	Polygons const& polygons = mesh_->getPolygons();
+	Vertices const& vertices = mesh_->getVertices();
+	polygons.visitAll(
+			[&polygons, &vertices, &vertexIndexContainer, &tessMesh]
+					(PolygonIndex const polygonIndex_)
+			{
+				assert(polygons.getVertexCount(polygonIndex_) == 3);
+				vertexIndexContainer.resize(0);
+				polygons.getVertexIndices(polygonIndex_, vertexIndexContainer);
+
+				Math::vec3 verts[6];
+				verts[0] = vertices.position(vertexIndexContainer[0]).getVec3();
+				verts[5] = vertices.position(vertexIndexContainer[1]).getVec3();
+				verts[2] = vertices.position(vertexIndexContainer[2]).getVec3();
+
+				verts[1] = (verts[0] + verts[2]) * 0.5f;
+				verts[3] = (verts[0] + verts[5]) * 0.5f;
+				verts[4] = (verts[2] + verts[5]) * 0.5f;
+
+				VertexIndex vi[6];
+
+				for(auto j = 0u; j < 6; ++j)
+				{
+					vi[j] = tessMesh->getVertices().add(verts[j].x, verts[j].y, verts[j].z);
+				}
+
+				tessMesh->getPolygons().add({vi[0], vi[3], vi[1]});
+				tessMesh->getPolygons().add({vi[3], vi[4], vi[1]});
+				tessMesh->getPolygons().add({vi[4], vi[2], vi[1]});
+				tessMesh->getPolygons().add({vi[3], vi[5], vi[4]});
+			});
+
+	return tessMesh;
+}
+
+auto BasicMeshOps::spherize(std::shared_ptr<MeshMod::Mesh> const& mesh_, float t_) -> void
+{
+	using namespace MeshMod;
+	using namespace Math;
+
+	Vertices& vertices = mesh_->getVertices();
+
+	Math::vec3 maxLen = {0, 0, 0};
+	vertices.visitAll(
+			[&vertices, &maxLen](VertexIndex vertexIndex_)
+			{
+				Math::vec3 p = vertices.position(vertexIndex_).getVec3();
+				float const len = Math::length(p);
+				maxLen = Math::max(maxLen, len);
+			});
+
+	vertices.visitAll(
+			[&vertices, &t_, maxLen](VertexIndex vertexIndex_)
+			{
+				Math::vec3 p0 = vertices.position(vertexIndex_).getVec3();
+				float const len = Math::length(p0);
+				Math::vec3 p1 = Math::normalize(p0) * maxLen;
+				Math::vec3 p = p0 + t_ * (p1 - p0);
+				vertices.position(vertexIndex_).x = p.x;
+				vertices.position(vertexIndex_).y = p.y;
+				vertices.position(vertexIndex_).z = p.z;
+			});
+
+}
+
 
 } // end namespace

@@ -13,6 +13,9 @@
 #include "meshmod/vertexdata/pointrepvertex.h"
 #include "meshmod/halfedgedata/halfedgecontainers.h"
 #include "meshmod/polygonsdata/polygoncontainers.h"
+#include "meshops/platonicsolids.h"
+#include "meshops/basicmeshops.h"
+#include "fmt/format.h"
 
 namespace MeshOps {
 
@@ -59,6 +62,31 @@ auto Shapes::createDiamond() -> std::unique_ptr<MeshMod::Mesh>
 
 	return std::move(mesh);
 
+}
+
+auto Shapes::createSphere(uint32_t subdivisionSteps_) -> std::unique_ptr<MeshMod::Mesh>
+{
+	using namespace MeshMod;
+	using namespace Math;
+	std::shared_ptr<Mesh> mesh = PlatonicSolids::createIcosahedron();
+
+	for(auto i = 0u; i < subdivisionSteps_; ++i)
+	{
+		mesh = std::move(BasicMeshOps::tesselate4(std::move(mesh)));
+	}
+
+	// TODO fix weld functionality
+	//	mesh->getVertices().removeAllSimilarPositions();
+
+	mesh->updateEditState(MeshMod::Mesh::TopologyEdits);
+	mesh->updateFromEdits();
+
+
+	BasicMeshOps::spherize(mesh, 1.0f);
+	mesh->updateEditState(MeshMod::Mesh::PositionEdits);
+	mesh->updateFromEdits();
+
+	return std::make_unique<Mesh>(*mesh);
 }
 
 }

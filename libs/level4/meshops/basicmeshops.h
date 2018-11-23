@@ -41,6 +41,13 @@ public:
 	//! transform the mesh by a matrix
 	static auto transform(MeshMod::Mesh::Ptr const& mesh, Math::mat4x4 const& transform ) -> void;
 
+	static auto isTriangleMesh(std::shared_ptr<MeshMod::Mesh const> const& mesh_) -> bool;
+
+	// takes a triangle mesh and generate a mesh with 4 output triangles per input triangle
+	static auto tesselate4(std::shared_ptr<MeshMod::Mesh const> const& mesh_) -> std::unique_ptr<MeshMod::Mesh>;
+
+	static auto spherize(std::shared_ptr<MeshMod::Mesh> const& mesh_, float t_) -> void;
+
 private:
 	template<size_t n>
 	static auto ngulate(MeshMod::Mesh::Ptr const& mesh) -> void;

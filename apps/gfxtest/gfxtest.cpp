@@ -1,4 +1,3 @@
-#include <input/keyboard.h>
 #include "core/core.h"
 #include "shell/interface.h"
 #include "resourcemanager/resourceman.h"
@@ -23,6 +22,9 @@
 #include "meshops/platonicsolids.h"
 #include "meshmod/mesh.h"
 #include "meshmod/scenenode.h"
+#include "input/keyboard.h"
+#include "timing/tickerclock.h"
+#include "meshops/shapes.h"
 
 struct App
 {
@@ -125,7 +127,7 @@ struct App
 		meshModRenderer->init(rm);
 
 		auto rootScene = std::make_shared<MeshMod::SceneNode>();
-		rootScene->addObject(MeshOps::PlatonicSolids::createIcosahedron());
+		rootScene->addObject(MeshOps::Shapes::createSphere(3));
 		solidSceneIndex = meshModRenderer->addScene(rootScene);
 	}
 
