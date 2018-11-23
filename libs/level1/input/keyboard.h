@@ -38,6 +38,13 @@ public:
 	static constexpr uint32_t MaxKeyCount = 512;
 	bool const* getKeyDownBitmap() const { return keyDownBitMap.data(); }
 
+	// once per frame clearConsumedState should be called
+	// the first client that takes the input and doesn't want
+	// anybody else should call inputConsumed
+	auto clearConsumedState() -> void { inputConsumedFlag = false; }
+	auto inputConsumed() -> void { inputConsumedFlag = true; }
+	auto isInputConsumed() const -> bool { return inputConsumedFlag; }
+
 protected:
 	static constexpr uint16_t KeyDownFlag = 0x8000;
 	static constexpr uint16_t KeyHeldFlag = 0x4000;
@@ -45,6 +52,9 @@ protected:
 
 	std::array<uint16_t, MaxKeyCount> keyDataState;
 	std::array<bool, MaxKeyCount> keyDownBitMap{}; // most for imgui
+
+	bool inputConsumedFlag = false;
+
 };
 
 // if no keyboard is available will be nullptr

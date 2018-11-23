@@ -18,6 +18,9 @@ struct WinShell : public ConsoleApp
 	auto update() -> bool final;
 	auto ensureConsoleWindowsExists() -> void final;
 	auto createPresentableWindow(PresentableWindowConfig const& config_) -> PresentableWindow* final;
+	auto destroyPresentableWindow(PresentableWindow* window_) -> void final;
+
+	auto getInputProvider(PresentableWindow* window_) -> std::unique_ptr<Input::Provider> final;
 
 	WindowsSpecific* w;
 };

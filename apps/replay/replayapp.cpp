@@ -1,6 +1,7 @@
 #include "core/core.h"
 #include "clipp/clipp.h"
 #include "input/keyboard.h"
+#include "input/provider.h"
 #include "midrender/imguibindings.h"
 #include "midrender/meshmodrenderer.h"
 #include "midrender/simpleforwardglobals.h"
@@ -26,11 +27,38 @@
 #include "render/rasterisationstate.h"
 #include "shell/interface.h"
 #include "timing/tickerclock.h"
+#include "input/vpadlistener.h"
 
 #include "replay/replay.h"
 #include "replay/gui.h"
 #include "server.h"
 #include "fakeclient.h"
+
+struct InputListener : public Input::VPadListener
+{
+	~InputListener() final {}
+
+	void axisMovement(Input::VPadAxisId id_, float delta_) override
+	{
+		switch(id_)
+		{
+			case Input::VPadAxisId::LX: lx += delta_; break;
+			case Input::VPadAxisId::LY: ly += delta_; break;
+
+			case Input::VPadAxisId::LZ:break;
+			case Input::VPadAxisId::RX:break;
+			case Input::VPadAxisId::RY:break;
+			case Input::VPadAxisId::RZ:break;
+		}
+	}
+
+	void button(Input::VPadButtonId id_, float delta_) override
+	{
+	}
+
+	float lx = 0;
+	float ly = 0;
+};
 
 struct App
 {
@@ -98,7 +126,7 @@ struct App
 		windowConfig.windowName = windowName;
 		windowConfig.fullscreen = false;
 		windowConfig.directInput = true;
-		auto window = shell.createPresentableWindow(windowConfig);
+		window = shell.createPresentableWindow(windowConfig);
 		DeviceConfig config = {
 				true,    // presentable
 				true,    // renderer
@@ -112,6 +140,9 @@ struct App
 		if(!device) return false;
 
 		weakDisplay = device->getDisplay();
+		inputProvider = shell.getInputProvider(window);
+		inputListener = std::make_shared<InputListener>();
+		inputProvider->setVirtualPadListener(0, inputListener);
 
 		createResources();
 
@@ -143,6 +174,7 @@ struct App
 		resourceManager->flushCache();
 		weakDisplay.reset();
 		device.reset();
+		shell.destroyPresentableWindow(window);
 		resourceManager.reset();
 	}
 
@@ -242,6 +274,7 @@ struct App
 			if(client) client->update();
 			device->houseKeepTick();
 			display->present(colourRT0);
+			inputProvider->update(deltaT);
 			if(Input::g_Keyboard)
 			{
 				using namespace Input;
@@ -264,6 +297,9 @@ struct App
 	std::shared_ptr<Replay::Replay> replay;
 	std::unique_ptr<Replay::Gui> replayGui;
 	std::unique_ptr<Timing::TickerClock> tickerClock;
+	Shell::PresentableWindow* window;
+	std::unique_ptr<Input::Provider> inputProvider;
+	std::shared_ptr<InputListener> inputListener;
 };
 
 int Main(Shell::ShellInterface& shell_)
@@ -278,3 +314,4 @@ int Main(Shell::ShellInterface& shell_)
 	if(!okay) return 10;
 	else return 0;
 }
+

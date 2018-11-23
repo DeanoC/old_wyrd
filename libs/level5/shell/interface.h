@@ -6,9 +6,8 @@
 #include <vector>
 #include <string>
 
-namespace Render {
-struct Stable;
-}
+namespace Render { struct Stable; }
+namespace Input { struct Provider; }
 
 // define WYRD_SHELL_CONSOLE_APP to get a console app else expect a gui (windows only?)
 // define WYRD_SHELL_NOSHELL to supply your own initial main and shell
@@ -41,8 +40,13 @@ struct PresentableWindowConfig
 	uint32_t width;
 	uint32_t height;
 	bool fullscreen;
-	bool directInput;
+
+	// which input (both at the same time are legal, though upto you to
+	// figure out what etc.)
+
+	bool directInput; // access input (keyboard, mouse etc.) directly
 };
+
 struct PresentableWindow
 {
 };
@@ -60,6 +64,9 @@ struct ShellInterface
 	virtual auto getGpuStable() -> Render::Stable* = 0;
 
 	virtual auto createPresentableWindow(PresentableWindowConfig const& config_) -> PresentableWindow* = 0;
+	virtual auto destroyPresentableWindow(PresentableWindow* window_) -> void = 0;
+
+	virtual auto getInputProvider(PresentableWindow* window_) -> std::unique_ptr<Input::Provider> = 0;
 
 protected:
 	virtual auto ensureConsoleWindowsExists() -> void = 0;

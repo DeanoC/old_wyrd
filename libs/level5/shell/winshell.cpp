@@ -1,6 +1,7 @@
 
 #include "core/core.h"
 #include "shell/winshell.h"
+#include "input/provider.h"
 
 #if PLATFORM == WINDOWS
 
@@ -255,10 +256,14 @@ auto WinShell::createPresentableWindow(PresentableWindowConfig const& config_) -
 {
 	if(config_.directInput)
 	{
-		assert(Input::g_Keyboard == nullptr);
-		assert(Input::g_Mouse == nullptr);
-		Input::g_Keyboard = new Input::Keyboard();
-		Input::g_Mouse = new Input::Mouse();
+		if(Input::g_Keyboard == nullptr)
+		{
+			Input::g_Keyboard = new Input::Keyboard();
+		}
+		if(Input::g_Mouse == nullptr)
+		{
+			Input::g_Mouse = new Input::Mouse();
+		}
 	}
 
 	// Create window
@@ -284,8 +289,42 @@ auto WinShell::createPresentableWindow(PresentableWindowConfig const& config_) -
 	ShowWindow(hwnd, w->nCmdShow);
 	w->getMessages();
 
-	return (Shell::PresentableWindow*) &w->windows.emplace_back(Win32PresentationWindow{w->hInstance, hwnd});
+	return (PresentableWindow*) &w->windows.emplace_back(Win32PresentationWindow{w->hInstance, hwnd});
 }
+
+auto WinShell::destroyPresentableWindow(PresentableWindow* window_) -> void
+{
+	if(window_ == nullptr) return;
+	auto window = (Win32PresentationWindow*)(window_);
+	for(auto& win : w->windows)
+	{
+		if(win.hwnd == window->hwnd)
+		{
+			DestroyWindow(window->hwnd);
+			win.hwnd = {};
+		}
+	}
+
+}
+
+auto WinShell::getInputProvider(PresentableWindow* window_) -> std::unique_ptr<Input::Provider>
+{
+	// make sure we have the global and mouse handlers on windows
+	if(Input::g_Keyboard == nullptr)
+	{
+		Input::g_Keyboard = new Input::Keyboard();
+	}
+	if(Input::g_Mouse == nullptr)
+	{
+		Input::g_Mouse = new Input::Mouse();
+	}
+
+	// TODO lots of stuff here, for now we just have a basic vpad via
+	// wasd and mouse emulations
+
+	return std::move(Input::Provider::WinCreateProvider());
+}
+
 } // end namespace Shell
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
@@ -299,6 +338,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	WinShell shell(&params);
 	int result = Main((ShellInterface&) shell);
+
+	if(Input::g_Keyboard != nullptr)
+	{
+		delete Input::g_Keyboard;
+	}
+
+	if(Input::g_Mouse != nullptr)
+	{
+		delete Input::g_Mouse;
+	}
 
 	return result;
 }

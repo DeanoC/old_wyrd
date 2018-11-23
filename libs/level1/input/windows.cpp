@@ -1,10 +1,12 @@
-
 #include "core/core.h"
 #include "input/input.h"
 #include "input/keyboard.h"
 #include "input/mouse.h"
+#include "input/provider.h"
+#include "keyboardmouselistenerimpl.h"
 
 namespace Input {
+#if PLATFORM == WINDOWS
 bool Keyboard::WinProcessMessages(uint32_t message, uint16_t wParam, uint32_t lParam)
 {
 	if(g_Keyboard == nullptr) return false;
@@ -119,6 +121,36 @@ bool Mouse::WinProcessMessages(uint32_t message, uint16_t wParam, uint32_t lPara
 	return false;
 }
 
+struct WinProvider : public Provider
+{
+	uint32_t getNumVirtualPads() final
+	{
+		return 1;
+	}
 
+	auto setVirtualPadListener(uint32_t padIndex_, std::shared_ptr<VPadListener> const& listener_) -> void final
+	{
+		impl.listener = listener_;
+	}
+
+	auto getVirtualPadType(uint32_t padIndex_) -> VirtualPadType final
+	{
+		assert(padIndex_ < getNumVirtualPads());
+		return VirtualPadType::KeyboardMouse;
+	}
+	auto update(double deltaT_) -> void final
+	{
+		impl.update();
+	}
+
+	KeyboardMouseListenerImpl impl;
+};
+
+auto Provider::WinCreateProvider() -> std::unique_ptr<Provider>
+{
+	return std::move(std::make_unique<WinProvider>());
+}
+
+#endif
 } // end namespace
 
