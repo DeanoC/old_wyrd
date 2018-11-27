@@ -7,6 +7,41 @@
 #include <thread>
 #import <Cocoa/Cocoa.h>
 
+
+@interface WyrdWindow : NSWindow {}
+@end
+@implementation WyrdWindow
+- (BOOL)canBecomeKeyWindow
+{
+	// Required for NSWindowStyleMaskBorderless windows
+	return YES;
+}
+- (BOOL)canBecomeMainWindow
+{
+	return YES;
+}
+@end
+
+@interface WyrdApplicationDelegate : NSObject
+@end
+
+@implementation WyrdApplicationDelegate
+
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
+{
+//	for (window = _glfw.windowListHead;  window;  window = window->next)
+//		_glfwInputWindowCloseRequest(window);
+
+	return NSTerminateCancel;
+}
+@end
+
+// No-op thread entry point
+//
+- (void)doNothing:(id)object
+{
+}
+
 namespace Input {
 Keyboard* g_Keyboard = nullptr;
 Mouse* g_Mouse = nullptr;
@@ -116,6 +151,11 @@ public:
 };
 struct MacSpecific
 {
+	id object;
+	id delegate;
+	id view;
+	id layer;
+
 	std::vector<MacPresentationWindow> windows;
 	std::unique_ptr<MacEventHandler> eventHandler;
 };
@@ -163,6 +203,16 @@ MacShell::MacShell()
 {
 	m = new MacSpecific();
 	m->eventHandler = std::make_unique<MacEventHandler>();
+
+	[WyrdApplicationDelegate sharedApplication];
+	// Make Cocoa enter multi-threaded mode
+	[NSThread detachNewThreadSelector:@selector(doNothing:)
+							 toTarget:NSApp
+						   withObject:nil];
+	m->delegate = [[WyrdApplicationDelegate alloc] init];
+
+	[NSApp setDelegate:m->delegate];
+	[NSApp run];
 
 	Input::g_Keyboard = static_cast<Input::Keyboard*>(m->eventHandler.get());
 	Input::g_Mouse = static_cast<Input::Mouse*>(m->eventHandler.get());
