@@ -2,7 +2,8 @@
 #include "input/keyboardmouselistenerimpl.h"
 #include "input/keyboard.h"
 #include "input/mouse.h"
-
+#include "math/scalar_math.h"
+#include "math/vector_math.h"
 namespace Input
 {
 
@@ -59,8 +60,8 @@ auto KeyboardMouseListenerImpl::update() -> void
 //		ry += m->getRelY();
 	}
 
-#define NOT_ZERO_AXIS(v, ax) if( fabsf(v) > 1e-5f ) listener->axisMovement( VPadAxisId:: ax, v );
-#define NOT_ZERO_BUTTON(v, ax) if( fabsf(v) > 1e-5f ) listener->button( VPadButtonId:: ax, v );
+#define NOT_ZERO_AXIS(v, ax) if( Math::abs(v) > 1e-5f ) { listener->axisMovement( VPadAxisId:: ax, v ); }
+#define NOT_ZERO_BUTTON(v, ax) if( Math::abs(v) > 1e-5f ) { listener->button( VPadButtonId:: ax, v ); }
 
 	NOT_ZERO_AXIS(lx, LX)
 	NOT_ZERO_AXIS(ly, LY)

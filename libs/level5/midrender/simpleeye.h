@@ -22,7 +22,7 @@ public:
 
 	auto setView(const Math::mat4x4& viewMatrix) -> void;
 
-	auto computeFrustum() const -> Geometry::Frustum;
+	auto computeFrustum() const -> Geometry::frustum;
 
 	auto getProjection() const -> Math::mat4x4 const& { return projectionMatrix; }
 

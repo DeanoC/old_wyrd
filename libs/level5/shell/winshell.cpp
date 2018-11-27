@@ -3,8 +3,6 @@
 #include "shell/winshell.h"
 #include "input/provider.h"
 
-#if PLATFORM == WINDOWS
-
 #include <fcntl.h>
 #include <io.h>
 #include "input/keyboard.h"
@@ -351,5 +349,3 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	return result;
 }
-
-#endif // end PLATFORM == WINDOWS

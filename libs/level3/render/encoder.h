@@ -7,6 +7,7 @@
 #include "render/commandqueue.h"
 #include "render/types.h"
 #include "render/resources.h"
+#include <math.h>
 
 namespace Render {
 

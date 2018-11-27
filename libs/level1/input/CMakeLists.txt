@@ -5,7 +5,7 @@ set( INPUT_SRC
 		windows.cpp
 		mouse.h
 		vpadlistener.h
-		provider.h keyboardmouselistenerimpl.cpp keyboardmouselistenerimpl.h)
+		provider.h keyboardmouselistenerimpl.cpp keyboardmouselistenerimpl.h osx.mm osx_keycodes.h)
 
 add_definitions(${wyrd_DEFINITIONS})
 include_directories( ${wyrd_INCLUDES})

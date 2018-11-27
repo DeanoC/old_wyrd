@@ -8,9 +8,7 @@ option(TBB_BUILD_STATIC "" ON)
 option(TBB_BUILD_TBBMALLOC "" ON)
 option(TBB_BUILD_TBBMALLOC_PROXY "" OFF)
 option(TBB_BUILD_TESTS "" OFF)
-option(SHADERC_SKIP_INSTALL "" ON)
-option(SHADERC_SKIP_TESTS "" ON)
-option(SHADERC_ENABLE_NV_EXTENSIONS "" ON)
+
 
 #--------- Global defination and include
 set( wyrd_DEFINITIONS

@@ -104,7 +104,7 @@ public:
 	{
 		uint64_t id = getIndexFromName(type_::Id, name_);
 		auto handle = openByIndex<type_::Id>(id);
-		return handle.acquire<type_>();
+		return handle.template acquire<type_>();
 	}
 
 	auto getIndexFromName(ResourceId id_, ResourceNameView const name_) -> uint64_t;

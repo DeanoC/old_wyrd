@@ -43,7 +43,11 @@ struct App
 		shellConfig.gpuComputeRequired = true;
 		shellConfig.gpuRenderRequired = true;
 		bool okay = shell.init(shellConfig);
-		if(!okay) return false;
+		if(!okay)
+		{
+			LOG_S(WARNING) << "Shell init config failed";
+			return false;
+		}
 
 		resourceManager = ResourceManager::ResourceMan::Create();
 		auto memstorage = std::make_shared<ResourceManager::MemStorage>();
@@ -53,6 +57,11 @@ struct App
 
 		// use a presentable and descrete if possible else integrated presentable
 		Stable* gpuStable = shell.getGpuStable();
+		if(gpuStable == nullptr)
+		{
+			LOG_S(WARNING) << "Shell has no gpu stable";
+			return false;
+		}
 
 		uint32_t pickedGpuIndex = ~0;
 		for(auto gpuIndex = 0u; gpuIndex < gpuStable->getGpuCount(); ++gpuIndex)

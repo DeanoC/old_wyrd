@@ -12,7 +12,7 @@ TickerClock::TickerClock() :
 		throw std::exception( "QueryPerformanceFrequency unsupported." );
 	}
 	timeFrequency = tmp.QuadPart;
-#elif PLATFORM == POSIX
+#elif PLATFORM == POSIX || PLATFORM_OS == OSX
 	timeFrequency = 1000000; // micro seconds
 #else
 	static_assert(false, "No TickerClock implementation on this platform")

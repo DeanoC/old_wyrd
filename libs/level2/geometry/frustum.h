@@ -8,7 +8,7 @@
 
 namespace Geometry {
 
-class Frustum {
+class frustum {
 public:
 	enum class CullResult : uint8_t
 	{
@@ -20,9 +20,9 @@ public:
 	std::array<Math::Plane, 5> planes;
 	Math::mat4x4 matrix;
 
-	Frustum() {};
+	frustum() {};
 
-	Frustum( Math::mat4x4 const& _matrix )
+	frustum( Math::mat4x4 const& _matrix )
 	{
 		createFromMatrix( _matrix );
 	}

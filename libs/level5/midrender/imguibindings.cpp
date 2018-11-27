@@ -234,8 +234,8 @@ auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan> const& rm
 	io.KeyMap[ImGuiKey_RightArrow] = (uint16_t) Key::KT_RIGHT;
 	io.KeyMap[ImGuiKey_UpArrow] = (uint16_t) Key::KT_UP;
 	io.KeyMap[ImGuiKey_DownArrow] = (uint16_t) Key::KT_DOWN;
-	io.KeyMap[ImGuiKey_PageUp] = (uint16_t) Key::KT_PRIOR;
-	io.KeyMap[ImGuiKey_PageDown] = (uint16_t) Key::KT_NEXT;
+	io.KeyMap[ImGuiKey_PageUp] = (uint16_t) Key::KT_PAGEUP;
+	io.KeyMap[ImGuiKey_PageDown] = (uint16_t) Key::KT_PAGEDOWN;
 	io.KeyMap[ImGuiKey_Home] = (uint16_t) Key::KT_HOME;
 	io.KeyMap[ImGuiKey_End] = (uint16_t) Key::KT_END;
 	io.KeyMap[ImGuiKey_Insert] = (uint16_t) Key::KT_INSERT;
@@ -272,8 +272,8 @@ auto ImguiBindings::newFrame(uint32_t width_, uint32_t height_) -> void
 		g_Keyboard->clearConsumedState();
 		std::memcpy(io.KeysDown, g_Keyboard->getKeyDownBitmap(), sizeof(bool) * Keyboard::MaxKeyCount);
 		io.KeyCtrl = (g_Keyboard->keyDown(Key::KT_LCONTROL) || g_Keyboard->keyDown(Key::KT_RCONTROL));
-		io.KeyAlt = (g_Keyboard->keyDown(Key::KT_LMENU) || g_Keyboard->keyDown(Key::KT_RMENU));
 		io.KeyShift = (g_Keyboard->keyDown(Key::KT_LSHIFT) || g_Keyboard->keyDown(Key::KT_RSHIFT));
+		io.KeyAlt = (g_Keyboard->keyDown(Key::KT_LMENU) || g_Keyboard->keyDown(Key::KT_RMENU));
 		io.KeySuper = (g_Keyboard->keyDown(Key::KT_LWIN) || g_Keyboard->keyDown(Key::KT_RWIN));
 		// TODO AddInputCharacter
 	}

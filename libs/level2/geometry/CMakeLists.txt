@@ -10,7 +10,7 @@ set( GEOMETRY_SRC
 		ray.h
 		watertightray.cpp
 		watertightray.h
-		Frustum.h)
+		frustum.h)
 
 add_definitions(${wyrd_DEFINITIONS})
 include_directories( ${wyrd_INCLUDES})

@@ -8,6 +8,7 @@
 namespace Shell {
 class PosixShell : public ConsoleApp
 {
+public:
 	PosixShell();
 	~PosixShell() final;
 
@@ -15,6 +16,8 @@ class PosixShell : public ConsoleApp
 	auto update() -> bool final;
 	auto ensureConsoleWindowsExists() -> void final;
 	auto createPresentableWindow(PresentableWindowConfig const& config_) -> PresentableWindow* final;
+	void destroyPresentableWindow(PresentableWindow* window_) final;
+	std::unique_ptr<Input::Provider> getInputProvider(PresentableWindow* window_) final;
 
 };
 

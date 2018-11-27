@@ -20,7 +20,7 @@ struct RenderPipeline
 	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_, std::weak_ptr<Device> device_) -> void;
 	inline static int s_stage = -1;
 
-#define PIPELINE_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(renderpass, args...); }
+#define PIPELINE_VK_FUNC(name) template<typename... Args> auto name(Args... args) { return vtable-> name(pipeline, args...); }
 #define PIPELINE_VK_FUNC_EXT(name, extension) PIPELINE_VK_FUNC(name)
 #include "functionlist.inl"
 

@@ -6,7 +6,6 @@
 #include "input/input.h"
 #include <array>
 
-
 namespace Input {
 
 class Keyboard

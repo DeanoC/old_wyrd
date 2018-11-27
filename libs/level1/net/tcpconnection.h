@@ -34,22 +34,14 @@ public:
 		syncWrite(array_.data(), sizeof(T) * array_.size());
 	}
 
-	template<typename T, bool preAllocated_ = false>
+	template<typename T>
 	auto syncRead(std::vector<T>& vector_ ) -> size_t
 	{
 		static_assert(sizeof(T) != 0);
 
-		if constexpr (preAllocated_)
-		{
-			return syncRead(vector_.data(), sizeof(T) * vector_.size());
-		}
-		else
-		{
-			size_t size = readSize();
-			vector_.resize(size/sizeof(T));
-			return readPayload(vector_.data(), sizeof(T) * vector_.size());
-		}
+		return syncRead(vector_.data(), sizeof(T) * vector_.size());
 	}
+
 	template<typename T, size_t S = false>
 	auto syncRead(std::array<T,S>& array_ ) -> size_t
 	{

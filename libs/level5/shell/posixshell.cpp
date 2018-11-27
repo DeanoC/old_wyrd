@@ -20,7 +20,17 @@ auto PosixShell::ensureConsoleWindowsExists() -> void
 	ConsoleApp::ensureConsoleWindowsExists();
 }
 
-auto PosixShell::createPresentableWindow()->PresentableWindow* final
+auto PosixShell::createPresentableWindow(PresentableWindowConfig const& config_)->PresentableWindow*
+{
+	return nullptr;
+}
+
+void PosixShell::destroyPresentableWindow(PresentableWindow* window_)
+{
+
+}
+
+std::unique_ptr<Input::Provider> PosixShell::getInputProvider(PresentableWindow* window_)
 {
 	return nullptr;
 }
@@ -29,7 +39,7 @@ int main(int argc, char **argv)
 {
 	using namespace Shell;
 	PosixShell app;
-	app.sysInit(arc, argv)
+	app.sysInit(argc, argv);
 
 	int result = Main((ShellInterface&) app);
 

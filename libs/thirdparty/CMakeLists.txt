@@ -143,8 +143,11 @@ set(ICONFONTCPPHEADERS_SRC
 set( NLOHMANN_SRC nlohmann/json.h)
 set(CLIPP_SRC clipp/clipp.h)
 
-add_definitions(${wyrd_DEFINITIONS})
-include_directories(${wyrd_INCLUDES})
+option(SHADERC_SKIP_INSTALL "" ON)
+option(SHADERC_SKIP_TESTS "" ON)
+option(SHADERC_ENABLE_NV_EXTENSIONS "" ON)
+add_subdirectory(shaderc)
+
 
 set( THIRDPARTY_LIBS enkiTS)
 foreach(LIB ${THIRDPARTY_LIBS})
@@ -152,15 +155,19 @@ foreach(LIB ${THIRDPARTY_LIBS})
 endforeach(LIB)
 add_subdirectory(tbb)
 
-add_subdirectory(shaderc)
-
 add_library( asio STATIC ${ASIO_SRC} )
 target_include_directories(asio PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/asio/include )
 target_compile_definitions(asio PUBLIC
 		-DASIO_STANDALONE=1
 		-DASIO_SEPARATE_COMPILATION=1
-		-DASIO_NO_DEPRECATED=1
+		-DASIO_NO_DEPRECATED=1)
+if (WIN32)
+	target_compile_definitions(asio PUBLIC
 		-D_WIN32_WINNT=0x603)
+endif(WIN32)
+
+add_definitions(${wyrd_DEFINITIONS})
+include_directories(${wyrd_INCLUDES})
 
 add_library( imgui ${IMGUI_SRC} )
 

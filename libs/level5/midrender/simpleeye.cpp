@@ -77,9 +77,9 @@ auto SimpleEye::setView(Math::mat4x4 const& _viewMatrix) -> void
 	viewMatrix = _viewMatrix;
 }
 
-auto SimpleEye::computeFrustum() const -> Geometry::Frustum
+auto SimpleEye::computeFrustum() const -> Geometry::frustum
 {
-	return Geometry::Frustum(viewMatrix * projectionMatrix);
+	return Geometry::frustum(viewMatrix * projectionMatrix);
 }
 
 } // end namespace
