@@ -116,13 +116,13 @@ EXPORT auto Init() -> InterfaceFunc
 			}
 		}
 	}
-#elif
+#else
 	namespace fs = std::filesystem;
 	for (auto& p : fs::recursive_directory_iterator("Assets/Plugins/"))
 	{
 		if (fs::is_regular_file(p) && p.path().extension().string() == ".nco"s)
 		{
-			LoadModule(p.path().filename().string(), p.path.string());
+			LoadModule(p.path().filename().string(), p.path().string());
 		}
 	}
 #endif
