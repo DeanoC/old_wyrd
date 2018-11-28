@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 2.8.12)
 project(shaderc)
 enable_testing()
 
+if (POLICY CMP0042)
+	cmake_policy(SET CMP0042 NEW) # ENABLE CMP0042: MACOSX_RPATH is enabled by default.
+endif()
+
 message(STATUS "Shaderc: build type is \"${CMAKE_BUILD_TYPE}\".")
 
 option(SHADERC_SKIP_INSTALL "Skip installation" ${SHADERC_SKIP_INSTALL})

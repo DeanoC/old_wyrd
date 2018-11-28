@@ -1,3 +1,6 @@
+# CMake version
+cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
+
 # global packages and options (mostly for thirdparties)
 find_package(vulkan REQUIRED)
 
@@ -19,6 +22,7 @@ set( wyrd_INCLUDES
 		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/tbb/include
 		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/fmt/include
 		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glm
+		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/cppfs/include
 		)
 add_subdirectory(thirdparty)
 

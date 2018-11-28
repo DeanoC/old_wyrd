@@ -159,7 +159,15 @@ option(TBB_BUILD_TBBMALLOC "" ON)
 option(TBB_BUILD_TBBMALLOC_PROXY "" OFF)
 option(TBB_BUILD_TESTS "" OFF)
 
-set( THIRDPARTY_LIBS enkiTS)
+# cppfs
+option(BUILD_SHARED_LIBS               OFF)
+option(OPTION_SELF_CONTAINED           OFF)
+option(OPTION_BUILD_TESTS              OFF)
+option(OPTION_BUILD_DOCS               OFF)
+option(OPTION_BUILD_EXAMPLES           OFF)
+option(OPTION_BUILD_SSH_BACKEND        OFF)
+
+set( THIRDPARTY_LIBS enkiTS cppfs)
 foreach(LIB ${THIRDPARTY_LIBS})
 	add_subdirectory(${LIB})
 endforeach(LIB)

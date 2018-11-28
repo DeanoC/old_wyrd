@@ -68,7 +68,7 @@ auto Gui::render(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder
 	{
 		double time = (viewerTime < 0.0) ? replay->getCurrentTime() : viewerTime;
 		auto timeString = fmt::format("Time: {}s", time);
-		ImGui::Text(timeString.c_str());
+		ImGui::Text("%s", timeString.c_str());
 
 		menu();
 
@@ -231,7 +231,7 @@ auto Gui::log() -> void
 			typeString[4] = 0;
 
 			auto logString = fmt::format("({}s)[{}]: {}", item.timeStamp, typeString, item.data);
-			ImGui::Text(logString.c_str());
+			ImGui::Text("%s", logString.c_str());
 		}
 		if(item.type == Items::LogType)
 		{
@@ -317,7 +317,7 @@ auto Gui::decodeLog(Item const& item_) -> void
 			logString += fmt::format(" {},{},{}", pos.x, pos.y, pos.z);
 			spatialMarkers.push_back({pos});
 		}
-		ImGui::Text(logString.c_str());
+		ImGui::Text("%s", logString.c_str());
 
 	} catch(json::parse_error error)
 	{
@@ -326,7 +326,7 @@ auto Gui::decodeLog(Item const& item_) -> void
 									 error.what(),
 									 item_.data);
 		LOG_S(WARNING) << logString;
-		ImGui::Text(logString.c_str());
+		ImGui::Text("%s", logString.c_str());
 	}
 }
 

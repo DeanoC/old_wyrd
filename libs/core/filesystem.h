@@ -5,6 +5,7 @@
 #include "core/core.h"
 #if PLATFORM_OS == OSX
 #include "macos/experimental/filesystem"
+#error MACOS still doesn't support filesystem sadly, use cppfs
 #else
 #include <experimental/filesystem>
 #endif

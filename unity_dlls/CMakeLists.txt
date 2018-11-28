@@ -36,4 +36,5 @@ set_target_properties(ncoproxy PROPERTIES
 		RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/../../Assets/Plugins"
 		DEBUG_POSTFIX ""
 		)
+target_link_libraries(ncoproxy cppfs)
 
