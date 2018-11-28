@@ -6,7 +6,6 @@
 #include "keyboardmouselistenerimpl.h"
 
 namespace Input {
-#if PLATFORM == WINDOWS
 bool Keyboard::WinProcessMessages(uint32_t message, uint16_t wParam, uint32_t lParam)
 {
 	if(g_Keyboard == nullptr) return false;
@@ -151,6 +150,5 @@ auto Provider::WinCreateProvider() -> std::unique_ptr<Provider>
 	return std::move(std::make_unique<WinProvider>());
 }
 
-#endif
 } // end namespace
 
