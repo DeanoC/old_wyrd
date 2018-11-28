@@ -261,8 +261,8 @@ auto ImguiBindings::destroy() -> void
 auto ImguiBindings::newFrame(uint32_t width_, uint32_t height_) -> void
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize.x = width_;
-	io.DisplaySize.y = height_;
+	io.DisplaySize.x = (float)width_;
+	io.DisplaySize.y = (float)height_;
 
 	io.DeltaTime = (float) tickerClock->update();
 

@@ -146,21 +146,35 @@ set(CLIPP_SRC clipp/clipp.h)
 option(SHADERC_SKIP_INSTALL "" ON)
 option(SHADERC_SKIP_TESTS "" ON)
 option(SHADERC_ENABLE_NV_EXTENSIONS "" ON)
+option(SPIRV_SKIP_EXECUTABLES "" ON)
+option(ENABLE_GLSLANG_BINARIES "" OFF)
 add_subdirectory(shaderc)
 
+option(ENKITS_BUILD_C_INTERFACE "" OFF )
+option(ENKITS_BUILD_EXAMPLES "" OFF )
+
+option(TBB_BUILD_SHARED "" OFF)
+option(TBB_BUILD_STATIC "" ON)
+option(TBB_BUILD_TBBMALLOC "" ON)
+option(TBB_BUILD_TBBMALLOC_PROXY "" OFF)
+option(TBB_BUILD_TESTS "" OFF)
 
 set( THIRDPARTY_LIBS enkiTS)
 foreach(LIB ${THIRDPARTY_LIBS})
 	add_subdirectory(${LIB})
 endforeach(LIB)
+
 add_subdirectory(tbb)
+target_compile_definitions(tbb_static PUBLIC
+		-D__TBB_SOURCE_DIRECTLY_INCLUDED=1)
 
 add_library( asio STATIC ${ASIO_SRC} )
 target_include_directories(asio PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/asio/include )
 target_compile_definitions(asio PUBLIC
 		-DASIO_STANDALONE=1
 		-DASIO_SEPARATE_COMPILATION=1
-		-DASIO_NO_DEPRECATED=1)
+		-DASIO_NO_DEPRECATED=1
+		-D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1)
 if (WIN32)
 	target_compile_definitions(asio PUBLIC
 		-D_WIN32_WINNT=0x603)

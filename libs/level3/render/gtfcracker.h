@@ -812,12 +812,12 @@ public:
 			case GenericTextureFormat::R64G64B64_UINT:
 			case GenericTextureFormat::R64G64_UINT:
 			case GenericTextureFormat::R64_UINT:
-				return std::numeric_limits<uint64_t>::max();
+				return (double)std::numeric_limits<uint64_t>::max();
 			case GenericTextureFormat::R64G64B64A64_SINT:
 			case GenericTextureFormat::R64G64B64_SINT:
 			case GenericTextureFormat::R64G64_SINT:
 			case GenericTextureFormat::R64_SINT:
-				return std::numeric_limits<int64_t>::max();
+				return (double)std::numeric_limits<int64_t>::max();
 			case GenericTextureFormat::R64G64B64_SFLOAT:
 			case GenericTextureFormat::R64G64B64A64_SFLOAT:
 			case GenericTextureFormat::R64G64_SFLOAT:
@@ -1010,12 +1010,12 @@ public:
 			case GenericTextureFormat::R64G64B64_UINT:
 			case GenericTextureFormat::R64G64_UINT:
 			case GenericTextureFormat::R64_UINT:
-				return std::numeric_limits<uint64_t>::min();
+				return (double)std::numeric_limits<uint64_t>::min();
 			case GenericTextureFormat::R64G64B64A64_SINT:
 			case GenericTextureFormat::R64G64B64_SINT:
 			case GenericTextureFormat::R64G64_SINT:
 			case GenericTextureFormat::R64_SINT:
-				return std::numeric_limits<int64_t>::min();
+				return (double)std::numeric_limits<int64_t>::min();
 			case GenericTextureFormat::R64G64B64_SFLOAT:
 			case GenericTextureFormat::R64G64B64A64_SFLOAT:
 			case GenericTextureFormat::R64G64_SFLOAT:

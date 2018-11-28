@@ -24,7 +24,7 @@ template<ResourceManager::ResourceId id_>
 template<typename type_>
 auto Image<id_>::fetchHomoChannel_sRGB(uint8_t channel_, uint8_t const *ptr_) -> double
 {
-	return Math::sRGB2LinearRGB_channel(fetchHomoChannel<type_>(channel_, ptr_));
+	return Math::sRGB2LinearRGB_channel(fetchRaw<type_>(ptr_ + sizeof(type_) * channel_));
 }
 
 template<ResourceManager::ResourceId id_>
@@ -45,7 +45,7 @@ auto Image<id_>::fetchHomoChannel_nibble_UNORM(uint8_t channel_, uint8_t const *
 template<ResourceManager::ResourceId id_>
 auto Image<id_>::fetchChannel_R5G6B5_UNORM(uint8_t channel_, uint8_t const *ptr_) -> double
 {
-	uint16_t pixel = fetchHomoChannel<uint16_t>(0, ptr_);
+	uint16_t pixel = fetchRaw<uint16_t>(ptr_);
 	if(channel_ == 0) return ((double) ((pixel >> 11) & 0x1F)) / 31.0;
 	else if(channel_ == 1) return ((double) ((pixel >> 5) & 0x3F)) / 63.0;
 	else if(channel_ == 2) return ((double) ((pixel >> 0) & 0x1F)) / 31.0;
@@ -59,7 +59,7 @@ auto Image<id_>::fetchChannel_R5G6B5_UNORM(uint8_t channel_, uint8_t const *ptr_
 template<ResourceManager::ResourceId id_>
 auto Image<id_>::fetchChannel_R5G5B5A1_UNORM(uint8_t channel_, uint8_t const *ptr_) -> double
 {
-	uint16_t pixel = fetchHomoChannel<uint16_t>(0, ptr_);
+	uint16_t pixel = fetchRaw<uint16_t>(ptr_);
 	uint32_t x = 0;
 	if(channel_ == 0) x = (pixel >> 11) & 0x1F;
 	else if(channel_ == 1) x = (pixel >> 6) & 0x1F;
@@ -73,7 +73,7 @@ auto Image<id_>::fetchChannel_R5G5B5A1_UNORM(uint8_t channel_, uint8_t const *pt
 template<ResourceManager::ResourceId id_>
 auto Image<id_>::fetchChannel_A1R5G5B5_UNORM(uint8_t channel_, uint8_t const *ptr_) -> double
 {
-	uint16_t pixel = fetchHomoChannel<uint16_t>(0, ptr_);
+	uint16_t pixel = fetchRaw<uint16_t>(ptr_);
 
 	uint32_t x = 0;
 	if(channel_ == 0) return ((double) ((pixel >> 15) & 0x1));
@@ -88,14 +88,14 @@ auto Image<id_>::fetchChannel_A1R5G5B5_UNORM(uint8_t channel_, uint8_t const *pt
 template<ResourceManager::ResourceId id_>
 auto Image<id_>::fetchHomoChannel_FP16(uint8_t channel_, uint8_t const *ptr_) -> double
 {
-	return (double) Math::half2float(fetchHomoChannel<uint16_t>(channel_, ptr_));
+	return (double) Math::half2float(fetchRaw<uint16_t>(ptr_ + (sizeof(uint16_t) * channel_)));
 }
 
 template<ResourceManager::ResourceId id_>
 auto Image<id_>::fetchChannel_A2R10G10B10(uint8_t channel_, uint8_t const *ptr_) -> double
 {
 	// fake fetch a single 32 bit format
-	uint32_t pixel = fetchHomoChannel<uint32_t>(0, ptr_);
+	uint32_t pixel = fetchRaw<uint32_t>(ptr_);
 
 	uint32_t x = 0;
 	if(channel_ == 0) return ((double) ((pixel >> 30) & 0x3));
@@ -154,7 +154,7 @@ template<ResourceManager::ResourceId id_>
 auto Image<id_>::fetchChannel_X8D24_UNORM(uint8_t channel_, uint8_t const *ptr_) -> double
 {
 	// fake fetch a single 32 bit format
-	uint32_t pixel = fetchHomoChannel<uint32_t>(0, ptr_);
+	uint32_t pixel = fetchRaw<uint32_t>(ptr_);
 	if(channel_ == 0) return ((double) ((pixel & 0xFF000000) >> 24) / 255.0);
 	else return ((double) (pixel & 0x00FFFFFF) / 16777215.0);
 }
@@ -162,7 +162,7 @@ auto Image<id_>::fetchChannel_X8D24_UNORM(uint8_t channel_, uint8_t const *ptr_)
 template<ResourceManager::ResourceId id_>
 auto Image<id_>::fetchChannel_D24X8_UNORM(uint8_t channel_, uint8_t const *ptr_) -> double
 {
-	uint32_t pixel = fetchHomoChannel<uint32_t>(0, ptr_);
+	uint32_t pixel = fetchRaw<uint32_t>(ptr_);
 	if(channel_ == 0) return ((double) (pixel & 0x000000FF) / 255.0);
 	else return ((double) ((pixel & 0xFFFFFF00) >> 8) / 16777215.0);
 }

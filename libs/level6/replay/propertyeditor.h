@@ -133,19 +133,9 @@ public:
 				nlohmann::json const& value = a[i];
 
 				if (value.is_number_float()){
-					if(typeid(TYPE) == typeid(float)){
-						out[i] = array[i].get<float>();
-					} else
-					{
-						out[i] = static_cast<float>(array[i]);
-					}
+					out[i] = static_cast<TYPE>(value.get<float>());
 				} else if (value.is_number_integer()){
-					if(typeid(TYPE) == typeid(int)){
-						out[i] = array[i].get<int>();
-					} else
-					{
-						out[i] = static_cast<int>(array[i]);
-					}
+					out[i] = static_cast<TYPE>(value.get<int>());
 				}
 			}
 		}

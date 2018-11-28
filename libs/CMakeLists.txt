@@ -1,23 +1,15 @@
 # global packages and options (mostly for thirdparties)
 find_package(vulkan REQUIRED)
 
-option(ENKITS_BUILD_C_INTERFACE "" OFF )
-option(ENKITS_BUILD_EXAMPLES "" OFF )
-option(TBB_BUILD_SHARED "" OFF)
-option(TBB_BUILD_STATIC "" ON)
-option(TBB_BUILD_TBBMALLOC "" ON)
-option(TBB_BUILD_TBBMALLOC_PROXY "" OFF)
-option(TBB_BUILD_TESTS "" OFF)
-
-
 #--------- Global defination and include
 set( wyrd_DEFINITIONS
 		-D__TBB_NO_IMPLICIT_LINKAGE=1
 		-D__TBBMALLOC_NO_IMPLICIT_LINKAGE=1
 		-D_CRT_SECURE_NO_WARNINGS -D__STDC_FORMAT_MACROS
-		-D__TBB_SOURCE_DIRECTLY_INCLUDED=1
+		-D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1
 		-DCRC32C_STATIC
 		)
+
 set( wyrd_DEFINITIONS ${wyrd_DEFINITIONS} PARENT_SCOPE )
 
 set( wyrd_INCLUDES

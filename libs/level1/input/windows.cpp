@@ -6,7 +6,7 @@
 #include "keyboardmouselistenerimpl.h"
 
 namespace Input {
-bool Keyboard::WinProcessMessages(uint32_t message, uint16_t wParam, uint32_t lParam)
+bool Keyboard::WinProcessMessages(uint32_t message, uint64_t wParam, uint64_t lParam)
 {
 	if(g_Keyboard == nullptr) return false;
 
@@ -53,7 +53,7 @@ bool Keyboard::WinProcessMessages(uint32_t message, uint16_t wParam, uint32_t lP
 	return false;
 }
 
-bool Mouse::WinProcessMessages(uint32_t message, uint16_t wParam, uint32_t lParam)
+bool Mouse::WinProcessMessages(uint32_t message, uint64_t wParam, uint64_t lParam)
 {
 	if(g_Mouse == nullptr) return false;
 
@@ -113,8 +113,8 @@ bool Mouse::WinProcessMessages(uint32_t message, uint16_t wParam, uint32_t lPara
 		{
 			int xPosAbsolute = LOWORD( lParam );
 			int yPosAbsolute = HIWORD( lParam );
-			g_Mouse->absMousePos[0] = xPosAbsolute;
-			g_Mouse->absMousePos[1] = yPosAbsolute;
+			g_Mouse->absMousePos[0] = (float)xPosAbsolute;
+			g_Mouse->absMousePos[1] = (float)yPosAbsolute;
 		}
 	}
 	return false;

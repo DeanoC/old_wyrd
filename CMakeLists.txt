@@ -6,7 +6,7 @@ option(BUILD_TOOLS "Build tools folder." ON)
 option(BUILD_TESTER "Build the tester app." ON)
 option(BUILD_APPS "Build the apps." ON)
 option(BUILD_UNITY_PLUGINS "Build the unity plugins." ON )
-option(OPTIMIZE_FOR_AVX2 "whether to use the AVX2 (and before) ISA." ON)
+option(OPTIMIZE_FOR_AVX2 "whether to use the AVX2 (and before) ISA." OFF)
 
 include (cmake/VcMacros.cmake)
 include (cmake/AddTargetProperty.cmake)

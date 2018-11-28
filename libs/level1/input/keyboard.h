@@ -12,7 +12,7 @@ class Keyboard
 {
 public:
 #if PLATFORM == WINDOWS
-	static bool WinProcessMessages(uint32_t message, uint16_t wParam, uint32_t lParam);
+	static bool WinProcessMessages(uint32_t message, uint64_t wParam, uint64_t lParam);
 #elif PLATFORM == POSIX
 	friend void KeyboardX11ProcessKeyEvent( bool down, XKeyEvent* event );
 #endif
