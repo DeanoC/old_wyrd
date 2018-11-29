@@ -38,7 +38,6 @@ Geometry::AABB TacticalMapStitcher::rotateAABB(Geometry::AABB const& v, int rota
 }
 void TacticalMapStitcher::addTacticalMapInstance(TacticalMap::ConstPtr map_, Math::vec3 const position_, int rotationInDegrees_, int mapParcelId_)
 {
-	assert(mapParcelId_ <= 0xFF);
 	instances.emplace_back(map_, position_, rotationInDegrees_, mapParcelId_);
 }
 TacticalMap::Ptr TacticalMapStitcher::build()

@@ -157,7 +157,7 @@ TacticalMap::Ptr TacticalMapBuilder::build()
 		{
 			if (levelCount > 0)
 			{
-				assert(globalLevelIndex < levelCount);
+				assert(globalLevelIndex <= levelCount);
 			}
 			auto const tileIndex = y * width + x;
 			auto const& tileBuilder = tileBuilders[tileIndex];

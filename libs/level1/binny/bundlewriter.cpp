@@ -213,7 +213,7 @@ bool BundleWriter::build(uint64_t const userData_, std::vector<uint8_t>& result_
 	{
 		uint32_t index = dirIndices.top(); dirIndices.pop();
 		auto const& entry = dirEntries[index];
-		order.push_back(entry.id);
+		order.push_back(index);
 		for(uint32_t dep : entry.dependencies)
 		{
 			auto fit = dirEntries.cbegin();
@@ -236,9 +236,9 @@ bool BundleWriter::build(uint64_t const userData_, std::vector<uint8_t>& result_
 	// indices of a type appear before anything that depends on it
 	std::vector<uint32_t> final;
 	final.reserve(order.size());
-	for(auto it = order.rbegin();it != order.rbegin();it++)
+	for(auto it = order.rbegin();it != order.rend();it++)
 	{
-		if(std::find(final.begin(), final.end(), *it) != final.end())
+		if(std::find(final.begin(), final.end(), *it) == final.end())
 		{
 			final.push_back(*it);
 		}
@@ -247,22 +247,21 @@ bool BundleWriter::build(uint64_t const userData_, std::vector<uint8_t>& result_
 	std::string lastName = "chunks"s;
 	for (uint32_t index : final)
 	{
-		auto const&[id, flags, name, storedSize, unpackedSize, scrc32c, ucrc32c, chunk, deps] = dirEntries[index];
+		DirEntryWriter const& dw = dirEntries[index];
 
-		o.write(id, "id type"s);
-		o.write_flags("ChunkFlag", flags, "Chunk flags");
-		o.write_as<uint32_t>(scrc32c, "stored crc32c"s);
-		o.write_as<uint32_t>(ucrc32c, "unpacked crc32c"s);
-		o.write_as<uint32_t>(0, "flags");
+		o.write(dw.id, "id type"s);
+		o.write_as<uint32_t>(dw.compressedCrc32c, "stored crc32c"s);
+		o.write_as<uint32_t>(dw.uncompressedCrc32c, "unpacked crc32c"s);
+		o.write_flags("ChunkFlag", dw.flags, "Chunk flags");
 
-		o.add_string(name);
-		o.use_label(name + "chunk"s, lastName, false, false );
+		o.add_string(dw.name);
+		o.use_label(dw.name + "chunk"s, lastName, false, false );
 
-		o.write_size(storedSize, "stored size"s);
-		o.write_size(unpackedSize, "unpacked size"s);
+		o.write_size(dw.compressedSize, "stored size"s);
+		o.write_size(dw.uncompressedSize, "unpacked size"s);
 		
 		o.increment_variable("DirEntryCount"s);
-		lastName = name + "chunk"s;
+		lastName = dw.name + "chunk"s;
 	}
 	o.write_label("beginEnd"s);
 

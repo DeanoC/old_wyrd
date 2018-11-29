@@ -418,7 +418,7 @@ bool TacticalMap::createFromStream(std::istream& in, std::vector<TacticalMap::Pt
 	};
 
 	Bundle bundle(&malloc, &free, &malloc, &free, in);
-	auto const ret = bundle.read("tacmap", handlers);
+	auto const ret = bundle.read({}, handlers);
 	if(ret.first != Bundle::ErrorCode::Okay)
 	{
 		return false;
