@@ -20,7 +20,7 @@ void SceneNode::visitDescendents(Math::mat4x4 const& rootMatrix, std::function<v
 		matrixStack.pop();
 
 		Math::mat4x4 local = node->transform.MakeMatrix();
-		Math::mat4x4 world = local * parentMatrix;
+		Math::mat4x4 world = parentMatrix * local;
 
 		func(*node, world);
 

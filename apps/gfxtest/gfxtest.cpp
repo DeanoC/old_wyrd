@@ -1,4 +1,5 @@
 #include "core/core.h"
+#include "gfxtest.h"
 #include "shell/interface.h"
 #include "resourcemanager/resourceman.h"
 #include "resourcemanager/textresource.h"
@@ -151,15 +152,18 @@ struct App
 		tickerClock = std::make_unique<Timing::TickerClock>();
 		createResources();
 
+		underTest = CreateBasicMeshTest();
+		underTest->init(resourceManager);
+
 		return okay;
 	}
 
 	auto finish() -> void
 	{
+		underTest->finish();
+
 		imguiBindings->destroy();
 		imguiBindings.reset();
-		meshModRenderer->destroy();
-		meshModRenderer.reset();
 
 		resourceManager->flushCache();
 
@@ -188,12 +192,7 @@ struct App
 
 		imguiBindings.reset(new MidRender::ImguiBindings());
 		imguiBindings->init(rm);
-		meshModRenderer.reset(new MidRender::MeshModRenderer());
-		meshModRenderer->init(rm);
 
-		auto rootScene = std::make_shared<MeshMod::SceneNode>();
-		rootScene->addObject(MeshOps::Shapes::createSphere(3));
-		solidSceneIndex = meshModRenderer->addScene(rootScene);
 	}
 
 	auto body() -> bool
@@ -220,7 +219,6 @@ struct App
 		inputProvider->setVirtualPadListener(0, simplePadCamera);
 		tickerClock->update();
 
-		float yrot = 0.0f;
 		using namespace Core::bitmask;
 		do
 		{
@@ -229,12 +227,6 @@ struct App
 			simplePadCamera->update(deltaT);
 
 			rEncoderPool->reset();
-
-			Math::mat4x4 rootMatrix = Math::rotate(Math::identity<Math::mat4x4>(), yrot, Math::vec3(0, 1, 0));
-			while(yrot > Math::two_pi<float>())
-			{
-				yrot -= Math::two_pi<float>();
-			}
 
 			auto const simpleEye = &simplePadCamera->simpleEye;
 			SimpleForwardGlobals* globals = (SimpleForwardGlobals*) globalBuffer->map();
@@ -246,11 +238,6 @@ struct App
 
 			imguiBindings->newFrame(display->getWidth(), display->getHeight());
 
-			bool show_demo_window = true;
-			bool show_app_about = true;
-
-			if(show_demo_window)
-				ImGui::ShowDemoWindow(&show_demo_window);
 			auto encoder = rEncoderPool->allocateEncoder(EncoderFlag::RenderEncoder);
 			auto renderEncoder = encoder->asRenderEncoder();
 
@@ -258,12 +245,11 @@ struct App
 			colourRT0->transitionToRenderTarget(encoder);
 			renderEncoder->beginRenderPass(renderPass, renderTarget);
 
-			meshModRenderer->render(rootMatrix, solidSceneIndex, encoder);
-			imguiBindings->render(encoder);
+			underTest->tick(deltaT, encoder);
 
+			imguiBindings->render(encoder);
 			renderEncoder->endRenderPass();
 			colourRT0->transitionToDMASrc(encoder);
-
 			encoder->end();
 
 			renderQueue->enqueue(encoder);
@@ -294,8 +280,7 @@ struct App
 	std::unique_ptr<Input::Provider> inputProvider;
 
 	std::unique_ptr<MidRender::ImguiBindings> imguiBindings;
-	std::unique_ptr<MidRender::MeshModRenderer> meshModRenderer;
-	MidRender::SceneIndex solidSceneIndex;
+	std::unique_ptr<GfxTest> underTest;
 };
 
 int Main(Shell::ShellInterface& shell_)
