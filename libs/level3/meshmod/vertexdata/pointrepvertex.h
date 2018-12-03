@@ -20,7 +20,9 @@ struct PointRep
 	PointRep(const VertexIndex n_) :
 			next(n_) {}
 
-	static const std::string getName() { return "PointRep"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "PointRep"sv; };
 };
 //! index of next vertex sharing position but with other data ( cyclic list )
 typedef BaseElements<VertexData::PointRep, Vertex_, false, DerivedType::DerivedFromPositions> PointReps;

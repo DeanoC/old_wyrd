@@ -24,7 +24,7 @@ public:
 	HalfEdgeElementsContainer& getHalfEdgesContainer() { return halfEdgesContainer; }
 	HalfEdgeElementsContainer const& getHalfEdgesContainer() const { return halfEdgesContainer; }
 
-	HalfEdgeIndex getCount() const { return (HalfEdgeIndex) halfEdgesContainer.size(); }
+	size_t getCount() const { return halfEdgesContainer.size(); }
 
 	HalfEdgeData::HalfEdges& halfEdges();
 	HalfEdgeData::HalfEdges const& halfEdges() const;
@@ -78,39 +78,39 @@ inline HalfEdgeData::HalfEdge& HalfEdges::halfEdge(HalfEdgeIndex const index)
 
 inline HalfEdgeData::HalfEdges const& HalfEdges::halfEdges() const
 {
-	return *halfEdgesContainer.getElements<HalfEdgeData::HalfEdges>();
+	return *halfEdgesContainer.getElement<HalfEdgeData::HalfEdges>();
 }
 
 inline HalfEdgeData::HalfEdges& HalfEdges::halfEdges()
 {
-	return *halfEdgesContainer.getElements<HalfEdgeData::HalfEdges>();
+	return *halfEdgesContainer.getElement<HalfEdgeData::HalfEdges>();
 }
 
 template<typename attribute>
 inline attribute const& HalfEdges::getAttributes() const
 {
-	return *halfEdgesContainer.getElements<attribute>();
+	return *halfEdgesContainer.getElement<attribute>();
 }
 template<typename attribute>
 inline attribute& HalfEdges::getAttributes()
 {
-	return *halfEdgesContainer.getElements<attribute>();
+	return *halfEdgesContainer.getElement<attribute>();
 }
 template<typename attribute>
 inline attribute& HalfEdges::getOrAddAttributes()
 {
-	return *halfEdgesContainer.getOrAddElements<attribute>();
+	return *halfEdgesContainer.getOrAddElement<attribute>();
 }
 
 template<typename attribute>
 inline attribute const& HalfEdges::getAttributes(std::string const& subname) const
 {
-	return *halfEdgesContainer.getElements<attribute>(subname);
+	return *halfEdgesContainer.getElement<attribute>(subname);
 }
 template<typename attribute>
 inline attribute& HalfEdges::getOrAddAttributes(std::string const& subname)
 {
-	return *halfEdgesContainer.getOrAddElements<attribute>(subname);
+	return *halfEdgesContainer.getOrAddElement<attribute>(subname);
 }
 
 }

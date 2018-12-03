@@ -16,7 +16,9 @@ namespace MeshMod { namespace MaterialData
 //! a collection parameters that can be attached to a particular material
 struct VertexBindings
 {
-	static const std::string getName() { return "VertexBindings"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "VertexBindings"sv; };
 
 	VertexBindings() :
 		numVertexBindings(0)

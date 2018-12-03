@@ -131,26 +131,27 @@ auto MeshModRenderer::addMeshMod(std::shared_ptr<MeshMod::Mesh> const& mesh_,
 	static const int maxVerticesPerFace = 20;
 	for(auto iFace = 0u; iFace < polygons.getCount(); iFace++)
 	{
-		if(!polygons.isValid(iFace)) continue;
+		auto polygonIndex = PolygonIndex(iFace);
+		if(!polygons.isValid(polygonIndex)) continue;
 
 		VertexIndexContainer faceVertexIndices;
-		polygons.getVertexIndices(iFace, faceVertexIndices);
+		polygons.getVertexIndices(polygonIndex, faceVertexIndices);
 		assert(faceVertexIndices.size() < maxVerticesPerFace);
 
 		size_t baseVertex = renderVertices.size();
 		renderVertices.resize(baseVertex + faceVertexIndices.size());
 
 		static const uint32_t colMap[] =
-				{
-						0x80FF0000,
-						0x8000FF00,
-						0x800000FF,
-						0x8000FFFF,
-						0x80FF00FF,
-						0x80FFFF00,
-						0x808000FF,
-						0x80008080,
-				};
+		{
+				0x80FF0000,
+				0x8000FF00,
+				0x800000FF,
+				0x8000FFFF,
+				0x80FF00FF,
+				0x80FFFF00,
+				0x808000FF,
+				0x80008080,
+		};
 
 		for(auto i = 0u; i < faceVertexIndices.size(); ++i)
 		{
@@ -161,8 +162,8 @@ auto MeshModRenderer::addMeshMod(std::shared_ptr<MeshMod::Mesh> const& mesh_,
 
 			if(colourUsingPolygonNormal_)
 			{
-				auto const& planeEqs = polygons.getAttributes<PolygonData::PlaneEquations>();
-				Math::vec3 normal = planeEqs[iFace].planeEq.normal();
+				auto const& planeEqs = polygons.getAttribute<PolygonData::PlaneEquations>();
+				Math::vec3 normal = planeEqs[polygonIndex].planeEq.normal();
 
 				uint8_t a = 0xFF;
 				uint8_t r = (uint8_t) (((normal.x + 1) * 0.5f) * 255.f);
@@ -180,9 +181,9 @@ auto MeshModRenderer::addMeshMod(std::shared_ptr<MeshMod::Mesh> const& mesh_,
 
 		for(unsigned int iCoord = 2; iCoord < faceVertexIndices.size(); iCoord++)
 		{
-			indices.push_back((VertexIndex) (baseVertex + iCoord - 2));
-			indices.push_back((VertexIndex) (baseVertex + iCoord - 1));
-			indices.push_back((VertexIndex) (baseVertex + iCoord));
+			indices.push_back((uint32_t) (baseVertex + iCoord - 2));
+			indices.push_back((uint32_t) (baseVertex + iCoord - 1));
+			indices.push_back((uint32_t) (baseVertex + iCoord));
 		}
 	}
 

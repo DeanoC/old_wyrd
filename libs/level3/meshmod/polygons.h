@@ -24,7 +24,7 @@ public:
 	PolygonElementsContainer& getPolygonsContainer() { return polygonsContainer; }
 	PolygonElementsContainer const& getPolygonsContainer() const { return polygonsContainer; }
 
-	PolygonIndex getCount() const { return (PolygonIndex) polygonsContainer.size(); }
+	size_t getCount() const { return polygonsContainer.size(); }
 
 	PolygonData::Polygon const& polygon(PolygonIndex const index) const;
 	PolygonData::Polygon& polygon(PolygonIndex const index);
@@ -32,12 +32,13 @@ public:
 	PolygonData::Polygons const& polygons() const;
 	PolygonData::Polygons& polygons();
 
-	template<typename attribute> attribute const& getAttributes() const;
-	template<typename attribute> attribute& getAttributes();
-	template<typename attribute> attribute& getOrAddAttributes();
-	template<typename attribute> attribute const& getAttributes(std::string const& subname) const;
-	template<typename attribute> attribute& getAttributes(std::string const& subname);
-	template<typename attribute> attribute& getOrAddAttributes(std::string const& subname);
+	template<typename attribute> bool hasAttribute() const;
+	template<typename attribute> attribute const& getAttribute() const;
+	template<typename attribute> attribute& getAttribute();
+	template<typename attribute> attribute& getOrAddAttribute();
+	template<typename attribute> attribute const& getAttribute(std::string const& subname) const;
+	template<typename attribute> attribute& getAttribute(std::string const& subname);
+	template<typename attribute> attribute& getOrAddAttribute(std::string const& subname);
 
 	//! has the polygon been deleted, return false if deleted.
 	bool isValid(PolygonIndex const index) const { return polygonsContainer.isValid(index); }
@@ -62,7 +63,7 @@ public:
 	//! retrieves the indices of all polygons that share an edge with the input polygon.
 	void getSurroundingPolygonIndices(PolygonIndex const index, PolygonIndexContainer &polygonIndexContainer) const;
 
-	PolygonIndex add(VertexIndexContainer const &indices, VertexIndex const baseVertex = 0);
+	PolygonIndex add(VertexIndexContainer const &indices, VertexIndex const baseVertex = VertexIndex(0));
 	void remove(PolygonIndex const index);
 
 
@@ -76,60 +77,65 @@ protected:
 inline PolygonData::Polygon const& Polygons::polygon(PolygonIndex const index) const
 {
 	auto const& polys = polygons();
-	return polys[index];
+	return polys.at(index);
 }
 inline PolygonData::Polygon& Polygons::polygon(MeshMod::PolygonIndex const index)
 {
 	auto& polys = polygons();
-	return polys[index];
+	return polys.at(index);
 }
 
 inline PolygonData::Polygons const& Polygons::polygons() const
 {
-	return *polygonsContainer.getElements<PolygonData::Polygons>();
+	return *polygonsContainer.getElement<PolygonData::Polygons>();
 }
 
 inline PolygonData::Polygons& Polygons::polygons()
 {
-	return *polygonsContainer.getElements<PolygonData::Polygons>();
+	return *polygonsContainer.getElement<PolygonData::Polygons>();
 }
 
 template<typename attribute>
-inline attribute const& Polygons::getAttributes() const
+inline bool Polygons::hasAttribute() const
 {
-	assert(polygonsContainer.getElements<attribute>() != nullptr);
-	return *polygonsContainer.getElements<attribute>();
+	return polygonsContainer.getElement<attribute>() != nullptr;
 }
 template<typename attribute>
-inline attribute& Polygons::getAttributes()
+inline attribute const& Polygons::getAttribute() const
 {
-	return *polygonsContainer.getElements<attribute>();
+	assert(polygonsContainer.getElement<attribute>() != nullptr);
+	return *polygonsContainer.getElement<attribute>();
 }
 template<typename attribute>
-inline attribute& Polygons::getOrAddAttributes()
+inline attribute& Polygons::getAttribute()
 {
-	return *polygonsContainer.getOrAddElements<attribute>();
+	return *polygonsContainer.getElement<attribute>();
+}
+template<typename attribute>
+inline attribute& Polygons::getOrAddAttribute()
+{
+	return *polygonsContainer.getOrAddElement<attribute>();
 }
 
 template<typename attribute>
-inline attribute const& Polygons::getAttributes(std::string const& subname) const
+inline attribute const& Polygons::getAttribute(std::string const& subname) const
 {
-	return *polygonsContainer.getElements<attribute>(subname);
+	return *polygonsContainer.getElement<attribute>(subname);
 }
 template<typename attribute>
-inline attribute& Polygons::getAttributes(std::string const& subname)
+inline attribute& Polygons::getAttribute(std::string const& subname)
 {
-	return *polygonsContainer.getElements<attribute>(subname);
+	return *polygonsContainer.getElement<attribute>(subname);
 }
 template<typename attribute>
-inline attribute& Polygons::getOrAddAttributes(std::string const& subname)
+inline attribute& Polygons::getOrAddAttribute(std::string const& subname)
 {
-	return *polygonsContainer.getOrAddElements<attribute>(subname);
+	return *polygonsContainer.getOrAddElement<attribute>(subname);
 }
 
 inline bool Polygons::isValid(PolygonData::Polygons::const_iterator polyIt) const
 {
-	PolygonIndex index = polygons().distance<PolygonIndex>(polyIt);
+	PolygonIndex index = polygons().distance(polyIt);
 	return polygonsContainer.isValid(index);
 }
 

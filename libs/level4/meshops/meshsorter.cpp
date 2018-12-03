@@ -59,25 +59,21 @@ std::shared_ptr<MeshMod::PolygonData::SortIndices> MeshSorter::sortPolygonsByMat
 	// i.e. Sorted.face0 = Polygon[ SortMapper[0] ]
 
 	auto& polygons = mesh->getPolygons();
-	PolygonElementsContainer& polygonCon = polygons.getPolygonsContainer();
-	auto sortEle = polygonCon.getOrAddElements<PolygonData::SortIndices>( "MaterialIndex" );
+	auto& sortAttr = polygons.getOrAddAttribute<PolygonData::SortIndices>( "MaterialIndex" );
 
 	// fill sort mapper with identity mapping
-	PolygonData::SortIndices::iterator idenIt = sortEle->elements.begin();
-	while( idenIt != sortEle->elements.end() ) {
-		(*idenIt).index = (unsigned int) std::distance(sortEle->elements.begin(), idenIt);
-		++idenIt;
-	}
-
-	MatSort_Local sorter;
-	sorter.surfElement = polygonCon.getElements<PolygonData::Materials>();
+	polygons.visitAll([&sortAttr](PolygonIndex const pi_){
+		sortAttr[pi_].index = pi_;
+	});
 
 	// if we have no surface materinal indices ther is no sorting to do
-	if( sorter.surfElement != 0) {
-		std::sort( sortEle->elements.begin(), sortEle->elements.end(), sorter );
+	if( polygons.hasAttribute<PolygonData::Materials>()) {
+		MatSort_Local sorter;
+		sorter.surfElement = polygons.getPolygonsContainer().getElement<PolygonData::Materials>();
+		std::sort( sortAttr.begin(), sortAttr.end(), sorter );
 	}
 
-	return sortEle;
+	return polygons.getPolygonsContainer().getElement<PolygonData::SortIndices>("MaterialIndex");
 }
 
 /**
@@ -91,22 +87,20 @@ std::shared_ptr<MeshMod::VertexData::SortIndices> MeshSorter::sortVerticesByAxis
 
 	static const char* axisNames[] = { "X axis", "Y axis", "Z axis" };
 
-	VerticesElementsContainer& vertCon = mesh->getVertices().getVerticesContainer();
-	auto sortEle = vertCon.getOrAddElements<VertexData::SortIndices>(axisNames[(uint8_t) axis]);
+	auto& vertices = mesh->getVertices();
+	auto& sortAttr = vertices.getOrAddAttribute<VertexData::SortIndices>(axisNames[(uint8_t) axis]);
 
 	// fill sort mapper with identity mapping
-	VertexData::SortIndices::iterator idenIt = sortEle->elements.begin();
-	while( idenIt != sortEle->elements.end() ) {
-		(*idenIt).index = (unsigned int) std::distance(sortEle->elements.begin(), idenIt);
-		++idenIt;
-	}
+	vertices.visitAll([&sortAttr](VertexIndex const vi_){
+		sortAttr[vi_].index = vi_;
+	});
 
 	AxisSortCompare sorter;
-	sorter.posElement = vertCon.getElements<VertexData::Positions>();
-	sorter.axis = axis;
-	std::sort( sortEle->elements.begin(), sortEle->elements.end(), sorter );
+	sorter.posElement = vertices.getVerticesContainer().getElement<VertexData::Positions>();
+	std::sort( sortAttr.begin(), sortAttr.end(), sorter );
 
-	return sortEle;
+	return vertices.getVerticesContainer().getElement<VertexData::SortIndices>(axisNames[(uint8_t) axis]);
+
 }
 
 

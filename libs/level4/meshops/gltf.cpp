@@ -2,19 +2,12 @@
 // Created by Computer on 26/07/2018.
 //
 #define TINYGLTF_IMPLEMENTATION
-//#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-
-
-
-
 #include "core/core.h"
 
 #if PLATFORM == WINDOWS
 // If using a modern Microsoft Compiler, this define supress compilation
 // warnings in stb_image_write
 #define STBI_MSC_SECURE_CRT
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #endif
 
 #include "core/quick_hash.h"
@@ -91,7 +84,7 @@ MeshMod::SceneNode::Ptr Gltf::LoadInternal(tinygltf::Model const& model)
 		if (node.mesh != -1)
 		{
 			tinygltf::Mesh const& gltfMesh = model.meshes[node.mesh];
-			MeshMod::Mesh::Ptr mesh = std::make_shared<MeshMod::Mesh>(gltfMesh.name);
+			auto mesh = std::make_shared<MeshMod::Mesh>(gltfMesh.name);
 			sceneNode->addObject(mesh);
 
 			std::map<uint32_t, uint32_t> accessorAttributeMap;
@@ -154,7 +147,7 @@ void Gltf::convertTransform(tinygltf::Node const &node_, MeshMod::SceneNode::Ptr
 	}
 }
 
-bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, tinygltf::Model const& model, MeshMod::Mesh::Ptr& mesh)
+bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, tinygltf::Model const& model, std::shared_ptr<MeshMod::Mesh>& mesh)
 {
 	using namespace tinygltf;
 	using namespace MeshMod;
@@ -186,7 +179,7 @@ bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, ti
 
 
 
-void Gltf::convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tinygltf::Model const& model, MeshMod::Mesh::Ptr& mesh)
+void Gltf::convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tinygltf::Model const& model, std::shared_ptr<MeshMod::Mesh>& mesh)
 {
 	using namespace tinygltf;
 	using namespace MeshMod;
@@ -209,7 +202,7 @@ void Gltf::convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tiny
 				vec2Data = true;
 				break;
 			default:
-				printf("Unknown vertex attribute %s", accessor.name.c_str());
+				LOG_F(WARNING, "Unknown vertex attribute %s", accessor.name.c_str());
 		}
 
 		if(vec2Data)
@@ -231,13 +224,13 @@ void Gltf::convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tiny
 				{
 					if(it.first == "TEXCOORD_0"_hash) elementSubName = "0";
 					else elementSubName = "1";
-					VertexData::UVs& uvEle = *vertCon.getOrAddElements<VertexData::UVs>(elementSubName);
+					VertexData::UVs& uvEle = *vertCon.getOrAddElement<VertexData::UVs>(elementSubName);
 					for(size_t i = 0; i < accessor.count; ++i)
 					{
 						uint64_t offset = bufferView.byteOffset + (i * sizeof(float) * 2);
 						float *data = (float *) (buffer.data.data() + offset);
-						uvEle[i].u = data[0];
-						uvEle[i].v = data[1];
+						uvEle[VertexIndex(i)].u = data[0];
+						uvEle[VertexIndex(i)].v = data[1];
 					}
 					break;
 				}
@@ -258,14 +251,14 @@ void Gltf::convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tiny
 			{
 				case "NORMAL"_hash:
 				{
-					VertexData::Normals& nvEle = *vertCon.getOrAddElements<VertexData::Normals>();
+					VertexData::Normals& nvEle = *vertCon.getOrAddElement<VertexData::Normals>();
 					for(size_t i = 0; i < accessor.count; ++i)
 					{
 						uint64_t offset = bufferView.byteOffset + (i * sizeof(float) * 3);
 						float *data = (float *) (buffer.data.data() + offset);
-						nvEle[i].x = data[0];
-						nvEle[i].y = data[1];
-						nvEle[i].z = data[2];
+						nvEle[VertexIndex(i)].x = data[0];
+						nvEle[VertexIndex(i)].y = data[1];
+						nvEle[VertexIndex(i)].z = data[2];
 					}
 					break;
 				}
@@ -274,7 +267,7 @@ void Gltf::convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tiny
 	}
 }
 
-void Gltf::convertPrimitives(tinygltf::Model const& model, tinygltf::Mesh const& gltfMesh, MeshMod::Mesh::Ptr& mesh)
+void Gltf::convertPrimitives(tinygltf::Model const& model, tinygltf::Mesh const& gltfMesh, std::shared_ptr<MeshMod::Mesh>& mesh)
 {
 	using namespace tinygltf;
 	for (size_t i = 0; i < gltfMesh.primitives.size(); i++)
@@ -287,38 +280,38 @@ void Gltf::convertPrimitives(tinygltf::Model const& model, tinygltf::Mesh const&
 		int sizeOfIndex = sizeof(uint32_t);
 		if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
 			sizeOfIndex = sizeof(uint16_t);
+	
+		MeshMod::VertexIndexContainer indices(accessor.count);
+
+		assert(bufferView.byteLength == accessor.count * sizeOfIndex);
+		if (sizeOfIndex == sizeof(uint16_t))
+		{
+			uint16_t *data = (uint16_t*)(buffer.data.data() + bufferView.byteOffset);
+			for (uint64_t j = 0; j < accessor.count; ++j)
+			{
+				indices[j] = (MeshMod::VertexIndex)data[j];
+			}
+		} else
+		{
+			std::memcpy(indices.data(), buffer.data.data() + bufferView.byteOffset, bufferView.byteLength);
+		}
 
 		// TODO other primitive modes
-		if (primitive.mode != TINYGLTF_MODE_TRIANGLES) break;
-
-		for (uint64_t i = 0; i < accessor.count/3; ++i)
+		if (primitive.mode != TINYGLTF_MODE_TRIANGLES)
 		{
-			MeshMod::VertexIndexContainer indices;
-
-			uint64_t offset = bufferView.byteOffset + (i * sizeOfIndex * 3);
-			if (sizeOfIndex == sizeof(uint16_t))
-			{
-				uint16_t *data = (uint16_t*)(buffer.data.data() + offset);
-				indices.push_back((MeshMod::VertexIndex)data[0]);
-				indices.push_back((MeshMod::VertexIndex)data[2]);
-				indices.push_back((MeshMod::VertexIndex)data[1]);
-			}
-			else
-			{
-				uint32_t *data = (uint32_t*)(buffer.data.data() + offset);
-				indices.push_back((MeshMod::VertexIndex)data[0]);
-				indices.push_back((MeshMod::VertexIndex)data[2]);
-				indices.push_back((MeshMod::VertexIndex)data[1]);
-			}
-			mesh->getPolygons().add(indices);
+			LOG_F(WARNING, "Primitive mode %u not supported", primitive.mode);
+			continue;
 		}
+
+		mesh->getPolygons().add(indices);
 	}
 
 	mesh->updateEditState(MeshMod::Mesh::TopologyEdits);
 	mesh->updateFromEdits();
 }
 
-void Gltf::SaveAscii(MeshMod::SceneNode::Ptr mesh_, std::string const fileName_){
+void Gltf::SaveAscii(MeshMod::SceneNode::Ptr mesh_, std::string const fileName_)
+{
 	std::string output_filename(fileName_);
 	std::string embedded_filename =
 			output_filename.substr(0, output_filename.size() - 5) + "-Embedded.gltf";
@@ -369,14 +362,14 @@ void Gltf::convertTransform(MeshMod::SceneNode::Ptr const& sceneNode_, tinygltf:
 }
 bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, 
 	std::vector<uint8_t>& dataBuffer, 
-	MeshMod::Mesh::Ptr const& mesh,
+	std::shared_ptr<MeshMod::Mesh> const& mesh,
 	tinygltf::Model& model)
 {
 	using namespace tinygltf;
 	using namespace MeshMod;
 
 	VerticesElementsContainer& vertCon = mesh->getVertices().getVerticesContainer();
-	VertexData::Positions const& posEle = *vertCon.getElements<VertexData::Positions>();
+	VertexData::Positions const& posEle = *vertCon.getElement<VertexData::Positions>();
 
 	assert(attribMap.find("POSITION"_hash) != attribMap.end());
 	int attribIndex = attribMap.find("POSITION"_hash)->second;
@@ -391,7 +384,7 @@ bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap,
 	dataBuffer.resize(dataBufferSize + accessor.count * sizeof(float) * 3);
 	for (auto i = 0u; i < accessor.count; ++i)
 	{
-		Math::vec3 pos = posEle[i].getVec3();
+		Math::vec3 pos = posEle[VertexIndex(i)].getVec3();
 		memcpy(dataBuffer.data() + dataBufferSize + i * sizeof(float) * 3, &pos.x, sizeof(float) * 3);
 	}	
 
@@ -409,7 +402,7 @@ bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap,
 }
 void Gltf::convertPrimitives(std::map<uint32_t, uint32_t> const& attribMap, 
 	std::vector<uint8_t>& dataBuffer, 
-	MeshMod::Mesh::Ptr const& mesh,
+	std::shared_ptr<MeshMod::Mesh> const& mesh,
 	tinygltf::Model & model, 
 	tinygltf::Mesh & gltfMesh)
 {
@@ -428,10 +421,10 @@ void Gltf::convertPrimitives(std::map<uint32_t, uint32_t> const& attribMap,
 	VertexIndexContainer swapperfacesVertexIndices;
 	swapperfacesVertexIndices.reserve(10);
 
-	for( auto faceIndex = 0u; faceIndex < faceEle.size(); ++faceIndex)
+	for( auto i = 0u; i < faceEle.size(); ++i)
 	{
 		swapperfacesVertexIndices.clear();
-		polygons.getVertexIndices(faceIndex, swapperfacesVertexIndices);
+		polygons.getVertexIndices(PolygonIndex(i), swapperfacesVertexIndices);
 		if (swapperfacesVertexIndices.size() == 3)
 		{
 			facesVertexIndices.push_back(swapperfacesVertexIndices[0]);
@@ -449,8 +442,8 @@ void Gltf::convertPrimitives(std::map<uint32_t, uint32_t> const& attribMap,
 		}
 	}
 
-	PolygonIndex maxIndex = 0;
-	for (auto const& fi : facesVertexIndices) { maxIndex = std::max(maxIndex, fi); }
+	size_t maxIndex { 0 };
+	for (auto const& fi : facesVertexIndices) { maxIndex = std::max(maxIndex, size_t(fi)); }
 
 	auto const dataBufferSize = dataBuffer.size();
 

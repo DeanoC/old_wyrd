@@ -27,15 +27,15 @@ namespace MeshMod
 	// Classes and structures
 	//---------------------------------------------------------------------------
 	//! vertex index type.
-	typedef uint32_t VertexIndex;
+	enum class VertexIndex : uint32_t;
 	//! half edge index type.
-	typedef uint32_t HalfEdgeIndex;
+	enum class HalfEdgeIndex : uint32_t;
 	//! face index type
-	typedef uint32_t PolygonIndex;
+	enum class PolygonIndex : uint32_t;
 	//! material index type
-	typedef uint32_t MaterialIndex;
+	enum class MaterialIndex : uint32_t;
 	//! scene node index
-	typedef uint32_t SceneNodeIndex;
+	enum class SceneNodeIndex : uint32_t;
 
 	//! a list of vertex indices
 	typedef std::vector<VertexIndex> VertexIndexContainer;
@@ -45,7 +45,11 @@ namespace MeshMod
 	typedef std::vector<PolygonIndex> PolygonIndexContainer;
 
 	//! value used to indicate an index is not assigned/deleted/invalid etc.
-	static const uint32_t MM_INVALID_INDEX = (~0);
+	inline static VertexIndex const InvalidVertexIndex = VertexIndex(~0);
+	inline static HalfEdgeIndex const InvalidHalfEdgeIndex = HalfEdgeIndex(~0);
+	inline static PolygonIndex const InvalidPolygonIndex = PolygonIndex(~0);
+	inline static MaterialIndex const InvalidMaterialIndex = MaterialIndex(~0);
+	inline static SceneNodeIndex const InvalidSceneNodeIndex = SceneNodeIndex(~0);
 
 } // end namespace
 

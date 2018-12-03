@@ -11,7 +11,7 @@ set(TESTER_SOURCE
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/live)
 add_executable(tester WIN32 ${TESTER_SOURCE})
 add_definitions(-DUSING_STATIC_LIBS)
-target_link_libraries(tester wyrd_static)
+target_link_libraries(tester wyrd_static shell)
 include_directories( ${wyrd_INCLUDES})
 target_compile_definitions(tester PRIVATE ${wyrd_DEFINITIONS})
 

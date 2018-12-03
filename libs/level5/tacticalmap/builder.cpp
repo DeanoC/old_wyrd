@@ -62,7 +62,7 @@ TacticalMap::Ptr TacticalMapBuilder::build()
 		if(mesh)
 		{
 			polyIndices.clear();
-			Mesh::Mesh::Ptr localMesh = mesh;
+			auto localMesh = mesh;
 
 			mesh->getPolygons().visitValid(
 					[this, i, localMesh, &polyIndices]( PolygonIndex polygonIndex )
@@ -353,7 +353,8 @@ void TacticalMapBuilder::addMeshAt( MeshMod::MeshPtr const& mesh, TacticalMapLev
 {
 	using namespace MeshMod;
 	Geometry::AABB wipAABB;
-	Mesh::Ptr wip = mesh->sharedClone();
+
+	auto wip = std::shared_ptr<Mesh>(mesh->clone());
 	MeshOps::BasicMeshOps::transform(wip, transform);
 	MeshOps::BasicMeshOps::triangulate( wip);
 	MeshOps::BasicMeshOps::computeFacePlaneEquations(wip);
@@ -829,7 +830,7 @@ void TacticalMapBuilder::generateHeightFragmentsForTileAt( TileCoord_t x, TileCo
 		using namespace MeshMod;
 		Vertices const& vertices = mesh->getVertices();
 		Polygons const& polygons = mesh->getPolygons();
-		auto const& planeEqs = polygons.getAttributes<PolygonData::PlaneEquations>();
+		auto const& planeEqs = polygons.getAttribute<PolygonData::PlaneEquations>();
 		VertexIndexContainer polyVertIndices;
 		polyVertIndices.reserve( 3 );
 

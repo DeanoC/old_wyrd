@@ -57,7 +57,7 @@ void ReturnDestroyer(MeshOps::ConvexHullComputer::ReturnType* b)
 
 namespace MeshOps {
 
-auto ConvexHullComputer::generate( MeshMod::Mesh::Ptr const& in_, ConvexHullParameters const& parameters_) -> std::vector<MeshMod::Mesh::Ptr>
+auto ConvexHullComputer::generate(std::shared_ptr<MeshMod::Mesh> const& in_, ConvexHullParameters const& parameters_) -> std::vector<std::shared_ptr<MeshMod::Mesh>>
 {
 	auto ivhacd = std::shared_ptr<ReturnType>(new ReturnType(VHACD::CreateVHACD(), nullptr), ReturnDestroyer);
 
@@ -68,17 +68,17 @@ auto ConvexHullComputer::generate( MeshMod::Mesh::Ptr const& in_, ConvexHullPara
 	return getResults(ivhacd);
 }
 
-void ConvexHullComputer::generateInline( MeshMod::Mesh::Ptr& in_ )
+void ConvexHullComputer::generateInline( std::shared_ptr<MeshMod::Mesh>& in_ )
 {
 	MeshOps::ConvexHullParameters defaults;
 	auto out = generate(in_, defaults);
 	assert(out.size() == 1);
-	*(in_.get()) = *(out[0].get());
+	in_.reset(out[0].get());
 }
 
-auto ConvexHullComputer::createAsync(	MeshMod::Mesh::Ptr const& in_, 
+auto ConvexHullComputer::createAsync(std::shared_ptr<MeshMod::Mesh> const& in_,
 										ConvexHullParameters const& parameters_
-										)->Ptr
+										) -> std::shared_ptr<ReturnType>
 {
 	ConvexHullProgessCallback* callback = nullptr;
 	if (parameters_.convexHullProgressCallback)
@@ -95,7 +95,7 @@ auto ConvexHullComputer::createAsync(	MeshMod::Mesh::Ptr const& in_,
 	return ivhacd;
 }
 
-auto ConvexHullComputer::isReady(Ptr ptr_) -> bool
+auto ConvexHullComputer::isReady(std::shared_ptr<ReturnType> ptr_) -> bool
 {
 	if (ptr_)
 	{
@@ -104,7 +104,7 @@ auto ConvexHullComputer::isReady(Ptr ptr_) -> bool
 	return false;
 }
 
-auto ConvexHullComputer::getResults(Ptr ptr_)->std::vector<MeshMod::Mesh::Ptr>
+auto ConvexHullComputer::getResults(std::shared_ptr<ReturnType> ptr_) -> std::vector<std::shared_ptr<MeshMod::Mesh>>
 {
 	if (ptr_)
 	{
@@ -119,13 +119,13 @@ auto ConvexHullComputer::getResults(Ptr ptr_)->std::vector<MeshMod::Mesh::Ptr>
 			return {};
 
 		using namespace MeshMod;
-		std::vector<Mesh::Ptr> outArray(nConvexHulls);
+		std::vector<std::shared_ptr<Mesh>> outArray(nConvexHulls);
 		for (auto j = 0u; j < nConvexHulls; ++j)
 		{
 			VHACD::IVHACD::ConvexHull ch;
 			ptr_->first->GetConvexHull(j, ch);
 
-			Mesh::Ptr out = std::make_shared<Mesh>("ConvexHull_" + std::to_string(j));
+			auto out = std::make_shared<Mesh>("ConvexHull_" + std::to_string(j));
 			for (auto i = 0u; i < ch.m_nPoints * 3; i += 3)
 			{
 				float x = (float)ch.m_points[i + 0];
@@ -133,15 +133,15 @@ auto ConvexHullComputer::getResults(Ptr ptr_)->std::vector<MeshMod::Mesh::Ptr>
 				float z = (float)ch.m_points[i + 2];
 				out->getVertices().add(x, y, z);
 			}
+
+			VertexIndexContainer triIndices(ch.m_nTriangles * 3);
 			for (auto i = 0u; i < ch.m_nTriangles * 3; i += 3)
 			{
-				VertexIndexContainer triIndices = {
-						ch.m_triangles[i + 0],
-						ch.m_triangles[i + 1],
-						ch.m_triangles[i + 2],
-				};
-				out->getPolygons().add(triIndices);
+				triIndices[i + 0] = VertexIndex(ch.m_triangles[i + 0]);
+				triIndices[i + 1] = VertexIndex(ch.m_triangles[i + 1]);
+				triIndices[i + 2] = VertexIndex(ch.m_triangles[i + 2]);
 			}
+			out->getPolygons().add(triIndices);
 
 			out->updateFromEdits();
 			outArray[j] = out;
@@ -151,7 +151,7 @@ auto ConvexHullComputer::getResults(Ptr ptr_)->std::vector<MeshMod::Mesh::Ptr>
 	return {};
 }
 
-auto ConvexHullComputer::begin(Ptr ptr_, MeshMod::Mesh::Ptr const& in_, ConvexHullParameters const& parameters_) -> bool
+auto ConvexHullComputer::begin(std::shared_ptr<ReturnType> ptr_, std::shared_ptr<MeshMod::Mesh> const& in_, ConvexHullParameters const& parameters_) -> bool
 {
 	using namespace MeshMod;
 
@@ -160,11 +160,11 @@ auto ConvexHullComputer::begin(Ptr ptr_, MeshMod::Mesh::Ptr const& in_, ConvexHu
 
 	auto const& positions = vertices.positions();
 	std::vector<float> points;
-	points.resize(vertices.getCount() * 3);
+	points.resize(size_t(vertices.getCount()) * 3);
 
 	for (auto const& pos : positions)
 	{
-		size_t i = positions.distance<size_t>(pos) * 3;
+		size_t i = size_t(positions.distance(pos)) * 3;
 		points[i + 0] = pos.x;
 		points[i + 1] = pos.y;
 		points[i + 2] = pos.z;
@@ -173,7 +173,7 @@ auto ConvexHullComputer::begin(Ptr ptr_, MeshMod::Mesh::Ptr const& in_, ConvexHu
 	VertexIndexContainer vertexIndices;
 	for (auto i = 0u; i < polygons.getCount(); ++i)
 	{
-		polygons.getVertexIndices(i, vertexIndices);
+		polygons.getVertexIndices(PolygonIndex(i), vertexIndices);
 	}
 
 	VHACD::IVHACD::Parameters params;
@@ -193,7 +193,7 @@ auto ConvexHullComputer::begin(Ptr ptr_, MeshMod::Mesh::Ptr const& in_, ConvexHu
 
 	bool res = ptr_->first->Compute(points.data(),
 		(unsigned int)points.size() / 3,
-		vertexIndices.data(),
+		(unsigned int*)vertexIndices.data(),
 		(unsigned int)vertexIndices.size() / 3, params);
 
 	return res;

@@ -59,7 +59,9 @@ struct FloatScalar : public ParameterBase
 	}
 
 	//! name is used to get this data
-	static const std::string getName() { return "FloatScalar"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "FloatScalar"; };
 };
 
 //! Material Parameters RGB data

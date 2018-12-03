@@ -185,8 +185,8 @@ MaterialIndex Mesh::findMaterial(const char *pName) const
 	const MaterialElementsContainer& matCon = getMaterialContainer();
 
 	// no names, then must be invalid material
-	auto nameEle = matCon.getElements<MeshData::MaterialNames>();
-	if(nameEle) return MM_INVALID_INDEX;
+	auto nameEle = matCon.getElement<MeshData::MaterialNames>();
+	if(nameEle) return InvalidMaterialIndex;
 
 	// search for this name
 	auto idenIt = nameEle->elements.cbegin();
@@ -200,17 +200,17 @@ MaterialIndex Mesh::findMaterial(const char *pName) const
 	}
 
 	// can't find it
-	return MM_INVALID_INDEX;
+	return InvalidMaterialIndex;
 }
 
-Mesh *Mesh::clone() const
+Mesh *Mesh::rawClone() const
 {
 	return new Mesh(*this);
 }
 
-std::shared_ptr<Mesh> Mesh::sharedClone() const
+std::unique_ptr<Mesh> Mesh::clone() const
 {
-	return std::shared_ptr<Mesh>(clone());
+	return std::make_unique<Mesh>(*this);
 }
 
 void Mesh::validate() const
@@ -288,12 +288,13 @@ void Mesh::cleanAndRepack()
 	bool anyInvalid = false;
 	for (auto i = 0u; i < vertices.getCount(); ++i)
 	{
-		anyInvalid |= !vertices.isValid(i);
+		anyInvalid |= !vertices.isValid(VertexIndex(i));
 	}
 	for (auto i = 0u; i < polygons.getCount(); ++i)
 	{
-		anyInvalid |= !polygons.isValid(i);
+		anyInvalid |= !polygons.isValid(PolygonIndex(i));
 	}
+
 	if (!anyInvalid) return;
 
 	// this does a complete rebuild, first we need to get all the valid indices
@@ -302,7 +303,7 @@ void Mesh::cleanAndRepack()
 
 	for (auto i = 0u; i < polygons.getCount(); ++i)
 	{
-		polygons.getVertexIndices(i, polys[i]);
+		polygons.getVertexIndices(PolygonIndex(i), polys[i]);
 	}
 
 	halfEdges.getHalfEdgesContainer().clear();
@@ -310,8 +311,7 @@ void Mesh::cleanAndRepack()
 	polygons.getPolygonsContainer().addElements<PolygonData::Polygons>();
 	halfEdges.getHalfEdgesContainer().addElements<HalfEdgeData::HalfEdges>();
 
-	auto tmp = vertices.getVerticesContainer().getElements<VertexData::HalfEdges>();
-	vertices.getVerticesContainer().removeElements(tmp);
+	vertices.getVerticesContainer().removeElements<VertexData::HalfEdges>();
 	vertices.getVerticesContainer().addElements<VertexData::HalfEdges>();
 
 	std::vector<VertexIndex> oldToNew;
@@ -325,9 +325,9 @@ void Mesh::cleanAndRepack()
 			newPolyIndices.resize(poly.size());
 			for (auto i = 0u; i < poly.size(); ++i)
 			{
-				newPolyIndices[i] = oldToNew[poly[i]];
+				newPolyIndices[i] = oldToNew[size_t(poly[i])];
 			}
-			polygons.add(poly, 0);
+			polygons.add(poly);
 		}
 	}
 
@@ -345,7 +345,7 @@ void Mesh::cleanAndRepackWIP()
 	HalfEdges& halfEdges = getHalfEdges();
 	Polygons & polygons = getPolygons();
 
-	auto& vertMarkers = vertices.getOrAddAttributes<VertexMarkers>();
+	auto& vertMarkers = vertices.getOrAddAttribute<VertexMarkers>();
 
 	// go through all valid polygons, using valid halfEdges to mark valid vertices 
 	polygons.visitValid([&vertices, &halfEdges, &polygons, &vertMarkers](PolygonIndex polygonIndex)
@@ -370,7 +370,7 @@ void Mesh::cleanAndRepackWIP()
 	{
 		if (marker.marker == false)
 		{
-			VertexIndex vi = vertMarkers.distance<VertexIndex>(marker);
+			VertexIndex vi = vertMarkers.distance(marker);
 			vertices.remove(vi);
 		}
 	}
@@ -389,7 +389,7 @@ void Mesh::cleanAndRepackWIP()
 			heMarkers[halfEdgeIndex].marker = true;
 
 			auto const& halfEdge = halfEdges.halfEdge(halfEdgeIndex);
-			if (halfEdge.prev == MM_INVALID_INDEX)
+			if (halfEdge.prev == InvalidHalfEdgeIndex)
 			{
 				heMarkers[halfEdgeIndex].marker = false;
 			}
@@ -401,7 +401,7 @@ void Mesh::cleanAndRepackWIP()
 					heMarkers[halfEdgeIndex].marker = false;
 			}
 
-			if (halfEdge.next == MM_INVALID_INDEX)
+			if (halfEdge.next == InvalidHalfEdgeIndex)
 			{
 				heMarkers[halfEdgeIndex].marker = false;
 			}
@@ -418,7 +418,7 @@ void Mesh::cleanAndRepackWIP()
 	// now  remove marked half edges and repack
 	for (auto& marker : heMarkers)
 	{
-		auto hei = heMarkers.distance<HalfEdgeIndex>(marker);
+		auto hei = heMarkers.distance(marker);
 		HalfEdgeData::HalfEdge& halfEdge = halfEdges.halfEdge(hei);
 
 		if (marker.marker == false)
@@ -429,7 +429,7 @@ void Mesh::cleanAndRepackWIP()
 	halfEdges.repack();
 
 	// finially mark valid polygons and kill the rest, repack at the end
-	auto& polyMarkers = polygons.getOrAddAttributes<PolygonMarkers>();
+	auto& polyMarkers = polygons.getOrAddAttribute<PolygonMarkers>();
 	polygons.visitValid([&vertices, &halfEdges, &polygons, &polyMarkers](PolygonIndex polygonIndex) {
 		auto& polyMarker = polyMarkers[polygonIndex];
 		if (polygons.isValid(polygonIndex))
@@ -453,7 +453,7 @@ void Mesh::cleanAndRepackWIP()
 	{
 		if (marker.marker == false)
 		{
-			auto poi = polyMarkers.distance<PolygonIndex>(marker);
+			auto poi = polyMarkers.distance(marker);
 			polygons.remove(poi);
 		}
 	}
@@ -474,7 +474,7 @@ inline VertexIndex Mesh::addVertexAttributeToFace(const VertexIndex vPosIndex,
 
 	// if this fires the position passed in doesn't belong to the face
 	// passed it, which makes this whole thing useless...
-	assert(vfPosIndex != MM_INVALID_INDEX);
+	assert(vfPosIndex != InvalidVertexIndex);
 
 	// does this face vertex already have the attribute data
 	if(eleContainer[vfPosIndex].equal(data) == true)

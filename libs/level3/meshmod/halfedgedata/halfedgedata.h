@@ -15,22 +15,24 @@ namespace MeshMod { namespace HalfEdgeData {
 struct HalfEdge
 {
 	//! index of vertex that starts this half edge
-	VertexIndex startVertexIndex = MM_INVALID_INDEX;
+	VertexIndex startVertexIndex = InvalidVertexIndex;
 	//! index of vertex that ends this half edge
-	VertexIndex endVertexIndex = MM_INVALID_INDEX;
+	VertexIndex endVertexIndex = InvalidVertexIndex;
 	//! polygon this edge is connected to
-	PolygonIndex polygonIndex = MM_INVALID_INDEX;
+	PolygonIndex polygonIndex = InvalidPolygonIndex;
 
 	//! the other half edge this half edges is paired with
-	HalfEdgeIndex pair = MM_INVALID_INDEX;
+	HalfEdgeIndex pair = InvalidHalfEdgeIndex;
 
 	//! previous half edge in polygon (counter clockwise)
-	HalfEdgeIndex prev = MM_INVALID_INDEX;
+	HalfEdgeIndex prev = InvalidHalfEdgeIndex;
 
 	//! next half edge in polygon (clockwise)
-	HalfEdgeIndex next = MM_INVALID_INDEX;
+	HalfEdgeIndex next = InvalidHalfEdgeIndex;
 
-	static const std::string getName() { return "HalfEdge"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "HalfEdge"sv; };
 };
 }} // end namespace
 

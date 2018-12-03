@@ -17,7 +17,9 @@ typedef VariContainer< Elements<MaterialParameters_> > ParameterContainer;
 
 //! a collection parameters that can be attached to a particular material
 struct Parameters {
-	static const std::string getName() { return "Parameters"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "Parameters"sv; };
 
 	ParameterContainer			parameters;
 };

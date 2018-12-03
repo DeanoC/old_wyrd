@@ -28,6 +28,7 @@
 #include "meshops/shapes.h"
 #include "input/provider.h"
 #include "input/vpadlistener.h"
+#include "meshops/gltf.h"
 
 struct SimplePadCamera : public Input::VPadListener
 {

@@ -28,7 +28,7 @@ public:
 	VerticesElementsContainer& getVerticesContainer() { return verticesContainer; }
 	VerticesElementsContainer const& getVerticesContainer() const { return verticesContainer; }
 
-	VertexIndex getCount() const { return (VertexIndex) getVerticesContainer().size(); }
+	size_t getCount() const { return getVerticesContainer().size(); }
 
 	VertexData::Position const& position(VertexIndex const index) const;
 	VertexData::Position& position(VertexIndex const index);
@@ -36,11 +36,15 @@ public:
 	VertexData::Positions const& positions() const;
 	VertexData::Positions& positions();
 
-	template<typename attribute> attribute const& getAttributes() const;
-	template<typename attribute> attribute& getAttributes();
-	template<typename attribute> attribute& getOrAddAttributes();
-	template<typename attribute> attribute const& getAttributes(std::string const& subname) const;
-	template<typename attribute> attribute& getOrAddAttributes(std::string const& subname);
+	template<typename attribute> bool hasAttribute() const;
+
+	template<typename attribute> attribute const& getAttribute() const;
+	template<typename attribute> attribute& getAttribute();
+	template<typename attribute> attribute& getOrAddAttribute();
+	template<typename attribute> attribute const& getAttribute(std::string const& subname) const;
+	template<typename attribute> attribute& getOrAddAttribute(std::string const& subname);
+
+	template<typename attribute> void removeAttributes();
 
 	//! has the vertex been deleted, return false if deleted.
 	bool isValid(VertexIndex index) const { return getVerticesContainer().isValid(index); }
@@ -60,8 +64,12 @@ public:
 	VertexIndex hasPosition(VertexIndex const i0, VertexIndexContainer const& vertexList) const;
 
 	void visitAll(std::function<void(VertexIndex const)> const& func);
+	void visitAll(std::function<void(VertexIndex const)> const& func) const;
 	void visitValid(std::function<void(VertexIndex const)> const& func);
+	void visitValid(std::function<void(VertexIndex const)> const& func) const;
+
 	void visit(VertexIndexContainer const& indexList, std::function<void(VertexIndex const)> const& func);
+	void visit(VertexIndexContainer const& indexList, std::function<void(VertexIndex const)> const& func) const;
 
 	void visitHalfEdges(VertexIndex const vertexIndex, std::function<void(HalfEdgeIndex const)> const& func);
 	void visitSimilarVertexIndices(VertexIndex const vertexIndex, std::function<void(VertexIndex const)> const& func);
@@ -90,7 +98,6 @@ protected:
 
 };
 
-
 inline VertexData::Position const& Vertices::position(VertexIndex const index) const
 {
 	auto const& poss = positions();
@@ -99,49 +106,63 @@ inline VertexData::Position const& Vertices::position(VertexIndex const index) c
 inline VertexData::Position& Vertices::position(VertexIndex const index)
 {
 	auto& poss = positions();
-	return poss[index];
+	return poss.at(index);
 }
 
 inline VertexData::Positions const& Vertices::positions() const
 {
-	return *verticesContainer.getElements<VertexData::Positions>();
+	return *verticesContainer.getElement<VertexData::Positions>();
 }
 
 inline VertexData::Positions& Vertices::positions()
 {
-	return *verticesContainer.getElements<VertexData::Positions>();
+	return *verticesContainer.getElement<VertexData::Positions>();
 }
 
 template<typename attribute>
-inline attribute const& Vertices::getAttributes() const
+inline bool Vertices::hasAttribute() const
 {
-	return *verticesContainer.getElements<attribute>();
-}
-template<typename attribute>
-inline attribute& Vertices::getAttributes()
-{
-	return *verticesContainer.getElements<attribute>();
-}
-template<typename attribute>
-inline attribute& Vertices::getOrAddAttributes()
-{
-	return *verticesContainer.getOrAddElements<attribute>();
+	return verticesContainer.getElement<attribute>() != nullptr;
 }
 
 template<typename attribute>
-inline attribute const& Vertices::getAttributes(std::string const& subname) const
+inline attribute const& Vertices::getAttribute() const
 {
-	return *verticesContainer.getElements<attribute>(subname);
+	return *verticesContainer.getElement<attribute>();
 }
 template<typename attribute>
-inline attribute& Vertices::getOrAddAttributes(std::string const& subname)
+inline attribute& Vertices::getAttribute()
 {
-	return *verticesContainer.getOrAddElements<attribute>(subname);
+	return *verticesContainer.getElement<attribute>();
 }
+
+template<typename attribute>
+inline attribute& Vertices::getOrAddAttribute()
+{
+	return *verticesContainer.getOrAddElement<attribute>();
+}
+
+template<typename attribute>
+inline attribute const& Vertices::getAttribute(std::string const& subname) const
+{
+	return *verticesContainer.getElement<attribute>(subname);
+}
+template<typename attribute>
+inline attribute& Vertices::getOrAddAttribute(std::string const& subname)
+{
+	return *verticesContainer.getOrAddElement<attribute>(subname);
+}
+
+template<typename attribute>
+inline void Vertices::removeAttributes()
+{
+	verticesContainer.removeElements<attribute>();
+}
+
 
 inline bool Vertices::isValid(VertexData::Positions::const_iterator polyIt) const
 {
-	VertexIndex index = positions().distance<VertexIndex>(polyIt);
+	VertexIndex index = positions().distance(polyIt);
 	return verticesContainer.isValid(index);
 }
 
@@ -152,6 +173,7 @@ inline bool Vertices::isValid(VertexData::Position const& pos) const
 	VertexIndex index = (VertexIndex)(&pos - beginPtr);
 	return verticesContainer.isValid(index);
 }
+
 }
 
 #endif //MESH_VERTICES_H

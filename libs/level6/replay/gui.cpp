@@ -37,6 +37,9 @@ Gui::Gui(std::shared_ptr<ResourceManager::ResourceMan> const& rm_,
 		rootScene->addObject(MeshOps::PlatonicSolids::createIcosahedron());
 		fallbackSceneIndex = meshModRenderer->addScene(rootScene);
 	}
+
+	using namespace std::placeholders;
+	replay->registerCallback(Items::SimpleMeshType, std::bind(&Gui::meshCallback, this, _1));
 }
 
 Gui::~Gui()
@@ -355,9 +358,9 @@ auto Gui::decodeSimpleMesh(Item const& item_) -> void
 		auto triCount = jtriCount.get<uint32_t>();
 
 		std::vector<float> positions;
-		std::vector<uint32_t> indices;
+		std::vector<MeshMod::VertexIndex> indices;
 		positions = jpositions.get<std::vector<float>>();
-		indices = jindices.get<std::vector<uint32_t>>();
+		indices = jindices.get<std::vector<MeshMod::VertexIndex>>();
 
 		using namespace MeshMod;
 		auto mesh = std::make_shared<Mesh>(name, false, true);
@@ -442,7 +445,12 @@ auto Gui::decodeMeshObject(Item const& item_) -> void
 									 item_.data);
 		LOG_S(WARNING) << logString;
 	}
+}
 
+auto Gui::meshCallback(Item const& item_) -> bool
+{
+
+	return true;
 }
 
 }

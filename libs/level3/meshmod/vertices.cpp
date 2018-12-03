@@ -34,12 +34,12 @@ Adds a new position (which has the effect of creating a new vertex), updates the
 VertexIndex Vertices::add( const float x, const float y, const float z )
 {
 	// default to linking to itself
-	VertexIndex const link = (VertexIndex) getVerticesContainer().resizeForNewElement();
+	VertexIndex const link = getVerticesContainer().resizeForNewElement();
 	// add position
 	position(link) = VertexData::Position(x,y,z);
 
 	// add point rep
-	auto& pointReps = getOrAddAttributes<VertexData::PointReps>();
+	auto& pointReps = getOrAddAttribute<VertexData::PointReps>();
 	pointReps[link] = VertexData::PointRep(link);
 
 	return link;
@@ -57,7 +57,7 @@ struct AxisSortCompare
 	/// function to sort by position[axis]
 	bool operator()(const MeshMod::VertexData::SortIndex& a, const MeshMod::VertexData::SortIndex& b) const
 	{
-		return (positions[a.index].get(axis) < positions[b.index].get(axis));
+		return positions[a.index].get(axis) < positions[b.index].get(axis);
 	}
 
 private:
@@ -81,12 +81,12 @@ void Vertices::createPointReps(VertexData::Axis axis, float fEpsilon)
 	if (getCount() == 0) return;
 	if (verticesContainer.getSizeOfElementContainer() == 2) return;
 
-	auto& sortEle = *getVerticesContainer().getOrAddElements<VertexData::SortIndices>(axisNames[(uint8_t) axis]);
+	auto& sortEle = *getVerticesContainer().getOrAddElement<VertexData::SortIndices>(axisNames[(uint8_t) axis]);
 
 	// fill sort mapper with identity mapping
 	VertexData::SortIndices::iterator idenIt = sortEle.elements.begin();
 	while( idenIt != sortEle.elements.end() ) {
-		(*idenIt).index = (unsigned int) std::distance(sortEle.elements.begin(), idenIt);
+		(*idenIt).index = sortEle.distance(idenIt);
 		++idenIt;
 	}
 
@@ -94,30 +94,29 @@ void Vertices::createPointReps(VertexData::Axis axis, float fEpsilon)
 	std::sort( sortEle.elements.begin(), sortEle.elements.end(), sorter );
 
 	// clear existing point representation
-	auto& pointReps = getOrAddAttributes<VertexData::PointReps>();
+	auto& pointReps = getOrAddAttribute<VertexData::PointReps>();
 	auto prIt = pointReps.begin();
 	while(prIt != pointReps.end())
 	{
 		auto const prIndex = (VertexIndex) std::distance(pointReps.begin(), prIt);
-		// a point rep set to MM_INVALID_INDEX is 'deleted' if its deleted leave it deleted
-		if((*prIt).next != MM_INVALID_INDEX) (*prIt).next = prIndex;
+		// a point rep set to InvalidVertexIndex is 'deleted' if its deleted leave it deleted
+		if((*prIt).next != InvalidVertexIndex) (*prIt).next = prIndex;
 
 		++prIt;
 	}
 
 	for(auto siIt = sortEle.cbegin() + 1; siIt != sortEle.cend();++siIt)
 	{
-		VertexIndex const siIndex = (VertexIndex) siIt->index;
-
+		VertexIndex const siIndex = siIt->index;
 		float const cmp = position(siIndex).get(axis);
 
 		// need to back up until we are further than epsilon (with a nice fudge factor)
 		// away, test everything in this range and add it to our point rep if in range
 		// we never scan forward as the next johnny will search backwards
 		auto siBackIt = siIt - 1;
-		while((fabsf((position((VertexIndex)siBackIt->index).get(axis)) - cmp) < fEpsilon * 5))
+		while((fabsf((position(siBackIt->index).get(axis)) - cmp) < fEpsilon * 5))
 		{
-			VertexIndex const siBackIndex  = (VertexIndex)siBackIt->index;
+			VertexIndex const siBackIndex = siBackIt->index;
 			// ignore deleted vertices
 			if(!isValid(siBackIndex))
 			{
@@ -153,12 +152,12 @@ An exact copy of the input vertex is created and its index returned, point reps 
 */
 VertexIndex Vertices::clone(const VertexIndex vertexToCopy)
 {
-	if(!isValid(vertexToCopy)) return MM_INVALID_INDEX;
+	if(!isValid(vertexToCopy)) return InvalidVertexIndex;
 
 	VertexIndex const newIndex = (VertexIndex) getVerticesContainer().cloneElement(vertexToCopy);
 
 	// add to the point rep list (increased via vertex container)
-	auto& pointReps = getOrAddAttributes<VertexData::PointReps>();
+	auto& pointReps = getOrAddAttribute<VertexData::PointReps>();
 	VertexIndex const temp = pointReps[vertexToCopy].next;
 	pointReps[vertexToCopy] = VertexData::PointRep(newIndex);
 	pointReps[newIndex] = VertexData::PointRep(temp);
@@ -179,8 +178,8 @@ void Vertices::remove(const VertexIndex vertexIndex)
 	if (!isValid(vertexIndex)) return;
 
 	auto& halfEdges = owner.getHalfEdges();
-	auto& vertexHalfEdges = getAttributes<VertexData::HalfEdges>();
-	auto& pointReps = getOrAddAttributes<VertexData::PointReps>();
+	auto& vertexHalfEdges = getAttribute<VertexData::HalfEdges>();
+	auto& pointReps = getOrAddAttribute<VertexData::PointReps>();
 
 	VertexIndexContainer vertList;
 	getSimilarVertexIndices(vertexIndex, vertList);
@@ -202,8 +201,8 @@ void Vertices::remove(const VertexIndex vertexIndex)
 	for (auto halfEdgeIndex : halfEdgeList)
 	{
 		auto& halfEdge = halfEdges.halfEdge(halfEdgeIndex);
-		if(!isValid(halfEdge.startVertexIndex)) halfEdge.startVertexIndex = MM_INVALID_INDEX;
-		if(!isValid(halfEdge.endVertexIndex)) halfEdge.endVertexIndex = MM_INVALID_INDEX;
+		if(!isValid(halfEdge.startVertexIndex)) halfEdge.startVertexIndex = InvalidVertexIndex;
+		if(!isValid(halfEdge.endVertexIndex)) halfEdge.endVertexIndex = InvalidVertexIndex;
 	}
 
 	verticesContainer.setValid(vertexIndex, false);
@@ -214,8 +213,8 @@ bool Vertices::moveToSimilarIfPossible(VertexIndex index)
 	if (!isValid(index)) return true;
 
 	auto& halfEdges = owner.getHalfEdges();
-	auto& vertexHalfEdges = getAttributes<VertexData::HalfEdges>();
-	auto& pointReps = getOrAddAttributes<VertexData::PointReps>();
+	auto& vertexHalfEdges = getAttribute<VertexData::HalfEdges>();
+	auto& pointReps = getOrAddAttribute<VertexData::PointReps>();
 
 	// decide wether we have a similar vertex to move to
 	VertexIndex const moveTo = pointReps[index].next;
@@ -227,7 +226,7 @@ bool Vertices::moveToSimilarIfPossible(VertexIndex index)
 	HalfEdgeIndexContainer::iterator edIt = vertexHalfEdgeList.begin();
 	while (edIt != vertexHalfEdgeList.end()) {
 		auto& edge = halfEdges.halfEdge(*edIt);
-		if (edge.pair != MM_INVALID_INDEX)
+		if (edge.pair != InvalidHalfEdgeIndex)
 		{
 			auto& pedge = halfEdges.halfEdge(edge.pair);
 			if (pedge.startVertexIndex == index) {
@@ -261,7 +260,7 @@ bool Vertices::moveToSimilarIfPossible(VertexIndex index)
 	} while (pointReps[i].next != index);
 
 	pointReps[i].next = pointReps[index].next;
-	pointReps[index] = MM_INVALID_INDEX;
+	pointReps[index] = InvalidVertexIndex;
 	verticesContainer.setValid(index, false);
 
 	return false;
@@ -289,11 +288,11 @@ void Vertices::removeAllSimilarPositions(VertexData::Axis axis, float fEpsilon)
 	halfEdges.connectPairs();
 
 	// walk the position array
-	auto& pointReps = getAttributes<VertexData::PointReps>();
+	auto& pointReps = getAttribute<VertexData::PointReps>();
 	std::vector<VertexIndex> vertList;
 	for(auto const& pos : positions())
 	{
-		VertexIndex vertexIndex = positions().distance<VertexIndex>(pos);
+		auto vertexIndex = positions().distance(pos);
 
 		// skip deleted one
 		if(!isValid(vertexIndex)) continue;
@@ -332,17 +331,17 @@ bool Vertices::similarPosition(const VertexIndex i0, const VertexIndex i1) const
 	// deleted vertex never match the same
 	if(!isValid(i0) || isValid(i1)) return false;
 
-	auto& pointReps = getAttributes<VertexData::PointReps>();
+	auto& pointReps = getAttribute<VertexData::PointReps>();
 
 	// old school delete marker
-	if(pointReps[i0].next == MM_INVALID_INDEX ||
-	   pointReps[i1].next == MM_INVALID_INDEX)
+	if(pointReps[i0].next == InvalidVertexIndex ||
+	   pointReps[i1].next == InvalidVertexIndex)
 	{
 		return false;
 	}
 
 	// walk the point rep, similar vertices match the samePosition test
-	unsigned int i = i0;
+	VertexIndex i = i0;
 	do
 	{
 		if(pointReps[i].next == i1)
@@ -373,8 +372,8 @@ void Vertices::getSimilarVertexIndices(VertexIndex const vertexIndex, VertexInde
 	// a deleted vertex has no 'similar' vertices
 	if(!isValid(i)) return;
 
-	auto& pointReps = getAttributes<VertexData::PointReps>();
-	if(pointReps[i].next == MM_INVALID_INDEX) return;
+	auto& pointReps = getAttribute<VertexData::PointReps>();
+	if(pointReps[i].next == InvalidVertexIndex) return;
 
 	i = pointReps[i].next;
 	while (i != vertexIndex)
@@ -399,7 +398,7 @@ VertexIndex Vertices::hasPosition(VertexIndex const i0, VertexIndexContainer con
 		}
 		++vIt;
 	}
-	return MM_INVALID_INDEX;
+	return InvalidVertexIndex;
 }
 
 /**
@@ -415,8 +414,8 @@ void Vertices::getVertexHalfEdges(VertexIndex const vertexIndex, HalfEdgeIndexCo
 
 	std::set<HalfEdgeIndex> halfEdgeSet;
 
-	auto const& vertexHalfEdges = getAttributes<VertexData::HalfEdges>();
-	auto& pointReps = getAttributes<VertexData::PointReps>();
+	auto const& vertexHalfEdges = getAttribute<VertexData::HalfEdges>();
+	auto& pointReps = getAttribute<VertexData::PointReps>();
 
 	VertexIndex curVert = vertexIndex;
 	do
@@ -435,7 +434,37 @@ void Vertices::visitAll(std::function<void(VertexIndex const)> const& func)
 {
 	for (auto i = 0u; i < verticesContainer.size(); ++i)
 	{
-		func(i);
+		func(VertexIndex(i));
+	}
+}
+
+void Vertices::visitValid(std::function<void(VertexIndex const)> const& func)
+{
+	for (auto i = 0u; i < verticesContainer.size(); ++i)
+	{
+		if (isValid(VertexIndex(i)))
+		{
+			func(VertexIndex(i));
+		}
+	}
+}
+
+void Vertices::visitValid(std::function<void(VertexIndex const)> const& func) const
+{
+	for (size_t i = 0u; i < verticesContainer.size(); ++i)
+	{
+		if (isValid(VertexIndex(i)))
+		{
+			func(VertexIndex(i));
+		}
+	}
+}
+
+void Vertices::visitAll(std::function<void(VertexIndex const)> const& func) const
+{
+	for (auto i = 0u; i < verticesContainer.size(); ++i)
+	{
+		func(VertexIndex(i));
 	}
 }
 
@@ -447,14 +476,11 @@ void Vertices::visit(VertexIndexContainer const& indexList, std::function<void(V
 	}
 }
 
-void Vertices::visitValid(std::function<void(VertexIndex const)> const& func)
+void Vertices::visit(VertexIndexContainer const& indexList, std::function<void(VertexIndex const)> const& func) const
 {
-	for (auto i = 0u; i < verticesContainer.size(); ++i)
+	for (auto const index : indexList)
 	{
-		if (isValid(i))
-		{
-			func(i);
-		}
+		func(index);
 	}
 }
 
@@ -464,8 +490,8 @@ void Vertices::visitSimilarVertexIndices(VertexIndex const vertexIndex, std::fun
 	// a deleted vertex has no 'similar' vertices
 	if (!isValid(i)) return;
 
-	auto& pointReps = getAttributes<VertexData::PointReps>();
-	if (pointReps[i].next == MM_INVALID_INDEX) return;
+	auto& pointReps = getAttribute<VertexData::PointReps>();
+	if (pointReps[i].next == InvalidVertexIndex) return;
 	
 	i = pointReps[i].next;
 	while(i != vertexIndex)
@@ -477,8 +503,8 @@ void Vertices::visitSimilarVertexIndices(VertexIndex const vertexIndex, std::fun
 
 void Vertices::visitHalfEdges(VertexIndex const vertexIndex, std::function<void(HalfEdgeIndex const)> const& func)
 {
-	auto const& vertexHalfEdges = getAttributes<VertexData::HalfEdges>();
-	auto& pointReps = getAttributes<VertexData::PointReps>();
+	auto const& vertexHalfEdges = getAttribute<VertexData::HalfEdges>();
+	auto& pointReps = getAttribute<VertexData::PointReps>();
 
 	VertexIndex curVert = vertexIndex;
 	do
@@ -497,7 +523,7 @@ void Vertices::visitHalfEdges(VertexIndex const vertexIndex, std::function<void(
 
 unsigned int Vertices::getValency(VertexIndex const vertexIndex) const
 {
-	auto const& vertexHalfEdges = getAttributes<VertexData::HalfEdges>();
+	auto const& vertexHalfEdges = getAttribute<VertexData::HalfEdges>();
 	return (unsigned int) vertexHalfEdges[vertexIndex].halfEdgeIndexContainer.size();
 }
 
@@ -516,15 +542,16 @@ void Vertices::repack(std::vector<VertexIndex>& oldToNew)
 	size_t invalidCount = 0;
 	for (auto i = 0u; i < vertCon.size(); ++i)
 	{
-		if (isValid(i))
+		VertexIndex vi{ i };
+		if (isValid(vi))
 		{
-			newToOld[validCount] = i;
+			newToOld[validCount] = vi;
 			oldToNew[i] = (VertexIndex) validCount;
 			validCount++;
 		}
 		else
 		{
-			oldToNew[i] = MM_INVALID_INDEX;
+			oldToNew[i] = InvalidVertexIndex;
 			invalidCount++;
 		}
 	}
@@ -540,7 +567,7 @@ void Vertices::repack(std::vector<VertexIndex>& oldToNew)
 		std::vector<bool> pointMapRemapped(verticesContainer.size());
 
 		VertexIndexContainer similarList;
-		auto& pointReps = getAttributes<VertexData::PointReps>();
+		auto& pointReps = getAttribute<VertexData::PointReps>();
 		visitAll([this, &similarList,
 							&pointReps,
 							&oldToNew,
@@ -548,18 +575,18 @@ void Vertices::repack(std::vector<VertexIndex>& oldToNew)
 							validCount](VertexIndex vIndex) {
 			if (isValid(vIndex))
 			{
-				if (pointMapRemapped[vIndex] == false)
+				if (pointMapRemapped[size_t(vIndex)] == false)
 				{
 					similarList.clear();
 					getSimilarVertexIndices(vIndex, similarList);
 					for (auto index : similarList)
 					{
-						pointReps[index].next = oldToNew[pointReps[index].next];
-						assert(pointReps[index].next < validCount);
-						pointMapRemapped[index] = true;
+						pointReps[index].next = oldToNew[size_t(pointReps[index].next)];
+						assert(pointReps[index].next < VertexIndex(validCount));
+						pointMapRemapped[size_t(index)] = true;
 					}
-					pointReps[vIndex].next = oldToNew[pointReps[vIndex].next];
-					pointMapRemapped[vIndex] = true;
+					pointReps[vIndex].next = oldToNew[size_t(pointReps[vIndex].next)];
+					pointMapRemapped[size_t(vIndex)] = true;
 				}
 			}
 		});
@@ -573,12 +600,14 @@ void Vertices::repack(std::vector<VertexIndex>& oldToNew)
 
 	for (size_t i = 0; i < newVerticesCon.getSizeOfElementContainer(); ++i)
 	{
-		VerticesElementsContainer::Ptr oldCon = verticesContainer.getElementContainer(i);
-		VerticesElementsContainer::Ptr newCon = newVerticesCon.getElementContainer(i);
+		auto oldCon = verticesContainer.getElementContainer(i);
+		auto newCon = newVerticesCon.getElementContainer(i);
 
 		for (size_t vertIndex = 0; vertIndex < validCount; ++vertIndex)
 		{
-			oldCon->unsafeCopyElementTo(*newCon, newToOld[vertIndex], vertIndex);
+			oldCon->unsafeCopyElementTo(*newCon, 
+				newToOld[vertIndex], 
+				VertexIndex(vertIndex));
 		}
 	}
 	// vertices now remapped
@@ -590,36 +619,36 @@ void Vertices::repack(std::vector<VertexIndex>& oldToNew)
 	HalfEdges& halfEdges = owner.halfEdges;
 	for (auto& he : halfEdges.halfEdges())
 	{
-		HalfEdgeIndex hei = halfEdges.halfEdges().distance<HalfEdgeIndex>(he);
+		HalfEdgeIndex hei = halfEdges.halfEdges().distance(he);
 		if (halfEdges.isValid(hei))
 		{
-			if (he.startVertexIndex != MM_INVALID_INDEX)
+			if (he.startVertexIndex != InvalidVertexIndex)
 			{
-				VertexIndex newSVI = oldToNew[he.startVertexIndex];
-				if (newSVI < verticesContainer.size())
+				VertexIndex newSVI = oldToNew[size_t(he.startVertexIndex)];
+				if (size_t(newSVI) < verticesContainer.size())
 					he.startVertexIndex = newSVI;
 				else
 				{
-					he.startVertexIndex = MM_INVALID_INDEX;
+					he.startVertexIndex = InvalidVertexIndex;
 					halfEdges.remove(hei);
 				}
 			}
-			if (he.endVertexIndex != MM_INVALID_INDEX)
+			if (he.endVertexIndex != InvalidVertexIndex)
 			{
-				VertexIndex newEVI = oldToNew[he.endVertexIndex];
-				if (newEVI < verticesContainer.size())
+				VertexIndex newEVI = oldToNew[size_t(he.endVertexIndex)];
+				if (size_t(newEVI) < verticesContainer.size())
 					he.endVertexIndex = newEVI;
 				else
 				{
-					he.endVertexIndex = MM_INVALID_INDEX;
+					he.endVertexIndex = InvalidVertexIndex;
 					halfEdges.remove(hei);
 				}
 			}
 		}
 		else
 		{
-			he.startVertexIndex = MM_INVALID_INDEX;
-			he.endVertexIndex = MM_INVALID_INDEX;
+			he.startVertexIndex = InvalidVertexIndex;
+			he.endVertexIndex = InvalidVertexIndex;
 		}
 	}
 }

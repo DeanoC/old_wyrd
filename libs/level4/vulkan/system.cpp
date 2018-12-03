@@ -445,9 +445,9 @@ auto System::createGpuDevice(uint32_t deviceIndex_,
 auto System::findQueueFamily(uint32_t deviceIndex_, uint32_t minQueues_) -> std::tuple<uint32_t, uint32_t, uint32_t>
 {
 	assert(deviceIndex_ < physicalDevices.size());
-	auto graphicsIndex = ~0;
-	auto computeIndex = ~0;
-	auto transferIndex = ~0;
+	uint32_t graphicsIndex = ~0u;
+	uint32_t computeIndex = ~0u;
+	uint32_t transferIndex = ~0u;
 
 	// try and get a 'pure' compute and pure transfer queues for async
 	for(auto const& familyQueue : deviceQueueFamilies[deviceIndex_])
@@ -458,12 +458,12 @@ auto System::findQueueFamily(uint32_t deviceIndex_, uint32_t minQueues_) -> std:
 		if(familyQueue.queueFlags & VK_QUEUE_COMPUTE_BIT &&
 		   !(familyQueue.queueFlags & VK_QUEUE_GRAPHICS_BIT))
 		{
-			computeIndex = &familyQueue - deviceQueueFamilies[deviceIndex_].data();
+			computeIndex = uint32_t(&familyQueue - deviceQueueFamilies[deviceIndex_].data());
 		}
 		// get a blit/transfer queue with no other capabilities
 		if(familyQueue.queueFlags == (familyQueue.queueFlags & VK_QUEUE_TRANSFER_BIT))
 		{
-			transferIndex = &familyQueue - deviceQueueFamilies[deviceIndex_].data();
+			transferIndex = uint32_t(&familyQueue - deviceQueueFamilies[deviceIndex_].data());
 		}
 	}
 
@@ -473,15 +473,15 @@ auto System::findQueueFamily(uint32_t deviceIndex_, uint32_t minQueues_) -> std:
 
 		if(graphicsIndex == ~0 && familyQueue.queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
-			graphicsIndex = &familyQueue - deviceQueueFamilies[deviceIndex_].data();
+			graphicsIndex = uint32_t(&familyQueue - deviceQueueFamilies[deviceIndex_].data());
 		}
 		if(computeIndex == ~0 && familyQueue.queueFlags & VK_QUEUE_COMPUTE_BIT)
 		{
-			computeIndex = &familyQueue - deviceQueueFamilies[deviceIndex_].data();
+			computeIndex = uint32_t(&familyQueue - deviceQueueFamilies[deviceIndex_].data());
 		}
 		if(transferIndex == ~0 && familyQueue.queueFlags & VK_QUEUE_TRANSFER_BIT)
 		{
-			transferIndex = &familyQueue - deviceQueueFamilies[deviceIndex_].data();
+			transferIndex = uint32_t(&familyQueue - deviceQueueFamilies[deviceIndex_].data());
 		}
 	}
 	return {graphicsIndex, computeIndex, transferIndex};

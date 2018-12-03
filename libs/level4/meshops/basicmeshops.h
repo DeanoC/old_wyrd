@@ -21,25 +21,25 @@ class BasicMeshOps
 public:
 
 	//! compute a per-polygon plane equation
-	static auto computeFacePlaneEquations(MeshMod::Mesh::Ptr const& mesh, bool replaceExisting = true, bool zeroBad = false, bool fixBad = true ) -> void;
+	static auto computeFacePlaneEquations(std::shared_ptr<MeshMod::Mesh> const& mesh, bool replaceExisting = true, bool zeroBad = false, bool fixBad = true ) -> void;
 
 	//! generates a basic vertex normal set. optionally replace any existing normals
-	static auto computeVertexNormals(MeshMod::Mesh::Ptr const& mesh, bool replaceExisting = true ) -> void;
+	static auto computeVertexNormals(std::shared_ptr<MeshMod::Mesh> const& mesh, bool replaceExisting = true ) -> void;
 
 	//! conpute vertex normals handling bad cases better
-	static auto computeVertexNormalsEx(MeshMod::Mesh::Ptr const& mesh, bool replaceExisting = true, bool zeroBad = false, bool fixBad = true ) -> void;
+	static auto computeVertexNormalsEx(std::shared_ptr<MeshMod::Mesh> const& mesh, bool replaceExisting = true, bool zeroBad = false, bool fixBad = true ) -> void;
 
 	//! turns simple convex n-gon to triangles, leaving points and lines along
-	static auto triangulate(MeshMod::Mesh::Ptr const& mesh) -> void;
+	static auto triangulate(std::shared_ptr<MeshMod::Mesh> const& mesh) -> void;
 
 	//! turns simple convex n-gon to triangles, leaving others (inlcuding quads) alone
-	static auto quadOrTriangulate(MeshMod::Mesh::Ptr const& mesh) -> void;
+	static auto quadOrTriangulate(std::shared_ptr<MeshMod::Mesh> const& mesh) -> void;
 
 	//! computes and returns the axis aligned bounding box from the meshes positions
-	static auto computeAABB(MeshMod::Mesh::ConstPtr const& mesh, Geometry::AABB& aabb ) -> void;
+	static auto computeAABB(std::shared_ptr<MeshMod::Mesh const> const& mesh, Geometry::AABB& aabb ) -> void;
 
 	//! transform the mesh by a matrix
-	static auto transform(MeshMod::Mesh::Ptr const& mesh, Math::mat4x4 const& transform ) -> void;
+	static auto transform(std::shared_ptr<MeshMod::Mesh> const& mesh, Math::mat4x4 const& transform ) -> void;
 
 	static auto isTriangleMesh(std::shared_ptr<MeshMod::Mesh const> const& mesh_) -> bool;
 
@@ -50,7 +50,7 @@ public:
 
 private:
 	template<size_t n>
-	static auto ngulate(MeshMod::Mesh::Ptr const& mesh) -> void;
+	static auto ngulate(std::shared_ptr<MeshMod::Mesh> const& mesh) -> void;
 
 };
 };

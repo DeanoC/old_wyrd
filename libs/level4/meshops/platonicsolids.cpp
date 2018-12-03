@@ -28,11 +28,12 @@ auto PlatonicSolids::createTetrahedon() -> std::unique_ptr<MeshMod::Mesh>
 			{-1, 1,  1},
 			{-1, 1,  -1},
 	};
+	using vi = VertexIndex;
 	VertexIndexContainer faces[4] = {
-			{0, 1, 2},
-			{2, 3, 0},
-			{2, 1, 3},
-			{3, 1, 0},
+		{ vi(0), vi(1), vi(2) },
+		{ vi(2), vi(3), vi(0) },
+		{ vi(2), vi(1), vi(3) },
+		{ vi(3), vi(1), vi(0) },
 	};
 	for(auto p : pos)
 	{
@@ -46,7 +47,7 @@ auto PlatonicSolids::createTetrahedon() -> std::unique_ptr<MeshMod::Mesh>
 
 	assert(mesh->getVertices().getCount() == 4);
 	assert(mesh->getPolygons().getCount() == 4);
-	assert(mesh->getHalfEdges().getCount()/2 == 6);
+	assert(mesh->getHalfEdges().getCount() == 12);
 
 	return std::move(mesh);
 }
@@ -65,15 +66,16 @@ auto PlatonicSolids::createOctahedron() -> std::unique_ptr<MeshMod::Mesh>
 			{0,  0,  -1},
 			{0,  0,  1},
 	};
+	using vi = VertexIndex;
 	static const VertexIndexContainer faces[] = {
-			{0, 3, 5},
-			{0, 5, 2},
-			{4, 3, 0},
-			{4, 0, 2},
-			{5, 3, 1},
-			{5, 1, 2},
-			{4, 1, 3},
-			{4, 2, 1},
+		{ vi(0), vi(3), vi(5) },
+		{ vi(0), vi(5), vi(2) },
+		{ vi(4), vi(3), vi(0) },
+		{ vi(4), vi(0), vi(2) },
+		{ vi(5), vi(3), vi(1) },
+		{ vi(5), vi(1), vi(2) },
+		{ vi(4), vi(1), vi(3) },
+		{ vi(4), vi(2), vi(1) },
 	};
 	for(auto p : pos)
 	{
@@ -88,7 +90,7 @@ auto PlatonicSolids::createOctahedron() -> std::unique_ptr<MeshMod::Mesh>
 
 	assert(mesh->getVertices().getCount() == 6);
 	assert(mesh->getPolygons().getCount() == 8);
-	assert(mesh->getHalfEdges().getCount()/2 == 12);
+	assert(mesh->getHalfEdges().getCount() == 24);
 
 	return std::move(mesh);
 }
@@ -100,23 +102,24 @@ auto PlatonicSolids::createCube() -> std::unique_ptr<MeshMod::Mesh>
 	auto mesh = std::make_unique<Mesh>("Cube");
 
 	static const vec3 pos[] = {
-			{-1,  1, -1},
-			{-1, -1, -1},
-			{ 1, -1, -1},
-			{ 1,  1, -1},
+		{-1,  1, -1},
+		{-1, -1, -1},
+		{ 1, -1, -1},
+		{ 1,  1, -1},
 
-			{-1,  1,  1},
-			{-1, -1,  1},
-			{ 1, -1,  1},
-			{ 1,  1,  1},
+		{-1,  1,  1},
+		{-1, -1,  1},
+		{ 1, -1,  1},
+		{ 1,  1,  1},
 	};
+	using vi = VertexIndex;
 	static const VertexIndexContainer faces[] = {
-			{0, 1, 2, 3},
-			{7, 6, 5, 4},
-			{4, 0, 3, 7},
-			{5, 6, 2, 1},
-			{5, 1, 0, 4},
-			{2, 6, 7, 3}
+		{ vi(0), vi(1), vi(2), vi(3) },
+		{ vi(7), vi(6), vi(5), vi(4) },
+		{ vi(4), vi(0), vi(3), vi(7) },
+		{ vi(5), vi(6), vi(2), vi(1) },
+		{ vi(5), vi(1), vi(0), vi(4) },
+		{ vi(2), vi(6), vi(7), vi(3) }
 	};
 	for(auto p : pos)
 	{
@@ -131,7 +134,7 @@ auto PlatonicSolids::createCube() -> std::unique_ptr<MeshMod::Mesh>
 
 	assert(mesh->getVertices().getCount() == 8);
 	assert(mesh->getPolygons().getCount()  == 6);
-	assert(mesh->getHalfEdges().getCount()/2 == 12);
+	assert(mesh->getHalfEdges().getCount() == 24);
 
 	return std::move(mesh);
 
@@ -157,42 +160,42 @@ auto PlatonicSolids::createIcosahedron() -> std::unique_ptr<MeshMod::Mesh>
 	b = b * 2;
 
 	static const vec3 pos[] = {
-			{0,  b,  -a},
-			{b,  a,  0},
-			{-b, a,  0},
-			{0,  b,  a},
-			{0,  -b, a},
-			{-a, 0,  b},
-			{a,  0,  b},
-			{0,  -b, -a},
-			{a,  0,  -b},
-			{-a, 0,  -b},
-			{b,  -a, 0},
-			{-b, -a, 0}
+		{0,  b,  -a},
+		{b,  a,  0},
+		{-b, a,  0},
+		{0,  b,  a},
+		{0,  -b, a},
+		{-a, 0,  b},
+		{a,  0,  b},
+		{0,  -b, -a},
+		{a,  0,  -b},
+		{-a, 0,  -b},
+		{b,  -a, 0},
+		{-b, -a, 0}
 	};
 
+	using vi = VertexIndex;
 	static const VertexIndexContainer faces[] = {
-			{0, 1, 2},
-			{0, 2, 9},
-			{0, 7, 8},
-			{0, 8, 1},
-			{0, 9, 7},
-			{1, 6, 3},
-			{1, 8, 6},
-			{1, 3, 2},
-			{2, 3, 5},
-			{2, 5, 9},
-			{3, 4, 5},
-			{3, 6, 4},
-			{4, 6, 10},
-			{4, 10, 11},
-			{5, 4, 11},
-			{5, 11, 9},
-			{6, 8, 10},
-			{7, 9, 11},
-			{7, 10, 8},
-			{7, 11, 10 },
-
+		{ vi(0), vi(1), vi(2) },
+		{ vi(0), vi(2), vi(9) },
+		{ vi(0), vi(7), vi(8) },
+		{ vi(0), vi(8), vi(1) },
+		{ vi(0), vi(9), vi(7) },
+		{ vi(1), vi(6), vi(3) },
+		{ vi(1), vi(8), vi(6) },
+		{ vi(1), vi(3), vi(2) },
+		{ vi(2), vi(3), vi(5) },
+		{ vi(2), vi(5), vi(9) },
+		{ vi(3), vi(4), vi(5) },
+		{ vi(3), vi(6), vi(4) },
+		{ vi(4), vi(6), vi(10) },
+		{ vi(4), vi(10),vi(11) },
+		{ vi(5), vi(4), vi(11) },
+		{ vi(5), vi(11),vi(9) },
+		{ vi(6), vi(8), vi(10) },
+		{ vi(7), vi(9), vi(11) },
+		{ vi(7), vi(10),vi(8) },
+		{ vi(7), vi(11),vi(10) },
 	};
 	for(auto p : pos)
 	{
@@ -207,7 +210,7 @@ auto PlatonicSolids::createIcosahedron() -> std::unique_ptr<MeshMod::Mesh>
 
 	assert(mesh->getVertices().getCount() == 12);
 	assert(mesh->getPolygons().getCount() == 20);
-	assert(mesh->getHalfEdges().getCount()/2 == 30);
+	assert(mesh->getHalfEdges().getCount() == 60);
 
 	return mesh;
 }
@@ -233,13 +236,14 @@ auto PlatonicSolids::createBoxFrom(Geometry::AABB const& aabb) -> std::unique_pt
 		{ maxBox.x, minBox.y,  maxBox.z },
 		{ maxBox.x, maxBox.y,  maxBox.z },
 	};
+	using vi = VertexIndex;
 	const VertexIndexContainer faces[] = {
-		{ 0, 1, 2, 3 },
-		{ 7, 6, 5, 4 },
-		{ 4, 0, 3, 7 },
-		{ 5, 6, 2, 1 },
-		{ 5, 1, 0, 4 },
-		{ 2, 6, 7, 3 }
+		{ vi(0), vi(1), vi(2), vi(3) },
+		{ vi(7), vi(6), vi(5), vi(4) },
+		{ vi(4), vi(0), vi(3), vi(7) },
+		{ vi(5), vi(6), vi(2), vi(1) },
+		{ vi(5), vi(1), vi(0), vi(4) },
+		{ vi(2), vi(6), vi(7), vi(3) }
 	};
 	for (auto p : pos)
 	{
@@ -254,7 +258,7 @@ auto PlatonicSolids::createBoxFrom(Geometry::AABB const& aabb) -> std::unique_pt
 
 	assert(mesh->getVertices().getCount() == 8);
 	assert(mesh->getPolygons().getCount() == 6);
-	assert(mesh->getHalfEdges().getCount() / 2 == 12);
+	assert(mesh->getHalfEdges().getCount() == 24);
 
 	return std::move(mesh);
 }

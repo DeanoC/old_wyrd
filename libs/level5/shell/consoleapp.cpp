@@ -1,8 +1,12 @@
 #define LOGURU_IMPLEMENTATION 1
-#define CX_ERROR_IMPLEMENTATION 1
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define TINYGLTF_IMPLEMENTATION
 #include "core/core.h"
 #include "shell/consoleapp.h"
 #include "vulkan/system.h"
+#include "tinygltf/tiny_gltf.h"
+
 
 namespace Shell {
 ConsoleApp::~ConsoleApp()

@@ -64,7 +64,9 @@ struct RGBColour : public ParameterBase
 	}
 
 	//! name is used to get this data
-	static const std::string getName() { return "RGBColour"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "RGBColour"sv; };
 };
 
 //! Material Parameters RGB data

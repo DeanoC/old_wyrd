@@ -35,11 +35,11 @@ PolygonIndex Polygons::add(VertexIndexContainer const &indices, VertexIndex cons
 
 	PolygonData::Polygon t0;
 	// index of this polygon first edge
-	HalfEdgeIndex firstEdge = halfEdges.getCount();
+	HalfEdgeIndex firstEdge = HalfEdgeIndex(halfEdges.getCount());
 	// if the input face data has 0 vertices
 	if(indices.size() == 0)
 	{
-		t0.anyHalfEdge = MM_INVALID_INDEX;
+		t0.anyHalfEdge = InvalidHalfEdgeIndex;
 	} else
 	{
 		t0.anyHalfEdge = firstEdge;
@@ -48,20 +48,20 @@ PolygonIndex Polygons::add(VertexIndexContainer const &indices, VertexIndex cons
 	polygon(faceIndex) = t0;
 
 	// insert polygon at the end of the polygons list
-	for(VertexIndex i = 0; i < indices.size(); i++)
+	for(size_t i = 0u; i < indices.size(); i++)
 	{
-		const VertexIndex svIndex = indices[i] + baseVertex;
-		const VertexIndex evIndex = (VertexIndex) indices[(i + 1) % indices.size()] + baseVertex;
+		const VertexIndex svIndex = VertexIndex( size_t(indices.at(i)) + size_t(baseVertex) );
+		const VertexIndex evIndex = VertexIndex( size_t(indices.at((i + 1) % indices.size())) + size_t(baseVertex));
 
-		assert(vertices.isValid(svIndex) && vertices.isValid(evIndex));
+		if (!vertices.isValid(svIndex) || !vertices.isValid(evIndex)) return InvalidPolygonIndex;
 
 		HalfEdgeIndex halfEdgeIndex = halfEdges.add(svIndex, evIndex, faceIndex);
 		HalfEdgeData::HalfEdge& halfEdge = halfEdges.halfEdge(halfEdgeIndex);
 
-		if(i == 0) halfEdge.prev = (HalfEdgeIndex)(firstEdge + indices.size() - 1);
-		else halfEdge.prev = firstEdge + i - 1;
+		if(i == 0) halfEdge.prev = (HalfEdgeIndex)(size_t(firstEdge) + indices.size() - 1);
+		else halfEdge.prev = (HalfEdgeIndex)(size_t(firstEdge) + i - 1);
 
-		halfEdge.next = firstEdge + ((i + 1) % indices.size());
+		halfEdge.next = (HalfEdgeIndex)(size_t(firstEdge) + ((i + 1) % indices.size()));
 	}
 
 	return faceIndex;
@@ -80,7 +80,7 @@ void Polygons::remove(PolygonIndex const index)
 		halfEdges.remove(heIndex);
 	}
 
-	poly.anyHalfEdge = MM_INVALID_INDEX;
+	poly.anyHalfEdge = InvalidHalfEdgeIndex;
 	polygonsContainer.setValid(index, false);
 }
 
@@ -92,7 +92,7 @@ Uses the half edge pointers pair edges to get all faces surrounding
 */
 void Polygons::getSurroundingPolygonIndices(const PolygonIndex polygonIndex, PolygonIndexContainer &polygonList) const
 {
-	if(polygonIndex == MM_INVALID_INDEX) return;
+	if(polygonIndex == InvalidPolygonIndex) return;
 
 	auto& halfEdges = owner.getHalfEdges();
 	HalfEdgeIndex const firstEdge = polygon(polygonIndex).anyHalfEdge;
@@ -100,7 +100,7 @@ void Polygons::getSurroundingPolygonIndices(const PolygonIndex polygonIndex, Pol
 
 	do {
 		auto const& halfEdge = halfEdges.halfEdge(halfEdgeIndex);
-		if (halfEdge.pair != MM_INVALID_INDEX)
+		if (halfEdge.pair != InvalidHalfEdgeIndex)
 		{
 			auto const& halfEdgePair = halfEdges.halfEdge(halfEdge.pair);
 			assert(polygonIndex != halfEdgePair.polygonIndex);
@@ -113,12 +113,12 @@ void Polygons::getSurroundingPolygonIndices(const PolygonIndex polygonIndex, Pol
 /**
 Gets all the edges attached to the face.
 Uses the half edge next pointers to get all edges
-@param faceIndex - face/polygon to get edges from
+@param polygonIndex - face/polygon to get edges from
 @param halfEdgeList - return list of edges
 */
 void Polygons::getHalfEdgeIndices(PolygonIndex const polygonIndex, HalfEdgeIndexContainer& halfEdgeList) const
 {
-	if(polygonIndex == MM_INVALID_INDEX) return;
+	if(polygonIndex == InvalidPolygonIndex) return;
 	if (!isValid(polygonIndex)) return;
 
 	auto const& polys = polygons();
@@ -128,7 +128,7 @@ void Polygons::getHalfEdgeIndices(PolygonIndex const polygonIndex, HalfEdgeIndex
 	HalfEdgeIndex const firstHalfEdgeIndex = polys[polygonIndex].anyHalfEdge;
 	HalfEdgeIndex halfEdgeIndex = firstHalfEdgeIndex;
 
-	if(halfEdgeIndex == MM_INVALID_INDEX) return;
+	if(halfEdgeIndex == InvalidHalfEdgeIndex) return;
 
 	// gather half edges for triangles
 	do
@@ -141,7 +141,7 @@ void Polygons::getHalfEdgeIndices(PolygonIndex const polygonIndex, HalfEdgeIndex
 }
 void Polygons::visitHalfEdges(PolygonIndex const polygonIndex, std::function<void(HalfEdgeIndex const)> const& func) const
 {
-	if (polygonIndex == MM_INVALID_INDEX) return;
+	if (polygonIndex == InvalidPolygonIndex) return;
 	if (!isValid(polygonIndex)) return;
 
 	auto const& polys = polygons();
@@ -153,21 +153,21 @@ void Polygons::visitHalfEdges(PolygonIndex const polygonIndex, std::function<voi
 /**
 Gets all the vertices attached to the face.
 Uses the half edge pointers to get all vertices that make up this face
-@param faceIndex - face/polygon to get vertices from
+@param polygonIndex - face/polygon to get vertices from
 @param vertexList - return list of vertex
 */
-void Polygons::getVertexIndices(PolygonIndex const faceIndex, VertexIndexContainer& vertexList) const
+void Polygons::getVertexIndices(PolygonIndex const polygonIndex, VertexIndexContainer& vertexList) const
 {
-	if(faceIndex == MM_INVALID_INDEX) return;
+	if(polygonIndex == InvalidPolygonIndex) return;
 
 	auto const& vertices = owner.getVertices();
 	auto const& halfEdges = owner.getHalfEdges();
 	auto const& polys = polygons();
 	auto const& hes = halfEdges.halfEdges();
 
-	HalfEdgeIndex const firstHalfEdgeIndex = polys[faceIndex].anyHalfEdge;
+	HalfEdgeIndex const firstHalfEdgeIndex = polys[polygonIndex].anyHalfEdge;
 	HalfEdgeIndex halfEdgeIndex = firstHalfEdgeIndex;
-	if(halfEdgeIndex == MM_INVALID_INDEX) return;
+	if(halfEdgeIndex == InvalidHalfEdgeIndex) return;
 
 	// gather vertices for polygons
 	do
@@ -187,18 +187,18 @@ void Polygons::getVertexIndices(PolygonIndex const faceIndex, VertexIndexContain
 	} while(halfEdgeIndex != firstHalfEdgeIndex);
 }
 
-auto Polygons::getVertexCount(PolygonIndex const faceIndex_) const -> size_t
+auto Polygons::getVertexCount(PolygonIndex const polygonIndex_) const -> size_t
 {
-	if(faceIndex_ == MM_INVALID_INDEX) return 0;
+	if(polygonIndex_ == InvalidPolygonIndex) return 0;
 
 	auto const& vertices = owner.getVertices();
 	auto const& halfEdges = owner.getHalfEdges();
 	auto const& polys = polygons();
 	auto const& hes = halfEdges.halfEdges();
 
-	HalfEdgeIndex const firstHalfEdgeIndex = polys[faceIndex_].anyHalfEdge;
+	HalfEdgeIndex const firstHalfEdgeIndex = polys[polygonIndex_].anyHalfEdge;
 	HalfEdgeIndex halfEdgeIndex = firstHalfEdgeIndex;
-	if(halfEdgeIndex == MM_INVALID_INDEX) return 0;
+	if(halfEdgeIndex == InvalidHalfEdgeIndex) return 0;
 
 	size_t vertexCount = 0;
 	do
@@ -259,25 +259,26 @@ void Polygons::repack()
 	// [index] = existing polygon index of valid indices
 	std::vector<PolygonIndex> newToOld;
 	std::vector<PolygonIndex> oldToNew; // MM_INVALID_INDEX if no new index
-	newToOld.resize(polygonsContainer.size());
-	oldToNew.resize(polygonsContainer.size());
+	newToOld.resize(size_t(polygonsContainer.size()));
+	oldToNew.resize(size_t(polygonsContainer.size()));
 
 	size_t validCount = 0;
 	size_t invalidCount = 0;
 	for (auto i = 0u; i < polygonsContainer.size(); ++i)
 	{
-		if (isValid(i))
+		PolygonIndex pi = PolygonIndex(i);
+		if(isValid(pi))
 		{
-			auto& poly = polygon((PolygonIndex)i);
-			assert(poly.anyHalfEdge != MM_INVALID_INDEX);
+			auto& poly = polygon(pi);
+			assert(poly.anyHalfEdge != InvalidHalfEdgeIndex);
 
-			newToOld[validCount] = i;
+			newToOld[validCount] = pi;
 			oldToNew[i] = (PolygonIndex) validCount;
 			validCount++;
 		}
 		else
 		{
-			oldToNew[i] = MM_INVALID_INDEX;
+			oldToNew[i] = InvalidPolygonIndex;
 			invalidCount++;
 		}
 	}
@@ -294,12 +295,14 @@ void Polygons::repack()
 
 	for(size_t i = 0; i < newPolygonCon.getSizeOfElementContainer(); ++i)
 	{
-		PolygonElementsContainer::Ptr oldCon = polygonsContainer.getElementContainer(i);
-		PolygonElementsContainer::Ptr newCon = newPolygonCon.getElementContainer(i);
+		auto oldCon = polygonsContainer.getElementContainer(i);
+		auto newCon = newPolygonCon.getElementContainer(i);
 
 		for(size_t polyIndex = 0; polyIndex < validCount; ++polyIndex)
-		{
-			oldCon->unsafeCopyElementTo(*newCon, newToOld[polyIndex], polyIndex);
+		{ 
+			oldCon->unsafeCopyElementTo(*newCon, 
+				newToOld[polyIndex], 
+				PolygonIndex(polyIndex));
 		}
 	}
 	// polygons now remapped
@@ -310,7 +313,7 @@ void Polygons::repack()
 	{
 		auto& poly = polygon((PolygonIndex) polyIndex);
 
-		assert(poly.anyHalfEdge != MM_INVALID_INDEX);
+		assert(poly.anyHalfEdge != InvalidHalfEdgeIndex);
 
 		HalfEdgeIndex const firstHalfEdgeIndex = poly.anyHalfEdge;
 		HalfEdgeIndex halfEdgeIndex = firstHalfEdgeIndex;
@@ -320,7 +323,7 @@ void Polygons::repack()
 			if (!halfEdges.isValid(halfEdgeIndex)) break;
 
 			HalfEdgeData::HalfEdge& halfEdge = halfEdges.halfEdge(halfEdgeIndex);
-			if(halfEdge.polygonIndex != MM_INVALID_INDEX)
+			if(halfEdge.polygonIndex != InvalidPolygonIndex)
 			{
 				halfEdge.polygonIndex = (PolygonIndex) polyIndex;
 			}
@@ -337,7 +340,7 @@ void Polygons::visitAll(std::function<void(PolygonIndex const)> const& func) con
 {
 	for (auto i = 0u; i < polygonsContainer.size(); ++i)
 	{
-		func(i);
+		func(PolygonIndex(i));
 	}
 }
 
@@ -345,9 +348,10 @@ void Polygons::visitValid(std::function<void(PolygonIndex const)> const& func) c
 {
 	for (auto i = 0u; i < polygonsContainer.size(); ++i)
 	{
-		if (isValid(i))
+		PolygonIndex pi{ i };
+		if (isValid(pi))
 		{
-			func(i);
+			func(pi);
 		}
 	}
 }

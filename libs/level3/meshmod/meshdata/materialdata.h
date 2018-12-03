@@ -14,7 +14,9 @@ struct Name
 	Name(const std::string &name_) :
 			matName(name_) {}
 
-	static const std::string getName() { return "Name"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "Name"sv; };
 };
 
 struct Shader
@@ -26,7 +28,9 @@ struct Shader
 	Shader(const std::string &name_) :
 			shaderName(name_) {}
 
-	static const std::string getName() { return "Shader"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "Shader"sv; };
 };
 
 
@@ -41,7 +45,9 @@ struct LightParams
 	float translucency;            // as transp but for lights
 	float Kr;                    // reflection
 
-	static const std::string getName() { return "LightParams"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "LightParams"sv; };
 };
 
 struct BackFace
@@ -53,7 +59,9 @@ struct BackFace
 		NONE = 2,
 	} facing;
 
-	static const std::string getName() { return "BackFace"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "BackFace"sv; };
 };
 
 struct Texture
@@ -61,7 +69,9 @@ struct Texture
 	std::string fileName;
 	std::string uvChannel;
 
-	static const std::string getName() { return "Texture"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "Texture"sv; };
 };
 }}} // end namespace
 #endif
