@@ -380,7 +380,7 @@ auto Gui::decodeSimpleMesh(Item const& item_) -> void
 					indices[(i * 3) + 2],
 					indices[(i * 3) + 1]
 			};
-			mesh->getPolygons().add(triIndices);
+			mesh->getPolygons().addPolygon(triIndices);
 		}
 		mesh->updateFromEdits();
 

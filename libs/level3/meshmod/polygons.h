@@ -63,7 +63,8 @@ public:
 	//! retrieves the indices of all polygons that share an edge with the input polygon.
 	void getSurroundingPolygonIndices(PolygonIndex const index, PolygonIndexContainer &polygonIndexContainer) const;
 
-	PolygonIndex add(VertexIndexContainer const &indices, VertexIndex const baseVertex = VertexIndex(0));
+	PolygonIndex addPolygon(VertexIndexContainer const &indices, VertexIndex const baseVertex = VertexIndex(0));
+	void Polygons::addTriangles(VertexIndexContainer const &indices, VertexIndex const baseVertex = VertexIndex(0));
 	void remove(PolygonIndex const index);
 
 

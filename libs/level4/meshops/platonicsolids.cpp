@@ -41,7 +41,7 @@ auto PlatonicSolids::createTetrahedon() -> std::unique_ptr<MeshMod::Mesh>
 	}
 	for(auto f : faces)
 	{
-		mesh->getPolygons().add(f);
+		mesh->getPolygons().addPolygon(f);
 	}
 	mesh->updateEditState(Mesh::TopologyEdits);
 
@@ -83,7 +83,7 @@ auto PlatonicSolids::createOctahedron() -> std::unique_ptr<MeshMod::Mesh>
 	}
 	for(auto f : faces)
 	{
-		mesh->getPolygons().add(f);
+		mesh->getPolygons().addPolygon(f);
 	}
 	mesh->updateEditState(MeshMod::Mesh::TopologyEdits);
 	mesh->updateFromEdits();
@@ -127,7 +127,7 @@ auto PlatonicSolids::createCube() -> std::unique_ptr<MeshMod::Mesh>
 	}
 	for(auto f : faces)
 	{
-		mesh->getPolygons().add(f);
+		mesh->getPolygons().addPolygon(f);
 	}
 	mesh->updateEditState(MeshMod::Mesh::TopologyEdits);
 	mesh->updateFromEdits();
@@ -203,7 +203,7 @@ auto PlatonicSolids::createIcosahedron() -> std::unique_ptr<MeshMod::Mesh>
 	}
 	for(auto f : faces)
 	{
-		mesh->getPolygons().add(f);
+		mesh->getPolygons().addPolygon(f);
 	}
 	mesh->updateEditState(MeshMod::Mesh::TopologyEdits);
 	mesh->updateFromEdits();
@@ -251,7 +251,7 @@ auto PlatonicSolids::createBoxFrom(Geometry::AABB const& aabb) -> std::unique_pt
 	}
 	for (auto f : faces)
 	{
-		mesh->getPolygons().add(f);
+		mesh->getPolygons().addPolygon(f);
 	}
 	mesh->updateEditState(MeshMod::Mesh::TopologyEdits);
 	mesh->updateFromEdits();

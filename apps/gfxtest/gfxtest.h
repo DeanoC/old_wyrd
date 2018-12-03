@@ -16,5 +16,6 @@ struct GfxTest
 };
 
 std::unique_ptr<GfxTest> CreateBasicMeshTest();
+std::unique_ptr<GfxTest> CreateDuckGltfTest();
 
 #endif //WYRD_GFXTEST_H

@@ -141,7 +141,7 @@ auto ConvexHullComputer::getResults(std::shared_ptr<ReturnType> ptr_) -> std::ve
 				triIndices[i + 1] = VertexIndex(ch.m_triangles[i + 1]);
 				triIndices[i + 2] = VertexIndex(ch.m_triangles[i + 2]);
 			}
-			out->getPolygons().add(triIndices);
+			out->getPolygons().addTriangles(triIndices);
 
 			out->updateFromEdits();
 			outArray[j] = out;

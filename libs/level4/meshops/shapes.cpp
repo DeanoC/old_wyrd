@@ -53,7 +53,7 @@ auto Shapes::createDiamond() -> std::unique_ptr<MeshMod::Mesh>
 	}
 	for(auto f : faces)
 	{
-		mesh->getPolygons().add(f);
+		mesh->getPolygons().addPolygon(f);
 	}
 	mesh->updateEditState(MeshMod::Mesh::TopologyEdits);
 	mesh->updateFromEdits();

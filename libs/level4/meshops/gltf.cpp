@@ -1,7 +1,6 @@
 //
 // Created by Computer on 26/07/2018.
 //
-#define TINYGLTF_IMPLEMENTATION
 #include "core/core.h"
 
 #if PLATFORM == WINDOWS
@@ -73,12 +72,19 @@ MeshMod::SceneNode::Ptr Gltf::LoadInternal(tinygltf::Model const& model)
 
 	SceneNode::Ptr rootNode = std::make_shared<SceneNode>();
 
-	for (int nodeIndex : gltfScene.nodes)
+	std::stack<int> nodeStack;
+	for (int nodeIndex : gltfScene.nodes) nodeStack.push(nodeIndex);
+
+	do
 	{
+		int nodeIndex = nodeStack.top(); nodeStack.pop();
+
 		Node const& node = model.nodes[nodeIndex];
 		SceneNode::Ptr sceneNode = std::make_shared<SceneNode>();
 		rootNode->addChild(sceneNode);
 		convertTransform(node, sceneNode);
+
+		for(int childIndex : node.children) nodeStack.push(childIndex);
 
 		// TODO nodes other than meshes
 		if (node.mesh != -1)
@@ -102,7 +108,7 @@ MeshMod::SceneNode::Ptr Gltf::LoadInternal(tinygltf::Model const& model)
 						//check they are the same
 						if (aamIt->second != it.second)
 						{
-							printf("GLTF parser error: primitives attribute parse fail\n");
+							LOG_F(WARNING, "GLTF parser error: primitives attribute parse fail\n");
 						}
 					}
 					else
@@ -119,7 +125,7 @@ MeshMod::SceneNode::Ptr Gltf::LoadInternal(tinygltf::Model const& model)
 				convertPrimitives(model, gltfMesh, mesh);
 			}
 		}
-	}
+	} while(!nodeStack.empty());
 
 	return rootNode;
 }
@@ -157,21 +163,22 @@ bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, ti
 	int posAttribIndex = attribMap.find("POSITION"_hash)->second;
 
 	tinygltf::Accessor const& accessor = model.accessors[posAttribIndex];
-	if (accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) return false;
-	if (accessor.type != TINYGLTF_TYPE_VEC3) return false;
-	if (accessor.ByteStride(model.bufferViews[accessor.bufferView]) != sizeof(float) * 3)
-		return false;
-
 	BufferView const& posBufferView = model.bufferViews[accessor.bufferView];
 	Buffer const& posBuffer = model.buffers[posBufferView.buffer];
 
+	auto const accessorByteStride = accessor.ByteStride(posBufferView);
+
+	if (accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) return false;
+	if (accessor.type != TINYGLTF_TYPE_VEC3) return false;
+	if (accessorByteStride != sizeof(float) * 3) return false;
+
 	auto& vertices =  mesh->getVertices();
 
+	float* posData = (float*)(posBuffer.data.data() + posBufferView.byteOffset + accessor.byteOffset);
 	for (uint64_t i = 0; i < accessor.count; ++i)
 	{
-		uint64_t offset = posBufferView.byteOffset + (i * sizeof(float) * 3);
-		float* posData = (float*)(posBuffer.data.data() + offset);
 		vertices.add(posData[0], posData[1], posData[2]);
+		posData += 3;
 	}
 
 	return true;
@@ -205,18 +212,20 @@ void Gltf::convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tiny
 				LOG_F(WARNING, "Unknown vertex attribute %s", accessor.name.c_str());
 		}
 
+		tinygltf::BufferView const& bufferView = model.bufferViews[accessor.bufferView];
+		VerticesElementsContainer& vertCon = mesh->getVertices().getVerticesContainer();
+		Buffer const &buffer = model.buffers[bufferView.buffer];
+		float *data = (float *)(buffer.data.data() + bufferView.byteOffset + accessor.byteOffset);
+		auto const accessorByteStride = accessor.ByteStride(bufferView);
+
 		if(vec2Data)
 		{
-			tinygltf::BufferView const& bufferView = model.bufferViews[accessor.bufferView];
-			VerticesElementsContainer& vertCon = mesh->getVertices().getVerticesContainer();
-
 			// skip attrib if not vec2
-			if (accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) break;
-			if (accessor.type != TINYGLTF_TYPE_VEC2) break;
-			if(accessor.ByteStride(bufferView) != sizeof(float) * 2) break;
+			if(accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) break;
+			if(accessor.type != TINYGLTF_TYPE_VEC2) break;
+			if(accessorByteStride != sizeof(float) * 2) break;
 
 			std::string elementSubName = "";
-			Buffer const &buffer = model.buffers[bufferView.buffer];
 			switch(it.first)
 			{
 				case "TEXCOORD_0"_hash:
@@ -224,13 +233,13 @@ void Gltf::convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tiny
 				{
 					if(it.first == "TEXCOORD_0"_hash) elementSubName = "0";
 					else elementSubName = "1";
+
 					VertexData::UVs& uvEle = *vertCon.getOrAddElement<VertexData::UVs>(elementSubName);
 					for(size_t i = 0; i < accessor.count; ++i)
 					{
-						uint64_t offset = bufferView.byteOffset + (i * sizeof(float) * 2);
-						float *data = (float *) (buffer.data.data() + offset);
 						uvEle[VertexIndex(i)].u = data[0];
 						uvEle[VertexIndex(i)].v = data[1];
+						data += accessorByteStride;
 					}
 					break;
 				}
@@ -238,15 +247,11 @@ void Gltf::convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tiny
 
 		} else
 		{
-			tinygltf::BufferView const& bufferView = model.bufferViews[accessor.bufferView];
-			VerticesElementsContainer& vertCon = mesh->getVertices().getVerticesContainer();
-
 			// skip attrib if not vec3
 			if(accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) break;
 			if(accessor.type != TINYGLTF_TYPE_VEC3) break;
 			if(accessor.ByteStride(bufferView) != sizeof(float) * 3) break;
 
-			Buffer const &buffer = model.buffers[bufferView.buffer];
 			switch(it.first)
 			{
 				case "NORMAL"_hash:
@@ -254,11 +259,10 @@ void Gltf::convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tiny
 					VertexData::Normals& nvEle = *vertCon.getOrAddElement<VertexData::Normals>();
 					for(size_t i = 0; i < accessor.count; ++i)
 					{
-						uint64_t offset = bufferView.byteOffset + (i * sizeof(float) * 3);
-						float *data = (float *) (buffer.data.data() + offset);
 						nvEle[VertexIndex(i)].x = data[0];
 						nvEle[VertexIndex(i)].y = data[1];
 						nvEle[VertexIndex(i)].z = data[2];
+						data += accessorByteStride;
 					}
 					break;
 				}
@@ -286,14 +290,14 @@ void Gltf::convertPrimitives(tinygltf::Model const& model, tinygltf::Mesh const&
 		assert(bufferView.byteLength == accessor.count * sizeOfIndex);
 		if (sizeOfIndex == sizeof(uint16_t))
 		{
-			uint16_t *data = (uint16_t*)(buffer.data.data() + bufferView.byteOffset);
+			uint16_t *data = (uint16_t*)(buffer.data.data() + bufferView.byteOffset + accessor.byteOffset);
 			for (uint64_t j = 0; j < accessor.count; ++j)
 			{
 				indices[j] = (MeshMod::VertexIndex)data[j];
 			}
 		} else
 		{
-			std::memcpy(indices.data(), buffer.data.data() + bufferView.byteOffset, bufferView.byteLength);
+			std::memcpy(indices.data(), buffer.data.data() + bufferView.byteOffset + accessor.byteOffset, bufferView.byteLength);
 		}
 
 		// TODO other primitive modes
@@ -303,7 +307,7 @@ void Gltf::convertPrimitives(tinygltf::Model const& model, tinygltf::Mesh const&
 			continue;
 		}
 
-		mesh->getPolygons().add(indices);
+		mesh->getPolygons().addTriangles(indices);
 	}
 
 	mesh->updateEditState(MeshMod::Mesh::TopologyEdits);
@@ -337,8 +341,7 @@ void Gltf::SaveAscii(MeshMod::SceneNode::Ptr mesh_, std::string const fileName_)
 		return;
 	}
 
-	loader.WriteGltfSceneToFile(&model, output_filename);
-//	loader.WriteGltfSceneToFile(&model, embedded_filename, true, true);
+	loader.WriteGltfSceneToFile(&model, output_filename, true, true);
 }
 
 void Gltf::convertTransform(MeshMod::SceneNode::Ptr const& sceneNode_, tinygltf::Node &node_ )

@@ -27,7 +27,7 @@ Adds a poly, creates edge/half edge data structures
 @param baseVertex - all vertex indices are based off this number
 @return index of new polyMeshModn
 */
-PolygonIndex Polygons::add(VertexIndexContainer const &indices, VertexIndex const baseVertex)
+PolygonIndex Polygons::addPolygon(VertexIndexContainer const &indices, VertexIndex const baseVertex)
 {
 	// should always be convex simple polygons!!
 	auto const& vertices = owner.getVertices();
@@ -66,6 +66,28 @@ PolygonIndex Polygons::add(VertexIndexContainer const &indices, VertexIndex cons
 
 	return faceIndex;
 }
+
+/**
+Adds a triangle list to the mesh.
+Adds a poly, creates edge/half edge data structures
+@param indices - vertex indices the polygon is composed off
+@param baseVertex - all vertex indices are based off this number
+@return index of new polyMeshModn
+*/
+void Polygons::addTriangles(VertexIndexContainer const &indices, VertexIndex const baseVertex)
+{
+	for (auto i = 0u; i < indices.size(); i+=3)
+	{
+		VertexIndexContainer tri{
+			indices[i + 0],
+			indices[i + 1],
+			indices[i + 2],
+		};
+
+		addPolygon(tri, baseVertex);
+	}
+}
+
 void Polygons::remove(PolygonIndex const index)
 {
 	if(!polygonsContainer.isValid(index)) return;

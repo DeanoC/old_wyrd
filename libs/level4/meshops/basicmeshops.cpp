@@ -542,10 +542,10 @@ auto BasicMeshOps::tesselate4(std::shared_ptr<MeshMod::Mesh const> const& mesh_)
 					vi[j] = tessMesh->getVertices().add(verts[j].x, verts[j].y, verts[j].z);
 				}
 
-				tessMesh->getPolygons().add({vi[0], vi[3], vi[1]});
-				tessMesh->getPolygons().add({vi[3], vi[4], vi[1]});
-				tessMesh->getPolygons().add({vi[4], vi[2], vi[1]});
-				tessMesh->getPolygons().add({vi[3], vi[5], vi[4]});
+				tessMesh->getPolygons().addPolygon({vi[0], vi[3], vi[1]});
+				tessMesh->getPolygons().addPolygon({vi[3], vi[4], vi[1]});
+				tessMesh->getPolygons().addPolygon({vi[4], vi[2], vi[1]});
+				tessMesh->getPolygons().addPolygon({vi[3], vi[5], vi[4]});
 			});
 
 	return tessMesh;

@@ -6,11 +6,12 @@
 #include "meshmod/sceneobject.h"
 #include "meshmod/mesh.h"
 #include "meshops/shapes.h"
+#include "meshops/gltf.h"
 #include "render/encoder.h"
 
-struct BasicMeshTest : public GfxTest
+struct DuckGltfTest : public GfxTest
 {
-	~BasicMeshTest() final
+	~DuckGltfTest() final
 	{
 
 	}
@@ -22,27 +23,10 @@ struct BasicMeshTest : public GfxTest
 		meshModRenderer->init(rm);
 
 		rootScene = std::make_shared<MeshMod::SceneNode>();
-		rootScene->transform.position = Math::vec3(0, 0, -4);
+		rootScene->transform.position = Math::vec3(0, 0, -400);
 
-		std::shared_ptr sphere = MeshOps::Shapes::createSphere(3);
-		auto child0 = std::make_shared<MeshMod::SceneNode>();
-		child0->addObject(sphere);
-		auto child1 = std::make_shared<MeshMod::SceneNode>();
-		child1->addObject(sphere);
-		auto child2 = std::make_shared<MeshMod::SceneNode>();
-		child2->addObject(sphere);
-		auto child3 = std::make_shared<MeshMod::SceneNode>();
-		child3->addObject(sphere);
-
-		rootScene->addChild(child0);
-		rootScene->addChild(child1);
-		rootScene->addChild(child2);
-		rootScene->addChild(child3);
-
-		child0->transform.position = Math::vec3(-2, 0, 0);
-		child1->transform.position = Math::vec3(2, 0, 0);
-		child2->transform.position = Math::vec3(0, -2, 0);
-		child3->transform.position = Math::vec3(0, 2, 0);
+		std::shared_ptr duck = MeshOps::Gltf::LoadAscii("gltf/Duck.gltf");
+		rootScene->addChild(duck);
 
 		sceneIndex = meshModRenderer->addScene(rootScene);
 	}
@@ -77,7 +61,11 @@ struct BasicMeshTest : public GfxTest
 	std::shared_ptr<MeshMod::SceneNode> rootScene;
 };
 
-std::unique_ptr<GfxTest> CreateBasicMeshTest()
+std::unique_ptr<GfxTest> CreateDuckGltfTest()
 {
-	return std::move(std::make_unique<BasicMeshTest>());
+	return std::move(std::make_unique<DuckGltfTest>());
 }
+//
+// Created by deano on 03/12/2018.
+//
+

@@ -327,7 +327,7 @@ void Mesh::cleanAndRepack()
 			{
 				newPolyIndices[i] = oldToNew[size_t(poly[i])];
 			}
-			polygons.add(poly);
+			polygons.addPolygon(poly);
 		}
 	}
 
