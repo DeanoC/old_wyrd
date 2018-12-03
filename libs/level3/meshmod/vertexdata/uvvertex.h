@@ -63,7 +63,9 @@ struct UV
 		else return true;
 	}
 
-	static const std::string getName() { return "UV"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "UV"sv; };
 };
 //! 2D texture coords
 typedef BaseElements<VertexData::UV, Vertex_, true, DerivedType::NotDerived> UVs;

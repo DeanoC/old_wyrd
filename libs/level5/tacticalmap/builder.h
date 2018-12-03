@@ -103,9 +103,9 @@ public:
 
 	struct WorldSolid
 	{
-		WorldSolid(MeshMod::MeshPtr mesh_, Geometry::AABB aabb_, size_t extraLevelDataOffset_) :
+		WorldSolid(std::shared_ptr<MeshMod::Mesh> mesh_, Geometry::AABB aabb_, size_t extraLevelDataOffset_) :
 			mesh(mesh_), aabb(aabb_), extraLevelDataOffset(extraLevelDataOffset_) {}
-		MeshMod::MeshPtr mesh;
+		std::shared_ptr<MeshMod::Mesh> mesh;
 		Geometry::AABB aabb;
 		size_t extraLevelDataOffset;
 	};

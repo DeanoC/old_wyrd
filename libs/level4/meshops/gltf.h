@@ -32,15 +32,15 @@ public:
 private:
 	static MeshMod::SceneNode::Ptr LoadInternal(tinygltf::Model const& model);
 	static void convertTransform(tinygltf::Node const &node_, MeshMod::SceneNode::Ptr &sceneNode_);
-	static bool convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, tinygltf::Model const& model, MeshMod::Mesh::Ptr& mesh);
-	static void convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tinygltf::Model const& model, MeshMod::Mesh::Ptr& mesh);
-	static void convertPrimitives(tinygltf::Model const& model, tinygltf::Mesh const& gltfMesh, MeshMod::Mesh::Ptr& mesh);
+	static bool convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, tinygltf::Model const& model, std::shared_ptr<MeshMod::Mesh>& mesh);
+	static void convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tinygltf::Model const& model, std::shared_ptr<MeshMod::Mesh>& mesh);
+	static void convertPrimitives(tinygltf::Model const& model, tinygltf::Mesh const& gltfMesh, std::shared_ptr<MeshMod::Mesh>& mesh);
 
 	static void SaveInternal(MeshMod::SceneNode::Ptr node_, tinygltf::Model& model_);
 
 	static void convertTransform(MeshMod::SceneNode::Ptr const &sceneNode_, tinygltf::Node &node_);
-	static bool convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, std::vector<uint8_t>& dataBuffer, MeshMod::Mesh::Ptr const& mesh, tinygltf::Model & model);
-	static void convertPrimitives(std::map<uint32_t, uint32_t> const& attribMap, std::vector<uint8_t>& dataBuffer, MeshMod::Mesh::Ptr const& mesh, tinygltf::Model & model, tinygltf::Mesh & gltfMesh);
+	static bool convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, std::vector<uint8_t>& dataBuffer, std::shared_ptr<MeshMod::Mesh> const& mesh, tinygltf::Model & model);
+	static void convertPrimitives(std::map<uint32_t, uint32_t> const& attribMap, std::vector<uint8_t>& dataBuffer, std::shared_ptr<MeshMod::Mesh> const& mesh, tinygltf::Model & model, tinygltf::Mesh & gltfMesh);
 
 };
 

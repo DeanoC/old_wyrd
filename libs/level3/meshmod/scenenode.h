@@ -53,10 +53,10 @@ namespace MeshMod {
 		unsigned int getChildCount() const {
 			return (unsigned int) children.size();
 		}
-		Ptr getChild( SceneNodeIndex index ) {
+		Ptr getChild(uint32_t index) {
 			return children[index];
 		}
-		ConstPtr getChild(SceneNodeIndex index) const {
+		ConstPtr getChild(uint32_t index) const {
 			return children[index];
 		}
 		void addObject( SceneObject::Ptr obj ) {

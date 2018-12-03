@@ -60,17 +60,16 @@ class ConvexHullComputer
 {
 public:
 	using ReturnType = std::pair<VHACD::IVHACD*, ConvexHullProgessCallback*>;
-	using Ptr = std::shared_ptr<ReturnType>;
-	static auto generate(MeshMod::Mesh::Ptr const& in_, ConvexHullParameters const& parameters_) -> std::vector<MeshMod::Mesh::Ptr>;
-	static auto generateInline(MeshMod::Mesh::Ptr& in_) -> void;
+	static auto generate(std::shared_ptr<MeshMod::Mesh> const& in_, ConvexHullParameters const& parameters_) -> std::vector<std::shared_ptr<MeshMod::Mesh>>;
+	static auto generateInline(std::shared_ptr<MeshMod::Mesh>& in_) -> void;
 
-	static auto createAsync(MeshMod::Mesh::Ptr const& in_, ConvexHullParameters const& parameters_)->Ptr;
-	static auto isReady(Ptr ptr_) -> bool;
-	static auto getResults(Ptr ptr_) -> std::vector<MeshMod::Mesh::Ptr>;
+	static auto createAsync(std::shared_ptr<MeshMod::Mesh> const& in_, ConvexHullParameters const& parameters_) -> std::shared_ptr<ReturnType>;
+	static auto isReady(std::shared_ptr<ReturnType> ptr_) -> bool;
+	static auto getResults(std::shared_ptr<ReturnType> ptr_) -> std::vector<std::shared_ptr<MeshMod::Mesh>>;
 
 private:
 	// dependent on whether createAsync or generate were called begin will be blocking or async
-	static auto begin(Ptr ptr_, MeshMod::Mesh::Ptr const& in_, ConvexHullParameters const& parameters_) -> bool;
+	static auto begin(std::shared_ptr<ReturnType> ptr_, std::shared_ptr<MeshMod::Mesh> const& in_, ConvexHullParameters const& parameters_) -> bool;
 
 };
 

@@ -77,10 +77,6 @@ public:
 	friend class HalfEdges;
 	friend class Polygons;
 
-	using Ptr = std::shared_ptr<Mesh>;
-	using ConstPtr = std::shared_ptr<Mesh const>;
-	using WeakPtr = std::weak_ptr<Mesh>;
-
 	enum EditState
 	{
 		NoEdits = 0,
@@ -100,9 +96,9 @@ public:
 	//! dtor.
 	~Mesh();
 
-	Mesh *clone() const;
+	Mesh *rawClone() const;
 
-	std::shared_ptr<Mesh> sharedClone() const;
+	std::unique_ptr<Mesh> clone() const;
 
 	//-----------------------------------
 	// Mesh creation/alteration functions

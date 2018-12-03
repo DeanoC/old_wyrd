@@ -31,9 +31,9 @@ void Raycaster::addTargetVertexSource(	const std::string& elementName,
 	targetVertexSources[ elementName + subElementName ] = transformType;
 
 }
-void Raycaster::setTargetMesh( MeshMod::Mesh::Ptr _targetMesh, bool doAllVertexSources ) {
+void Raycaster::setTargetMesh(std::shared_ptr<MeshMod::Mesh> _targetMesh, bool doAllVertexSources) {
 	using namespace MeshMod;
-	if( doAllVertexSources ) {
+	if (doAllVertexSources) {
 		// iterate through mesh adding all vertex sources
 		//todo
 	}
@@ -41,37 +41,37 @@ void Raycaster::setTargetMesh( MeshMod::Mesh::Ptr _targetMesh, bool doAllVertexS
 
 	// create a KD-tree from the target mesh
 	// need to flatten the position and indices into a simple array for the kdtree
-	const PolygonElementsContainer& faceCon = targetMesh->getPolygons().getPolygonsContainer();
-	const VerticesElementsContainer& vertCon = targetMesh->getVertices().getVerticesContainer();
 
-	// get base position and normal vertex pointers
-	auto const posEle = vertCon.getElements<VertexData::Positions>();
-	auto const pfEle = faceCon.getElements<PolygonData::Polygons>();
-
-	targetPositionData.resize(posEle->size() * 3);
-	for( unsigned int i = 0; i < posEle->size(); ++ i ) {
-		targetPositionData[ (i*3)+0 ] = (*posEle)[i].x;
-		targetPositionData[ (i*3)+1 ] = (*posEle)[i].y;
-		targetPositionData[ (i*3)+2 ] = (*posEle)[i].z;
+	{
+		auto const& vertices = targetMesh->getVertices();
+		targetPositionData.resize(size_t(vertices.getCount()) * 3);
+		auto tpd = targetPositionData.data();
+		vertices.visitAll([tpd, &vertices](VertexIndex vi_)
+		{
+			size_t const i = size_t(vi_);
+			tpd[(i * 3) + 0] = vertices.position(vi_).x;
+			tpd[(i * 3) + 1] = vertices.position(vi_).y;
+			tpd[(i * 3) + 2] = vertices.position(vi_).z;
+		});
 	}
-	unsigned int indexCount = 0;
-	targetIndexData.resize(pfEle->size() * 3);
-	for( unsigned int i = 0; i < pfEle->size(); ++ i ) {
-		VertexIndexContainer faceVert;
-		baseMesh->getPolygons().getVertexIndices(i, faceVert);
-		// TODO triangles only at the moment
-		if( faceVert.size() == 3 ) {
-			targetIndexData[ (i*3)+0 ] = faceVert[0];
-			targetIndexData[ (i*3)+1 ] = faceVert[1];
-			targetIndexData[ (i*3)+2 ] = faceVert[2];
-			indexCount += 3;
-		}
+
+	{
+		auto const& polygons = targetMesh->getPolygons();
+		targetIndexData.resize(size_t(polygons.getCount()) * 3);
+		auto tid = targetIndexData.data();
+		polygons.visitValidVertices(
+			[tid](PolygonIndex pi_, VertexIndex vi_)
+			{
+				size_t const pi = size_t(pi_);
+				size_t const vi = size_t(vi_);
+				tid[(pi * 3) + 0] = (unsigned int)(vi);
+			});
 	}
  
-	targetTree.reset( new Geometry::KDTree( targetPositionData.data(), targetIndexData.data(), indexCount ) );
+	targetTree = std::make_unique<Geometry::KDTree>(targetPositionData.data(), targetIndexData.data(), (unsigned int) targetIndexData.size());
 }
 
-void Raycaster::setBaseMesh( MeshMod::Mesh::Ptr _baseMesh, const std::string& uvSetName ) {
+void Raycaster::setBaseMesh(std::shared_ptr<MeshMod::Mesh> _baseMesh, const std::string& uvSetName ) {
 	baseMesh = _baseMesh;
 	traceUVSetName = uvSetName;
 }
@@ -118,18 +118,18 @@ void Raycaster::transferTo( LayeredTexture& image ) {
 	const VerticesElementsContainer& vertCon = baseMesh->getVertices().getVerticesContainer();
 
 	// get base position and normal vertex pointers
-	auto const posEle = vertCon.getElements<VertexData::Positions>();
-	auto const normEle = vertCon.getElements<VertexData::Normals>();
+	auto const posEle = vertCon.getElement<VertexData::Positions>();
+	auto const normEle = vertCon.getElement<VertexData::Normals>();
 
 	// get tracing uv vertex pointer
-	auto const uvEle = vertCon.getElements<VertexData::UVs>( traceUVSetName );
+	auto const uvEle = vertCon.getElement<VertexData::UVs>( traceUVSetName );
 
 	// get face data 
-	auto const pfEle = faceCon.getElements<PolygonData::Polygons>();
+	auto const pfEle = faceCon.getElement<PolygonData::Polygons>();
 
 	auto faceIt = pfEle->elements.begin();
 	while( faceIt != pfEle->elements.end() ) {
-		const PolygonIndex faceNum = pfEle->distance<PolygonIndex>( faceIt );
+		const PolygonIndex faceNum = pfEle->distance( faceIt );
 
 		VertexIndexContainer faceVert;
 		baseMesh->getPolygons().getVertexIndices(faceNum, faceVert);
@@ -184,9 +184,9 @@ void Raycaster::transferTo( LayeredTexture& image ) {
 						iMaterial = pData[collision.face];
 					}
 #endif
+#if 0
 					// get the tangent, binormal and normal for this source ray
 					vec3 basis[3];
-#if 0
 					if( m_tangentSpaceRequired ) {
 						for( int i = 0; i < 3; ++i )
 						{

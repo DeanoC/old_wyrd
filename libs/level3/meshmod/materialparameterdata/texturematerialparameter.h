@@ -47,7 +47,9 @@ struct TextureParameter : public ParameterBase
 
 
 	//! name is used to get this data
-	static const std::string getName() { return "Texture"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "Texture"; };
 };
 
 //! Material Parameters Texture data

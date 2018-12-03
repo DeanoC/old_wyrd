@@ -24,34 +24,35 @@ enum DerivedType
 Short description.
 Detailed description
 */
-template<typename T>
+template<typename CT>
 class Elements
 {
 public:
-	virtual ~Elements()
-	{};
+	using IndexType = typename CT::IndexType;
+	
+	virtual ~Elements() {};
 
 	// name of this type of element ("position", "UV2D", "Colour", etc)
-	std::string const name;
+	std::string_view const name;
 	// subname. changeable for multiple sets of m_name's ("worldspace", "Tex0",etc)
 	std::string subName;
 
 	// this only works if the dest is the same as the source else does nothing!
-	virtual void unsafeCopyElementTo(Elements<T>& dest, size_t srcIndex, size_t destIndex) = 0;
+	virtual void unsafeCopyElementTo(Elements<CT>& dest_, IndexType srcIndex_, IndexType destIndex_) = 0;
 
-	virtual void cloneElement(size_t const index) = 0;
+	virtual void cloneElement(IndexType const index_) = 0;
 
-	virtual void resize(size_t const size) = 0;
+	virtual void resize(size_t const size_) = 0;
 
 	virtual size_t size() const = 0;
 
-	virtual std::shared_ptr<Elements<T>> clone() const = 0;
+	virtual std::shared_ptr<Elements<CT>> clone() const = 0;
 
 	virtual DerivedType derived() const = 0;
 
 protected:
-	Elements(std::string const& _name)
-			: name(_name)
+	Elements(std::string_view name_)
+			: name(name_)
 	{};
 
 	Elements &operator=(Elements const&);
@@ -62,8 +63,10 @@ template<typename DT, typename CT, bool Interpol, DerivedType Derived, int reser
 class BaseElements : public Elements<CT>
 {
 public:
-	typedef DT DataType;
-	typedef CT ContainerType;
+	using DataType = DT;
+	using ContainerType = CT;
+	using IndexType = typename CT::IndexType;
+
 	typedef typename std::vector<DataType>::iterator iterator;
 	typedef typename std::vector<DataType>::const_iterator const_iterator;
 	typedef BaseElements<DT, CT, Interpol, Derived, reserveAmnt> BaseElementType;
@@ -75,28 +78,15 @@ public:
 		elements.reserve(reserveAmnt);
 	}
 
-	static std::string const getName()
+	static constexpr std::string_view const getName()
 	{
 		return DataType::getName();
 	}
 
-	DataType const &get(size_t const i) const
-	{
-		return elements[i];
-	};
-
-	DataType &get(size_t const i)
-	{
-		return elements[i];
-	};
-
-
-	DataType const &operator[](size_t const i) const
-	{
-		return get(i);
-	};
-
-	DataType &operator[](size_t const i) { return get(i); };
+	DataType const &at(IndexType const i) const { return elements.at(size_t(i)); };
+	DataType &at(IndexType const i) { return elements.at(size_t(i)); };
+	DataType const &operator[](IndexType const i) const { return elements[size_t(i)]; };
+	DataType &operator[](IndexType const i) { return elements[size_t(i)]; };
 
 	iterator begin() { return elements.begin(); }
 	iterator end() { return elements.end(); }
@@ -114,17 +104,15 @@ public:
 		elements.push_back(data);
 	};
 
-	template<typename IndexType>
 	IndexType distance(const_iterator it) const
 	{
 		return (IndexType) std::distance(elements.cbegin(), it);
 	}
 
-	template<typename IndexType>
 	IndexType distance(DataType const &data) const
 	{
 		DataType const* beginPtr = &(*elements.cbegin());
-		IndexType index = (PolygonIndex)(&data - beginPtr);
+		IndexType index = (IndexType)(&data - beginPtr);
 		return index;
 	}
 
@@ -145,38 +133,38 @@ public:
 	// Elements interface implementation
 	//--------
 
-	virtual void cloneElement(const size_t index) override
+	void cloneElement(const IndexType index) final
 	{
-		elements.push_back(elements[index]);
+		elements.push_back(elements[size_t(index)]);
 	};
 
-	virtual void unsafeCopyElementTo(Elements<CT>& dest, size_t srcIndex, size_t destIndex) override
+	void unsafeCopyElementTo(Elements<CT>& dest, IndexType srcIndex, IndexType destIndex) final
 	{
-		assert(srcIndex< elements.size());
+		assert(size_t(srcIndex) < elements.size());
 
 		BaseElementType* ptr = dynamic_cast<BaseElementType*>(&dest);
 		if (ptr)
 		{
-			assert(destIndex < ptr->elements.size());
-			ptr->elements[destIndex] = elements[srcIndex];
+			assert(size_t(destIndex) < ptr->elements.size());
+			ptr->elements[size_t(destIndex)] = elements[size_t(srcIndex)];
 		}
 	}
-	virtual void resize(const size_t size) override
+	void resize(size_t const size_) final
 	{
-		elements.resize(size);
+		elements.resize(size_);
 	};
 
-	virtual size_t size() const override
+	size_t size() const final
 	{
 		return elements.size();
 	}
 
-	virtual std::shared_ptr<Elements<CT>> clone() const override
+	std::shared_ptr<Elements<CT>> clone() const final
 	{
 		return std::make_shared<BaseElementType>(*this);
 	}
 
-	virtual DerivedType derived() const override
+	DerivedType derived() const final
 	{
 		return Derived;
 	}

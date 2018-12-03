@@ -7,117 +7,118 @@
 #if !defined( MESH_MOD_VARICONTAINER_H_ )
 #define MESH_MOD_VARICONTAINER_H_
 
-//---------------------------------------------------------------------------
-// Defines
-//---------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------
-// Includes
-//---------------------------------------------------------------------------
 #include "core/core.h"
 #include <string>
 #include <vector>
+#include <string_view>
 #include "varielements.h"
 
-//---------------------------------------------------------------------------
-// Enums and typedefs
-//---------------------------------------------------------------------------
 namespace MeshMod {
 
-//---------------------------------------------------------------------------
-// Classes and structures
-//---------------------------------------------------------------------------
-
-
-template<typename T>
+template<typename CT>
 class VariContainer
 {
 public:
-	typedef T ContainerType;
-	typedef std::shared_ptr<T> Ptr;
-	typedef std::shared_ptr<const T> ConstPtr;
+	using ContainerType = CT;
+	using IndexType = typename CT::IndexType;
 
 	~VariContainer() { clear(); }
-
 	void clear();
 
-	bool isValid(size_t elementIndex) const
+	auto isValid(IndexType elementIndex) const -> bool
 	{
-		if(elementIndex == MM_INVALID_INDEX) return false;
-		return !notValidFlags.at(elementIndex);
+		if(elementIndex == IndexType(~0u)) return false;
+		return !notValids.at(size_t(elementIndex));
 	}
-	void setValid(size_t elementIndex, bool valid)
+
+	void setValid(IndexType elementIndex_, bool valid_)
 	{
-		notValidFlags.at(elementIndex) = !valid;
+		notValids.at(size_t(elementIndex_)) = !valid_;
 	}
-	void resetValidFlags() {
-		size_t osize = size();
-		notValidFlags.clear(); notValidFlags.resize(osize);
+
+	void resetValidFlags() 
+	{
+		for(auto& nv : notValids)
+		{
+			nv = false;
+		}
 	}
-	size_t resizeForNewElement();
+	auto resizeForNewElement() -> IndexType;
 
-	void resize(size_t const size);
+	void resize(size_t const size_);
 
-	size_t size() const;
+	auto size() const -> size_t;
 
-	void cloneTo(VariContainer<T> &nvc) const;
+	void cloneTo(VariContainer<ContainerType> &nvc_) const;
 
 	//! add the element with default subname
-	Ptr addElements(Ptr ele, std::string const &subName = std::string());
+	auto addElement(std::shared_ptr<ContainerType> ele_, std::string_view subName_ = {}) -> void;
 
 	//! remove the elements
-	void removeElements(Ptr ele);
+	void removeElements(std::shared_ptr<ContainerType> ele_);
 
 	//! gets the first element named name (ther may be others with different subnames)
-	Ptr getElements(std::string const &name);
-
-	//! gets the first element named name (ther may be others with different subnames) (const)
-	ConstPtr getElements(std::string const &name) const;
+	auto getElement(std::string_view name_) -> std::shared_ptr<ContainerType>;
+	auto getElement(std::string_view name_) const -> std::shared_ptr<ContainerType const>;
 
 	//! gets all elements of the input name
-	void getAllElementsNamed(std::string const &name, std::vector<Ptr> &out);
-
-	//! gets all elements of the input name (const)
-	void getAllElementsNamed(std::string const &name, std::vector<ConstPtr> &out) const;
+	void getAllElementsNamed(std::string_view name_, std::vector<std::shared_ptr<ContainerType>> &out_);
+	void getAllElementsNamed(std::string_view name_, std::vector<std::shared_ptr<ContainerType const>> &out_) const;
 
 	// gets the element of name and sub name
-	Ptr getElementsNameAndSubName(std::string const &name, std::string const &subName);
-
-	// gets the element of name and sub name (const_
-	ConstPtr getElementsNameAndSubName(std::string const &name, std::string const &subName) const;
+	auto getElementFromNameAndSubName(std::string_view name_, std::string_view subName_) -> std::shared_ptr<ContainerType>;
+	auto getElementFromNameAndSubName(std::string_view name_, std::string_view subName_) const -> std::shared_ptr<ContainerType const>;
 
 	// how many elements do we have.
-	size_t getSizeOfElementContainer() const
-	{
-		return elements.size();
-	}
-	Ptr getElementContainer(size_t index) { return elements[index]; }
+	auto getSizeOfElementContainer() const -> size_t { return elements.size(); }
+
+	auto getElementContainer(size_t index) -> std::shared_ptr<ContainerType> { return elements[index]; }
+	auto getElementContainer(size_t index) const -> std::shared_ptr<ContainerType const > { return elements[index]; }
 
 	template<typename Type>
-	std::shared_ptr<Type> addElements(std::string const &subName = std::string())
+	auto addElements(std::string_view subName = {}) -> std::shared_ptr<Type>
 	{
-		std::shared_ptr<Type> ele = std::static_pointer_cast<Type>(addElements(std::make_shared<Type>()));
-		assert(ele);
+		auto ele = std::make_shared<Type>();
+		addElement(ele, ele->getName());
 		return ele;
 	}
 
 	template<typename Type>
-	std::shared_ptr<Type> getOrAddElements(std::string const &subName = std::string())
+	void removeElements()
+	{
+		std::vector<std::shared_ptr<Type>> elementsToRemove;
+		getAllElements(elementsToRemove);
+
+		for (auto toRemove : elementsToRemove)
+		{
+			auto it = std::find(elements.cbegin(), elements.cend(), toRemove);
+			if (it != elements.cend())
+			{
+				elements.erase(it);
+			}
+		}
+	}
+
+
+	template<typename Type>
+	auto getOrAddElement(std::string_view subName = {}) -> std::shared_ptr<Type>
 	{
 		std::shared_ptr<Type> ele;
 		if(!subName.empty())
 		{
-			ele = std::static_pointer_cast<Type>(getElementsNameAndSubName(Type::getName(), subName));
+			ele = std::static_pointer_cast<Type>(getElementFromNameAndSubName(Type::getName(), subName));
 			if(!ele)
 			{
-				ele = std::static_pointer_cast<Type>(addElements(std::make_shared<Type>(), subName));
+				ele = std::make_shared<Type>();
+				addElement(ele, subName);
 			}
 		} else
 		{
-			ele = std::static_pointer_cast<Type>(getElements(Type::getName()));
+			ele = std::static_pointer_cast<Type>(getElement(Type::getName()));
 			if(!ele)
 			{
-				ele = std::static_pointer_cast<Type>(addElements(std::make_shared<Type>()));
+				ele = std::make_shared<Type>();
+				addElement(ele);
 			}
 		}
 
@@ -126,8 +127,7 @@ public:
 	}
 
 	template<typename Type>
-	void pushBack(std::string const &subName = std::string(),
-				  typename Type::DataType const &data = typename Type::DataType())
+	void pushBack(std::string_view subName = {}, typename Type::DataType const &data = {})
 	{
 		// if we adding a new type we don't wanna always resize the buffer after the add
 		// cos adding a new type resizes it to the size of the array. This encapsulates
@@ -139,6 +139,7 @@ public:
 			if(pType->size() == 0)
 			{
 				pType->push_back(data);
+				notValids.push_back(false);
 			} else
 			{
 				pType->getElement(0) = data;
@@ -147,45 +148,44 @@ public:
 		{
 			Type *pType = getElements<Type>(subName);
 			pType->push_back(data);
+			notValids.push_back(false);
 		}
 	}
 
 	template<typename Type>
-	std::shared_ptr<Type> getElements()
+	auto getElement() -> std::shared_ptr<Type>
 	{
-		return std::static_pointer_cast<Type>(getElements(Type::DataType::getName()));
+		return std::static_pointer_cast<Type>(getElement(Type::DataType::getName()));
 	}
 
 	template<typename Type>
-	std::shared_ptr<Type const> getElements() const
+	auto getElement() const -> std::shared_ptr<Type const>
 	{
-		return std::static_pointer_cast<Type const>(getElements(Type::DataType::getName()));
+		return std::static_pointer_cast<Type const>(getElement(Type::DataType::getName()));
 	}
 
 	template<typename Type>
-	std::shared_ptr<Type> getElements(std::string const &subName)
+	auto getElement(std::string const &subName) -> std::shared_ptr<Type>
 	{
-		return std::static_pointer_cast<Type>(getElementsNameAndSubName(Type::DataType::getName(), subName));
+		return std::static_pointer_cast<Type>(getElementFromNameAndSubName(Type::DataType::getName(), subName));
 	}
 
 	template<typename Type>
-	std::shared_ptr<const Type>getElements(std::string const &subName) const
+	auto getElement(std::string const &subName) const -> std::shared_ptr<const Type>
 	{
-		return std::static_pointer_cast<Type const>(getElementsNameAndSubName(Type::DataType::getName(), subName));
+		return std::static_pointer_cast<Type const>(getElementFromNameAndSubName(Type::DataType::getName(), subName));
 	}
 
 	//! gets all elements of the types name
 	template<typename Type>
 	void getAllElements(std::vector<std::shared_ptr<Type>> &out)
 	{
-		typename std::vector<Ptr>::iterator feIt = elements.begin();
-		while(feIt != elements.end())
+		for(auto& ptr : elements)
 		{
-			if((*feIt)->name == Type::DataType::getName())
+			if(ptr->name == Type::DataType::getName())
 			{
-				out.push_back(std::static_pointer_cast<Type>(*feIt));
+				out.push_back(std::static_pointer_cast<Type>(ptr));
 			}
-			++feIt;
 		}
 	}
 
@@ -193,96 +193,69 @@ public:
 	template<typename Type>
 	void getAllElements(std::vector<Type const *> &out) const
 	{
-		typename std::vector<ConstPtr>::const_iterator feIt = elements.begin();
-		while(feIt != elements.end())
+		for (auto const& ptr : elements)
 		{
-			if((*feIt)->name == Type::DataType::getName())
-			{
-				out.push_back(std::static_pointer_cast<std::shared_ptr<Type>>(*feIt));
-			}
-			++feIt;
-		}
-	}
-
-	size_t cloneElement(size_t const elementToCopy);
-
-	void removeDerived(DerivedType change)
-	{
-		assert(change != DerivedType::NotDerived);
-
-		std::vector<Ptr> derivedElements;
-		// wipe derived data
-		for(size_t i = 0; i < getSizeOfElementContainer(); ++i)
-		{
-			Ptr elementContainer = getElementContainer(i);
-			if(elementContainer->derived() >= change)
-			{
-				derivedElements.push_back(elementContainer);
-			}
-		}
-
-		for(auto toRemove : derivedElements)
-		{
-			auto it = std::find(elements.begin(), elements.end(), toRemove);
-			if(it != elements.end())
-			{
-				elements.erase(it);
+			if (ptr->name == Type::DataType::getName())
+			{				
+				out.push_back(std::static_pointer_cast<Type const>(ptr));
 			}
 		}
 	}
+
+	auto cloneElement(IndexType elementToCopy) -> IndexType;
+
+	void removeDerived(DerivedType change);
 
 private:
-	// elements
-	std::vector<Ptr> elements;
+	// we have a flag per element item saying if that element item is not valid
+	using elementContainer = std::vector<std::shared_ptr<ContainerType>>;
+	using notValidContainer = std::vector<bool>;
 
-	std::vector<bool> notValidFlags; // yes I know vector bool aren't the greatest
+	elementContainer elements;
+	notValidContainer notValids;
 };
 
-template<typename T>
-inline void VariContainer<T>::clear()
+template<typename CT>
+inline void VariContainer<CT>::clear()
 {
 	elements.clear();
-	notValidFlags.clear();
+	notValids.clear();
 }
 
-template<typename T>
-inline size_t VariContainer<T>::size() const
+template<typename CT>
+inline auto VariContainer<CT>::size() const -> size_t
 {
-	return notValidFlags.size();
+	return notValids.size();
 }
 
-template<typename T>
-inline size_t VariContainer<T>::resizeForNewElement()
+template<typename CT>
+inline auto VariContainer<CT>::resizeForNewElement() -> IndexType
 {
-	size_t preSize = notValidFlags.size();
-	resize(preSize + 1);
-	return preSize;
+	size_t initialSize = notValids.size();
+	resize(initialSize + 1);
+	return IndexType(initialSize);
 }
 
-template<typename T>
-inline void VariContainer<T>::resize(size_t const size)
+template<typename CT>
+inline void VariContainer<CT>::resize(size_t const size)
 {
-	notValidFlags.resize(size);
-
-	typename std::vector<Ptr>::iterator veIt = elements.begin();
-	while(veIt != elements.end())
+	for (auto& con : elements)
 	{
-		(*veIt)->resize(size);
-		++veIt;
+		con->resize(size);
 	}
+	notValids.resize(size);
 }
 
-template<typename T>
-inline typename VariContainer<T>::Ptr VariContainer<T>::addElements(Ptr ele, std::string const &subName)
+template<typename CT>
+inline auto VariContainer<CT>::addElement(std::shared_ptr<ContainerType> ele_, std::string_view subName_) -> void
 {
-	elements.push_back(ele);
-	ele->resize(notValidFlags.size());
-	ele->subName = subName;
-	return ele;
+	elements.push_back(ele_);
+	ele_->resize(notValids.size());
+	ele_->subName = subName_;
 }
 
-template<typename T>
-inline void VariContainer<T>::removeElements(Ptr ele)
+template<typename CT>
+inline void VariContainer<CT>::removeElements(std::shared_ptr<ContainerType> ele)
 {
 	auto it = std::find(elements.begin(), elements.end(), ele);
 	if (it != elements.end())
@@ -292,136 +265,118 @@ inline void VariContainer<T>::removeElements(Ptr ele)
 }
 
 
-template<typename T>
-inline typename VariContainer<T>::Ptr VariContainer<T>::getElements(std::string const &name)
+template<typename CT>
+inline auto VariContainer<CT>::getElement(std::string_view name_) -> std::shared_ptr<ContainerType>
 {
-	typename std::vector<Ptr>::iterator feIt = elements.begin();
-
-	while(feIt != elements.end())
+	for(auto ptr : elements)
 	{
-		if((*feIt)->name == name)
+		if(ptr->name == name_)
+			return ptr;
+	}
+	return {};
+}
+
+template<typename CT>
+inline auto VariContainer<CT>::getElement(std::string_view name_) const -> std::shared_ptr<ContainerType const>
+{
+	for (auto ptr : elements)
+	{
+		if (ptr->name == name_)
+			return ptr;
+	}
+	return {};
+}
+
+template<typename CT>
+inline void VariContainer<CT>::getAllElementsNamed(std::string_view name_, std::vector<std::shared_ptr<ContainerType>> &out_)
+{
+	for (auto ptr : elements)
+	{
+		if (ptr->name == name_)
+			out_.push_back(ptr);
+	}
+}
+
+template<typename CT>
+inline void VariContainer<CT>::getAllElementsNamed(std::string_view name_,
+												  std::vector<std::shared_ptr<ContainerType const>> &out_) const
+{
+	for (auto ptr : elements)
+	{
+		if (ptr->name == name_)
+			out_.push_back(ptr);
+	}
+}
+
+template<typename CT>
+inline auto VariContainer<CT>::getElementFromNameAndSubName(std::string_view name_,
+													  std::string_view subName_) -> std::shared_ptr<ContainerType>
+{
+	for (auto ptr : elements)
+	{
+		if (ptr->name == name_ && ptr->subName == subName_)
+			return ptr;
+	}
+	return {};
+}
+
+template<typename CT>
+inline auto VariContainer<CT>::getElementFromNameAndSubName(std::string_view name_,
+															std::string_view subName_) const -> std::shared_ptr<ContainerType const>
+{
+	for (auto ptr : elements)
+	{
+		if (ptr->name == name_ && ptr->subName == subName_)
+			return ptr;
+	}
+
+	return {};
+}
+
+template<typename CT>
+inline auto VariContainer<CT>::cloneElement(IndexType elementToCopy_) -> IndexType
+{
+	for (auto ptr : elements)
+	{
+		ptr->cloneElement(elementToCopy_);
+	}
+
+	return IndexType(size() - 1);
+}
+
+template<typename CT>
+inline void VariContainer<CT>::cloneTo(VariContainer<CT> &nvc) const
+{
+	for (auto const& ptr : elements)
+	{
+		nvc.elements.push_back(ptr);
+	}
+	nvc.notValids = notValids;
+}
+
+template<typename CT>
+inline void VariContainer<CT>::removeDerived(DerivedType change)
+{
+	assert(change != DerivedType::NotDerived);
+
+	std::vector<std::shared_ptr<ContainerType>> derivedElements;
+	// wipe derived data
+	for (size_t i = 0; i < getSizeOfElementContainer(); ++i)
+	{
+		auto elementContainer = getElementContainer(i);
+		if (elementContainer->derived() >= change)
 		{
-			return (*feIt);
+			derivedElements.push_back(elementContainer);
 		}
-		++feIt;
 	}
 
-	return nullptr;
-}
-
-template<typename T>
-inline typename VariContainer<T>::ConstPtr VariContainer<T>::getElements(std::string const &name) const
-{
-	typename std::vector<Ptr>::const_iterator feIt = elements.begin();
-
-	while(feIt != elements.end())
+	for (auto toRemove : derivedElements)
 	{
-		if((*feIt)->name == name)
+		auto it = std::find(elements.cbegin(), elements.cend(), toRemove);
+		if(it != elements.cend())
 		{
-			return (*feIt);
+			elements.erase(it);
 		}
-		++feIt;
-	}
-
-	return nullptr;
-}
-
-
-template<typename T>
-inline void VariContainer<T>::getAllElementsNamed(std::string const &name, std::vector<Ptr> &out)
-{
-	typename std::vector<Ptr>::iterator feIt = elements.begin();
-
-	while(feIt != elements.end())
-	{
-		if((*feIt)->name == name)
-		{
-			out.push_back((*feIt));
-		}
-		++feIt;
-	}
-}
-
-template<typename T>
-inline void VariContainer<T>::getAllElementsNamed(std::string const &name,
-												  std::vector<ConstPtr> &out) const
-{
-	typename std::vector<T *>::const_iterator feIt = elements.begin();
-
-	while(feIt != elements.end())
-	{
-		if((*feIt)->name == name)
-		{
-			out.push_back((*feIt));
-		}
-		++feIt;
-	}
-}
-
-template<typename T>
-inline typename VariContainer<T>::Ptr VariContainer<T>::getElementsNameAndSubName(std::string const &name,
-													  std::string const &subname)
-{
-	typename std::vector<Ptr>::iterator feIt = elements.begin();
-
-	while(feIt != elements.end())
-	{
-		if(((*feIt)->name == name) &&
-		   ((*feIt)->subName == subname))
-		{
-			return (*feIt);
-		}
-		++feIt;
-	}
-
-	return nullptr;
-}
-
-template<typename T>
-inline typename VariContainer<T>::ConstPtr VariContainer<T>::getElementsNameAndSubName(std::string const &name,
-															std::string const &subname) const
-{
-	typename std::vector<Ptr>::const_iterator feIt = elements.begin();
-
-	while(feIt != elements.end())
-	{
-		if(((*feIt)->name == name) &&
-		   ((*feIt)->subName == subname))
-		{
-			return (*feIt);
-		}
-		++feIt;
-	}
-
-	return ConstPtr();
-}
-
-template<typename T>
-inline size_t VariContainer<T>::cloneElement(size_t const elementToCopy)
-{
-	typename std::vector<Ptr>::iterator feIt = elements.begin();
-	notValidFlags.push_back(false);
-
-	while(feIt != elements.end())
-	{
-		(*feIt)->cloneElement(elementToCopy);
-		++feIt;
-	}
-
-	return size() - 1;
-}
-
-template<typename T>
-inline void VariContainer<T>::cloneTo(VariContainer<T> &nvc) const
-{
-	typename std::vector<Ptr>::const_iterator feIt = elements.cbegin();
-	nvc.clear();
-	nvc.notValidFlags = notValidFlags;
-
-	while(feIt != elements.cend())
-	{
-		nvc.elements.push_back((*feIt)->clone());
-		++feIt;
 	}
 }
 

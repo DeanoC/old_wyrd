@@ -27,6 +27,7 @@
 #include "meshops/shapes.h"
 #include "input/provider.h"
 #include "input/vpadlistener.h"
+#include "meshops/gltf.h"
 
 struct SimplePadCamera : public Input::VPadListener
 {
@@ -194,6 +195,10 @@ struct App
 		auto rootScene = std::make_shared<MeshMod::SceneNode>();
 		rootScene->addObject(MeshOps::Shapes::createSphere(3));
 		solidSceneIndex = meshModRenderer->addScene(rootScene);
+
+//		auto sponzaScene = MeshOps::Gltf::LoadAscii("gltf/Sponza/Sponza.gltf");
+//		sponzaSceneIndex = meshModRenderer->addScene(sponzaScene);
+
 	}
 
 	auto body() -> bool
@@ -296,6 +301,8 @@ struct App
 	std::unique_ptr<MidRender::ImguiBindings> imguiBindings;
 	std::unique_ptr<MidRender::MeshModRenderer> meshModRenderer;
 	MidRender::SceneIndex solidSceneIndex;
+	MidRender::SceneIndex sponzaSceneIndex;
+
 };
 
 int Main(Shell::ShellInterface& shell_)

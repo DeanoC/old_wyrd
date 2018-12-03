@@ -1,6 +1,6 @@
-#if !defined(USING_STATIC_LIBS)
 #define STB_IMAGE_IMPLEMENTATION
-#endif
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define LOGURU_IMPLEMENTATION 1
 
 #include "core/core.h"
 #include "cgeometryengine.h"
@@ -18,11 +18,10 @@
 #include "core/freelist.h"
 #include "core/blob.h"
 
-#if !defined(USING_STATIC_LIBS)
 enki::TaskScheduler g_EnkiTS;
-#endif
-
 #include "tinygltf/stb_image.h"
+#include "tinygltf/stb_image_write.h"
+
 #include "ctacticalmap.h"
 
 static Core::FreeList<TacticalMap::Ptr, uint32_t> unityOwnedTacticalMap;
@@ -263,7 +262,7 @@ CAPI auto CTMB_ExportToGLTF(TacticalMapBuilderHandle tmHandle, char const* fileN
 					VertexIndex outVIndex = out->getVertices().add(pos.x, pos.y, pos.z);
 					polyIndices.push_back(outVIndex);
 				});
-			out->getPolygons().add(polyIndices, 0);
+			out->getPolygons().add(polyIndices);
 		}
 	}
 	out->updateFromEdits();
@@ -297,7 +296,7 @@ CAPI auto CTMB_AddMeshAt(TacticalMapBuilderHandle handle, TacticalMapHandle mesh
 	assert(unityOwnedTacticalMapBuilders.at((uint32_t)handle));
 	assert(levelData);
 	auto const tmb = unityOwnedTacticalMapBuilders[(uint32_t)handle];
-	MeshMod::MeshPtr mesh(UnityOwnedMesh(meshHandle));
+	std::shared_ptr<MeshMod::Mesh> mesh(UnityOwnedMesh(meshHandle));
 
 	Math::mat4x4 transform = Math::Mat4x4FromArray(matrix);
 	tmb->addMeshAt(mesh, levelData, transform);

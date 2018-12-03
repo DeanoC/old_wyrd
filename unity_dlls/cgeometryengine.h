@@ -41,8 +41,8 @@ struct CGeometryEngineInterface
 
 };
 
-EXPORT_CPP MeshMod::Mesh::Ptr UnityOwnedMesh(MeshHandle meshHandle);
-EXPORT_CPP MeshHandle TakeOwnershipOfMesh(MeshMod::Mesh::Ptr mesh);
+EXPORT_CPP std::shared_ptr<MeshMod::Mesh> UnityOwnedMesh(MeshHandle meshHandle);
+EXPORT_CPP MeshHandle TakeOwnershipOfMesh(std::shared_ptr<MeshMod::Mesh> mesh);
 
 
 #if !defined(USING_STATIC_LIBS)

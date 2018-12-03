@@ -113,7 +113,9 @@ struct BoneWeight
 	}
 
 
-	static const std::string getName() { return "BoneWeight"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "BoneWeight"sv; };
 };
 
 struct PositionDelta
@@ -144,26 +146,31 @@ struct PositionDelta
 							 (dz * u) + (b.dz * v) + (c.dz * w));
 	}
 
-	static const std::string getName() { return "PositionDelta"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "PositionDelta"sv; };
 };
 
 struct SortIndex
 {
-	size_t index;
+	VertexIndex index;
 
 	SortIndex() {};
 
-	SortIndex(const unsigned int in_) :
-			index(in_) {}
+	SortIndex(VertexIndex in_) : index(in_) {}
 
-	static const std::string getName() { return "SortIndex"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "SortIndex"sv; };
 };
 
 struct HalfEdge
 {
 	HalfEdgeIndexContainer halfEdgeIndexContainer;
 
-	static const std::string getName() { return "HalfEdge"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "HalfEdge"sv; };
 };
 
 }

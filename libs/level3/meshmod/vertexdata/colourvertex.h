@@ -82,7 +82,9 @@ struct FloatRGBAColour
 	}
 
 	//! name is used to get this data
-	static const std::string getName() { return "FloatRGBAColour"; };
+	static constexpr std::string_view const getName() { 
+		using namespace std::literals; 
+		return "FloatRGBAColour"sv; };
 };
 //! float colour RGBA vertex element (r,g,b,a)
 typedef BaseElements<VertexData::FloatRGBAColour, Vertex_, true, DerivedType::NotDerived> FloatRGBAColourVertexElements;

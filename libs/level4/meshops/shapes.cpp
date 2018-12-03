@@ -35,15 +35,17 @@ auto Shapes::createDiamond() -> std::unique_ptr<MeshMod::Mesh>
 			{0,     -1, 0},
 	};
 
+	using vi = VertexIndex;
+
 	VertexIndexContainer const faces[] = {
-			{0, 4, 1},
-			{1, 4, 2},
-			{2, 4, 3},
-			{3, 4, 0},
-			{0, 5, 1},
-			{1, 5, 2},
-			{2, 5, 3},
-			{3, 5, 0},
+			{vi(0), vi(4), vi(1) },
+			{vi(1), vi(4), vi(2) },
+			{vi(2), vi(4), vi(3) },
+			{vi(3), vi(4), vi(0) },
+			{vi(0), vi(5), vi(1) },
+			{vi(1), vi(5), vi(2) },
+			{vi(2), vi(5), vi(3) },
+			{vi(3), vi(5), vi(0) },
 	};
 	for(auto p : pos)
 	{
@@ -58,7 +60,7 @@ auto Shapes::createDiamond() -> std::unique_ptr<MeshMod::Mesh>
 
 	assert(mesh->getVertices().getCount() == 6);
 	assert(mesh->getPolygons().getCount() == 8);
-	assert(mesh->getHalfEdges().getCount() / 2 == 12);
+	assert(mesh->getHalfEdges().getCount() == 24);
 
 	return std::move(mesh);
 
@@ -86,7 +88,7 @@ auto Shapes::createSphere(uint32_t subdivisionSteps_) -> std::unique_ptr<MeshMod
 	mesh->updateEditState(MeshMod::Mesh::PositionEdits);
 	mesh->updateFromEdits();
 
-	return std::make_unique<Mesh>(*mesh);
+	return mesh->clone();
 }
 
 }

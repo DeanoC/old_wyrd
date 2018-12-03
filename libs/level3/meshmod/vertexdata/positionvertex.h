@@ -11,6 +11,7 @@
 
 #include "meshmod/meshmod.h"
 #include "meshmod/varielements.h"
+#include <string_view>
 
 namespace MeshMod {
 namespace VertexData {
@@ -125,7 +126,9 @@ struct Position
 	}
 
 	//! name used to get this kind of data
-	static const std::string getName() { return "Position"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "Position"sv; };
 };
 
 //! position vertex Element (x,y,z)

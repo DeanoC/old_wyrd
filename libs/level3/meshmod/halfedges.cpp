@@ -6,6 +6,7 @@
 #include "mesh.h"
 #include <algorithm>
 #include <string>
+#include <unordered_set>
 
 namespace MeshMod {
 
@@ -33,15 +34,15 @@ HalfEdgeIndex HalfEdges::add(VertexIndex const svIndex, VertexIndex const evInde
 	e0.startVertexIndex = svIndex;
 	e0.endVertexIndex = evIndex;
 	e0.polygonIndex = faceIndex;
-	e0.next = MM_INVALID_INDEX;
-	e0.prev = MM_INVALID_INDEX;
+	e0.next = InvalidHalfEdgeIndex;
+	e0.prev = InvalidHalfEdgeIndex;
 
 	auto& vertices = owner.getVertices();
 
 	HalfEdgeIndex halfEdgeIndex = (HalfEdgeIndex) halfEdgesContainer.resizeForNewElement();
 	halfEdge(halfEdgeIndex) = e0;
 
-	auto& verticesHalfEdge = vertices.getOrAddAttributes<VertexData::HalfEdges>();
+	auto& verticesHalfEdge = vertices.getOrAddAttribute<VertexData::HalfEdges>();
 
 	// check for duplicates
 	if(std::find(verticesHalfEdge[svIndex].halfEdgeIndexContainer.begin(),
@@ -51,9 +52,10 @@ HalfEdgeIndex HalfEdges::add(VertexIndex const svIndex, VertexIndex const evInde
 		verticesHalfEdge[svIndex].halfEdgeIndexContainer.push_back(halfEdgeIndex);
 	}
 
-	if(std::find(verticesHalfEdge [evIndex].halfEdgeIndexContainer.begin(),
-				 verticesHalfEdge [evIndex].halfEdgeIndexContainer.end(),
-				 halfEdgeIndex) == verticesHalfEdge [evIndex].halfEdgeIndexContainer.end())
+	if(std::find(verticesHalfEdge[evIndex].halfEdgeIndexContainer.begin(),
+				 verticesHalfEdge[evIndex].halfEdgeIndexContainer.end(),
+				 halfEdgeIndex) == 
+		verticesHalfEdge [evIndex].halfEdgeIndexContainer.end())
 	{
 		verticesHalfEdge[evIndex].halfEdgeIndexContainer.push_back(halfEdgeIndex);
 	}
@@ -69,15 +71,15 @@ void HalfEdges::remove(HalfEdgeIndex const index)
 	Polygons& polygons = owner.getPolygons();
 
 	HalfEdgeData::HalfEdge& hedge = halfEdge(index);
-	VertexData::HalfEdges& vertexHalfEdges = vertices.getAttributes<VertexData::HalfEdges>();
+	VertexData::HalfEdges& vertexHalfEdges = vertices.getAttribute<VertexData::HalfEdges>();
 
 	// change the polygons any half edge to next if possible
-	if (hedge.polygonIndex != MM_INVALID_INDEX)
+	if (hedge.polygonIndex != InvalidPolygonIndex)
 	{
 		auto& polygon = polygons.polygon(hedge.polygonIndex);
-		if (hedge.next == MM_INVALID_INDEX || hedge.next == index)
+		if (hedge.next == InvalidHalfEdgeIndex || hedge.next == index)
 		{
-			polygon.anyHalfEdge = MM_INVALID_INDEX;
+			polygon.anyHalfEdge = InvalidHalfEdgeIndex;
 			polygons.remove(hedge.polygonIndex);
 		}
 		else
@@ -87,13 +89,13 @@ void HalfEdges::remove(HalfEdgeIndex const index)
 	}
 
 	// link previous halfedge to next half edge (and vice versa)
-	if (hedge.prev != MM_INVALID_INDEX)
+	if (hedge.prev != InvalidHalfEdgeIndex)
 	{
 		HalfEdgeData::HalfEdge& prevHE = halfEdge(hedge.prev);
 		prevHE.endVertexIndex = hedge.startVertexIndex;
 		prevHE.next = hedge.next;
 	}
-	if(hedge.next != MM_INVALID_INDEX)
+	if(hedge.next != InvalidHalfEdgeIndex)
 	{
 		HalfEdgeData::HalfEdge& nextHE = halfEdge(hedge.next);
 		nextHE.startVertexIndex = hedge.endVertexIndex;
@@ -101,10 +103,10 @@ void HalfEdges::remove(HalfEdgeIndex const index)
 	}
 
 	// remove from pair's pair 
-	if (hedge.pair != MM_INVALID_INDEX)
+	if (hedge.pair != InvalidHalfEdgeIndex)
 	{
 		auto& pedge = halfEdge(hedge.pair);
-		pedge.pair = MM_INVALID_INDEX;
+		pedge.pair = InvalidHalfEdgeIndex;
 	}
 
 	// from this half edge from start and end vertex half edge lists
@@ -127,10 +129,10 @@ void HalfEdges::remove(HalfEdgeIndex const index)
 		if (eit != evhe.halfEdgeIndexContainer.end()) evhe.halfEdgeIndexContainer.erase(eit);
 	}
 
-	hedge.prev = MM_INVALID_INDEX;
-	hedge.next = MM_INVALID_INDEX;
-	hedge.pair = MM_INVALID_INDEX;
-	hedge.polygonIndex = MM_INVALID_INDEX;
+	hedge.prev = InvalidHalfEdgeIndex;
+	hedge.next = InvalidHalfEdgeIndex;
+	hedge.pair = InvalidHalfEdgeIndex;
+	hedge.polygonIndex = InvalidPolygonIndex;
 	halfEdgesContainer.setValid(index, false);
 
 }
@@ -138,7 +140,7 @@ void HalfEdges::removeEdge(HalfEdgeIndex const index)
 {
 	HalfEdgeData::HalfEdge& hedge = halfEdge(index);
 	// remove pair half edge 
-	if (hedge.pair != MM_INVALID_INDEX)
+	if (hedge.pair != InvalidHalfEdgeIndex)
 	{
 		remove(hedge.pair);
 	}
@@ -152,116 +154,128 @@ void HalfEdges::repack()
 	auto& polygons = owner.getPolygons();
 
 	// [index] = existing half edge index of valid indices
-	std::vector<VertexIndex> newToOld;
-	std::vector<VertexIndex> oldToNew; // MM_INVALID_INDEX if no new index
-	newToOld.resize(halfEdgesContainer.size());
-	oldToNew.resize(halfEdgesContainer.size());
+	std::vector<HalfEdgeIndex> newToOld;
+	std::vector<HalfEdgeIndex> oldToNew; // InvalidHalfEdgeIndex if no new index
+	newToOld.reserve(halfEdgesContainer.size());
+	oldToNew.reserve(halfEdgesContainer.size());
 
-	size_t validCount = 0;
-	size_t invalidCount = 0;
-	for (auto heIndex = 0u; heIndex < halfEdgesContainer.size(); ++heIndex)
+	for (auto i = 0u; i < halfEdgesContainer.size(); ++i)
 	{
-		if (isValid(heIndex))
+		HalfEdgeIndex hei = HalfEdgeIndex{ i };
+		bool valid = isValid(hei);
+		if (valid)
 		{
-			auto& halfEdge = halfEdges.halfEdge(heIndex);
-			assert(isValid(halfEdge.prev));
-			assert(isValid(halfEdge.next));
-			newToOld[validCount] = heIndex;
-			oldToNew[heIndex] = (VertexIndex) validCount;
-			validCount++;
+			auto& halfEdge = halfEdges.halfEdge(hei);
+			if (!isValid(halfEdge.prev) || !isValid(halfEdge.next))
+			{
+				valid = false;
+			}
+		}
+
+		if(valid)
+		{
+			oldToNew.push_back(HalfEdgeIndex(newToOld.size()));
+			newToOld.push_back(hei);
 		}
 		else
 		{
-			oldToNew[heIndex] = MM_INVALID_INDEX;
-			invalidCount++;
+			oldToNew.push_back(InvalidHalfEdgeIndex);
 		}
 	}
 
 	// nothing to repack
-	if (invalidCount == 0) return;
+	if (newToOld.size() == 0) return;
 	
-	polygons.visitValid([this, &polygons, &oldToNew](PolygonIndex polyIndex) {
+	std::unordered_set<PolygonIndex> toRemove;
+
+	polygons.visitValid(
+		[this, &polygons, &halfEdges, &oldToNew, &toRemove](PolygonIndex polyIndex) {
 		auto& poly = polygons.polygon(polyIndex);
 
-		if (poly.anyHalfEdge == MM_INVALID_INDEX)
+		if (poly.anyHalfEdge == InvalidHalfEdgeIndex)
 		{
-			// mark this polygon as invalid
-			polygons.remove(polyIndex);
+			toRemove.insert(polyIndex);
 			return;
 		}
-		if (oldToNew[poly.anyHalfEdge] == MM_INVALID_INDEX)
+
+		polygons.visitHalfEdges(polyIndex, 
+			[this, &polygons, &halfEdges, &oldToNew, polyIndex, &toRemove](HalfEdgeIndex hei)
 		{
-			// mark this polygon as invalid
-			polygons.remove(polyIndex);
-			return;
-		}
+			if (!isValid(hei))
+			{
+				toRemove.insert(polyIndex);
+				return;
+			}
+		});
 	});
 
-	newToOld.resize(validCount);
+	for (auto pindex : toRemove)
+	{
+		polygons.remove(pindex);
+	}
 
 	HalfEdgeElementsContainer newHalfEdgeCon;
 	halfEdgesContainer.cloneTo(newHalfEdgeCon);
-	newHalfEdgeCon.resize(validCount);
+	newHalfEdgeCon.resize(newToOld.size());
 	newHalfEdgeCon.resetValidFlags();
 
 	for (size_t i = 0; i < newHalfEdgeCon.getSizeOfElementContainer(); ++i)
 	{
-		HalfEdgeElementsContainer::Ptr oldCon = halfEdgesContainer.getElementContainer(i);
-		HalfEdgeElementsContainer::Ptr newCon = newHalfEdgeCon.getElementContainer(i);
+		auto oldCon = halfEdgesContainer.getElementContainer(i);
+		auto newCon = newHalfEdgeCon.getElementContainer(i);
 
-		for (size_t heIndex = 0; heIndex < validCount; ++heIndex)
+		for (size_t heIndex = 0; heIndex < newToOld.size(); ++heIndex)
 		{
-			oldCon->unsafeCopyElementTo(*newCon, newToOld[heIndex], heIndex);
+			oldCon->unsafeCopyElementTo(*newCon, 
+				newToOld[heIndex], 
+				HalfEdgeIndex(heIndex));
 		}
 	}
 
 	// half edge now remapped
 	newHalfEdgeCon.cloneTo(halfEdgesContainer);
 
-	auto& vertexHalfEdges = vertices.getAttributes<VertexData::HalfEdges>();
+	auto& vertexHalfEdges = vertices.getAttribute<VertexData::HalfEdges>();
 	for (auto newIndex = 0u; newIndex < getCount(); ++newIndex)
 	{
-		auto& halfEdge = halfEdges.halfEdge(newIndex);
+		auto& halfEdge = halfEdges.halfEdge(HalfEdgeIndex(newIndex));
 
-		halfEdge.prev = oldToNew[halfEdge.prev];
-		halfEdge.next = oldToNew[halfEdge.next];
+		halfEdge.prev = oldToNew[size_t(halfEdge.prev)];
+		halfEdge.next = oldToNew[size_t(halfEdge.next)];
 		auto oldIndex = newToOld[newIndex];
 
-		if (halfEdge.pair != MM_INVALID_INDEX)
+		if (halfEdge.pair != InvalidHalfEdgeIndex)
 		{
-			if(oldToNew[halfEdge.pair] >= validCount)
-				halfEdge.pair = MM_INVALID_INDEX;
+
+			if(size_t(oldToNew[size_t(halfEdge.pair)]) >= newToOld.size())
+				halfEdge.pair = InvalidHalfEdgeIndex;
 			else
-				halfEdge.pair = oldToNew[halfEdge.pair];
+				halfEdge.pair = oldToNew[size_t(halfEdge.pair)];
 		}
 	}
 
-	vertices.visitAll([this, &halfEdges, &vertexHalfEdges, &oldToNew, validCount](VertexIndex vertexIndex)
+	vertices.visitAll(
+		[this, &halfEdges, &vertexHalfEdges, &oldToNew, &newToOld](VertexIndex vertexIndex)
 	{
 		auto& vheList = vertexHalfEdges[vertexIndex].halfEdgeIndexContainer;
 		for (auto& heIndex : vheList)
 		{
+			auto remapHEIndex = oldToNew[size_t(heIndex)];
+			if (size_t(remapHEIndex) >= newToOld.size())
+				remapHEIndex = InvalidHalfEdgeIndex;
 
-			if (oldToNew[heIndex] < validCount)
-			{
-				heIndex = oldToNew[heIndex];
-			}
-			else
-			{
-				heIndex = MM_INVALID_INDEX;
-			}
+			heIndex = remapHEIndex;
 		}
 		vheList.erase(std::remove_if(vheList.begin(), vheList.end(), [](HalfEdgeIndex heIndex) {
-			return heIndex == MM_INVALID_INDEX;
+			return heIndex == InvalidHalfEdgeIndex;
 		}), vheList.end());
 	});
 
 	polygons.visitValid([this, &polygons, &oldToNew](PolygonIndex polyIndex) {
 		auto& poly = polygons.polygon(polyIndex);
-		assert(oldToNew[poly.anyHalfEdge] != MM_INVALID_INDEX);
-		poly.anyHalfEdge = oldToNew[poly.anyHalfEdge];
+		assert(oldToNew[size_t(poly.anyHalfEdge)] != InvalidHalfEdgeIndex);
+		poly.anyHalfEdge = oldToNew[size_t(poly.anyHalfEdge)];
 	});
-
 }
 /**
 Breaks all edge pairs for the entire mesh.
@@ -272,7 +286,7 @@ void HalfEdges::breakPairs()
 	std::vector<HalfEdgeData::HalfEdge>::iterator edgeIt = halfEdges().begin();
 	while(edgeIt != halfEdges().end())
 	{
-		(*edgeIt).pair = MM_INVALID_INDEX;
+		(*edgeIt).pair = InvalidHalfEdgeIndex;
 		++edgeIt;
 	}
 }
@@ -302,8 +316,8 @@ void HalfEdges::connectPairs()
 			HalfEdgeData::HalfEdge& he = halfEdge(halfEdgeIndex);
 			VertexIndex startVert = he.startVertexIndex;
 			VertexIndex endVert = he.endVertexIndex;
-			if (startVert == MM_INVALID_INDEX || 
-				endVert == MM_INVALID_INDEX)
+			if (startVert == InvalidVertexIndex || 
+				endVert == InvalidVertexIndex)
 				break;
 
 			// swap indices for consistent ordering
@@ -311,10 +325,10 @@ void HalfEdges::connectPairs()
 			{
 				std::swap(startVert, endVert);
 			}
-			auto const& vertexHalfEdges = vertices.getAttributes<VertexData::HalfEdges>();
+			auto const& vertexHalfEdges = vertices.getAttribute<VertexData::HalfEdges>();
 
 			//iterate through the edges connect to the start vertex
-			for(auto vheIndex : vertexHalfEdges.get(startVert).halfEdgeIndexContainer)
+			for(auto vheIndex : vertexHalfEdges.at(startVert).halfEdgeIndexContainer)
 			{
 				// check that we are not working on our own edge
 				if(vheIndex != halfEdgeIndex)
@@ -322,7 +336,7 @@ void HalfEdges::connectPairs()
 					// does this edge have the same start and end vertex indices, if so its a pair
 					HalfEdgeData::HalfEdge& e0 = halfEdge(vheIndex);
 					HalfEdgeData::HalfEdge& e1 = halfEdge(halfEdgeIndex);
-					if (e0.pair == MM_INVALID_INDEX && e1.pair == MM_INVALID_INDEX)
+					if (e0.pair == InvalidHalfEdgeIndex && e1.pair == InvalidHalfEdgeIndex)
 					{
 						if (((e0.startVertexIndex == startVert) &&
 							(e0.endVertexIndex == endVert)) ||
@@ -344,7 +358,7 @@ void HalfEdges::visitAll(std::function<void(HalfEdgeIndex const)> const& func)
 {
 	for (auto i = 0u; i < halfEdgesContainer.size(); ++i)
 	{
-		func(i);
+		func(HalfEdgeIndex(i));
 	}
 }
 
@@ -352,9 +366,10 @@ void HalfEdges::visitValid(std::function<void(HalfEdgeIndex const)> const& func)
 {
 	for (auto i = 0u; i < halfEdgesContainer.size(); ++i)
 	{
-		if (isValid(i))
+		HalfEdgeIndex hei{ i };
+		if (isValid(hei))
 		{
-			func(i);
+			func(hei);
 		}
 	}
 }
@@ -363,7 +378,7 @@ void HalfEdges::visitLoop(HalfEdgeIndex const firstHalfEdgeIndex, std::function<
 {
 	HalfEdgeIndex halfEdgeIndex = firstHalfEdgeIndex;
 
-	if (halfEdgeIndex == MM_INVALID_INDEX) return;
+	if (halfEdgeIndex == InvalidHalfEdgeIndex) return;
 
 	// vists half edges for polygons
 	do

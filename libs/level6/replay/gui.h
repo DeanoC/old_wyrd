@@ -84,6 +84,9 @@ protected:
 
 	auto sceneView(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void;
 	auto meshView(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void;
+
+	auto meshCallback(Item const& item_) -> bool;
+
 };
 
 }

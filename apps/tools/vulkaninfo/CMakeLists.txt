@@ -8,7 +8,7 @@ set(VULKANINFO_SOURCE
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/live)
 add_executable(vulkaninfo WIN32 ${VULKANINFO_SOURCE})
 add_definitions(-DUSING_STATIC_LIBS)
-target_link_libraries(vulkaninfo wyrd_static)
+target_link_libraries(vulkaninfo wyrd_static shell)
 include_directories(${wyrd_INCLUDES})
 target_compile_definitions(vulkaninfo PRIVATE ${wyrd_DEFINITIONS})
 

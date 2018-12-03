@@ -1,6 +1,6 @@
-#if !defined(USING_STATIC_LIBS)
 #define STB_IMAGE_IMPLEMENTATION
-#endif
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define LOGURU_IMPLEMENTATION 1
 #include "core/core.h"
 #include "crc32c/crc32c.h"
 #include "core/quick_hash.h"
@@ -19,11 +19,11 @@
 #include "meshops/basicmeshops.h"
 #include "meshops/convexhullcomputer.h"
 
-
 #include "tinygltf/stb_image.h"
+#include "tinygltf/stb_image_write.h"
 
-static std::vector<MeshMod::Mesh::Ptr> unityOwnedMeshes;
-static std::vector<MeshOps::ConvexHullComputer::Ptr> unityOwnedConvexHullComputers;
+static std::vector<std::shared_ptr<MeshMod::Mesh>> unityOwnedMeshes;
+static std::vector<std::shared_ptr<MeshOps::ConvexHullComputer::ReturnType>> unityOwnedConvexHullComputers;
 
 /*
  * 1) The unity Mesh approach
@@ -71,9 +71,9 @@ CAPI auto CGE_CreateMeshFromSimpleMesh( int type, char *name, SimpleMesh *simple
 	for(auto i = 0u; i < simpleMesh->triangleCount; ++i)
 	{
 		VertexIndexContainer triIndices = {
-				simpleMesh->triangleIndices[(i * 3) + 0],
-				simpleMesh->triangleIndices[(i * 3) + 2],
-				simpleMesh->triangleIndices[(i * 3) + 1]
+				VertexIndex(simpleMesh->triangleIndices[(i * 3) + 0]),
+				VertexIndex(simpleMesh->triangleIndices[(i * 3) + 2]),
+				VertexIndex(simpleMesh->triangleIndices[(i * 3) + 1])
 		};
 		mesh->getPolygons().add( triIndices );
 	}
@@ -98,8 +98,8 @@ CAPI auto CGE_AddPositions( MeshHandle meshHandle, uint32_t count, intptr_t iptr
 	assert( meshHandle < unityOwnedMeshes.size());
 	assert( unityOwnedMeshes[(size_t) meshHandle] );
 
-	MeshMod::Mesh::Ptr mesh = unityOwnedMeshes[(uint32_t) meshHandle];
-	MeshMod::VertexIndex startIndex = mesh->getVertices().getCount();
+	auto mesh = unityOwnedMeshes[(uint32_t) meshHandle];
+	auto startIndex = mesh->getVertices().getCount();
 
 	float *positions = reinterpret_cast<float *>(iptr);
 	for(auto i = 0u; i < count; ++i)
@@ -108,7 +108,7 @@ CAPI auto CGE_AddPositions( MeshHandle meshHandle, uint32_t count, intptr_t iptr
 									positions[i * 3 + 1],
 									positions[i * 3 + 2] );
 	}
-	return startIndex;
+	return uint32_t(startIndex);
 }
 
 // add any optional vertex data after AddPositions
@@ -118,8 +118,8 @@ CAPI auto CGE_AddVertexData( MeshHandle meshHandle, char *typeName, uint32_t sta
 	assert( unityOwnedMeshes[(size_t) meshHandle] );
 
 	using namespace MeshMod;
-	Mesh::Ptr mesh = unityOwnedMeshes[(size_t) meshHandle];
-	assert( mesh->getVertices().getCount() >= (uint32_t) (startIndex + count));
+	auto mesh = unityOwnedMeshes[(size_t) meshHandle];
+	assert( mesh->getVertices().getCount() >= (startIndex + count));
 
 	VerticesElementsContainer& vertCon = mesh->getVertices().getVerticesContainer();
 
@@ -127,51 +127,51 @@ CAPI auto CGE_AddVertexData( MeshHandle meshHandle, char *typeName, uint32_t sta
 	{
 		case "uvs"_hash:
 		{
-			auto uvEle = vertCon.getOrAddElements<VertexData::UVs>();
+			auto uvEle = vertCon.getOrAddElement<VertexData::UVs>();
 			float *data = reinterpret_cast<float *>(iptr);
 			for(auto i = startIndex; i < startIndex + count; ++i)
 			{
-				(*uvEle)[i] = VertexData::UV( data[i * 2 + 0], data[i * 2 + 1] );
+				(*uvEle)[VertexIndex(i)] = VertexData::UV( data[i * 2 + 0], data[i * 2 + 1] );
 			}
 			break;
 		}
 		case "uvs_1"_hash:
 		{
-			auto uvEle = vertCon.getOrAddElements<VertexData::UVs>( "1" );
+			auto uvEle = vertCon.getOrAddElement<VertexData::UVs>( "1" );
 			float *data = reinterpret_cast<float *>(iptr);
 			for(auto i = startIndex; i < startIndex + count; ++i)
 			{
-				(*uvEle)[i] = VertexData::UV( data[i * 2 + 0], data[i * 2 + 1] );
+				(*uvEle)[VertexIndex(i)] = VertexData::UV( data[i * 2 + 0], data[i * 2 + 1] );
 			}
 			break;
 		}
 		case "normals"_hash:
 		{
-			auto normEle = vertCon.getOrAddElements<VertexData::Normals>();
+			auto normEle = vertCon.getOrAddElement<VertexData::Normals>();
 			float *data = reinterpret_cast<float *>(iptr);
 			for(auto i = startIndex; i < startIndex + count; ++i)
 			{
-				(*normEle)[i] = VertexData::Normal( data[i * 3 + 0], data[i * 3 + 1], data[i * 3 + 2] );
+				(*normEle)[VertexIndex(i)] = VertexData::Normal( data[i * 3 + 0], data[i * 3 + 1], data[i * 3 + 2] );
 			}
 			break;
 		}
 		case "tangents"_hash:
 		{ // this is actually the binormal usually but whatever
-			auto normEle = vertCon.getOrAddElements<VertexData::Normals>( "binormal" );
+			auto normEle = vertCon.getOrAddElement<VertexData::Normals>( "binormal" );
 			float *data = reinterpret_cast<float *>(iptr);
 			for(auto i = startIndex; i < startIndex + count; ++i)
 			{
-				(*normEle)[i] = VertexData::Normal( data[i * 3 + 0], data[i * 3 + 1], data[i * 3 + 2] );
+				(*normEle)[VertexIndex(i)] = VertexData::Normal( data[i * 3 + 0], data[i * 3 + 1], data[i * 3 + 2] );
 			}
 			break;
 		}
 		case "colours"_hash:
 		{ // 4 x float
-			auto colEle = vertCon.getOrAddElements<VertexData::FloatRGBAColourVertexElements>();
+			auto colEle = vertCon.getOrAddElement<VertexData::FloatRGBAColourVertexElements>();
 			float *data = reinterpret_cast<float *>(iptr);
 			for(auto i = startIndex; i < startIndex + count; ++i)
 			{
-				(*colEle)[i] = VertexData::FloatRGBAColour(
+				(*colEle)[VertexIndex(i)] = VertexData::FloatRGBAColour(
 						data[i * 4 + 0], data[i * 4 + 1], data[i * 4 + 2], data[i * 4 + 3] );
 			}
 			break;
@@ -188,10 +188,14 @@ CAPI auto CGE_AddTriangle( MeshHandle meshHandle, uint32_t i0, uint32_t i1, uint
 	assert( unityOwnedMeshes[(size_t) meshHandle] );
 
 	using namespace MeshMod;
-	Mesh::Ptr mesh = unityOwnedMeshes[(size_t) meshHandle];
+	auto mesh = unityOwnedMeshes[(size_t) meshHandle];
 
-	VertexIndexContainer tri = {i0, i2, i1};
-	return (uint32_t) mesh->getPolygons().add( tri, 0 );
+	VertexIndexContainer tri = {
+		VertexIndex(i0),
+		VertexIndex(i1),
+		VertexIndex(i2)
+	};
+	return (uint32_t) mesh->getPolygons().add( tri );
 }
 
 CAPI auto CGE_AddQuad( MeshHandle meshHandle, uint32_t i0, uint32_t i1, uint32_t i2, uint32_t i3 ) -> uint32_t
@@ -200,10 +204,16 @@ CAPI auto CGE_AddQuad( MeshHandle meshHandle, uint32_t i0, uint32_t i1, uint32_t
 	assert( unityOwnedMeshes[(size_t) meshHandle] );
 
 	using namespace MeshMod;
-	Mesh::Ptr mesh = unityOwnedMeshes[(size_t) meshHandle];
+	auto mesh = unityOwnedMeshes[(size_t) meshHandle];
 
-	VertexIndexContainer quad = {i0, i1, i2, i3};
-	return (uint32_t) mesh->getPolygons().add( quad, 0 );
+	VertexIndexContainer quad = {
+		VertexIndex(i0),
+		VertexIndex(i1),
+		VertexIndex(i2),
+		VertexIndex(i3)
+	};
+
+	return (uint32_t) mesh->getPolygons().add(quad);
 }
 
 CAPI auto CGE_AddTriangles( MeshHandle meshHandle, uint32_t count, intptr_t indicesPtr ) -> uint32_t
@@ -212,18 +222,22 @@ CAPI auto CGE_AddTriangles( MeshHandle meshHandle, uint32_t count, intptr_t indi
 	assert( unityOwnedMeshes[(size_t) meshHandle] );
 
 	using namespace MeshMod;
-	Mesh::Ptr mesh = unityOwnedMeshes[(size_t) meshHandle];
-	MeshMod::PolygonIndex startFace = mesh->getPolygons().getCount();
+	auto mesh = unityOwnedMeshes[(size_t) meshHandle];
+	auto startFace = mesh->getPolygons().getCount();
 
 	uint32_t *indices = reinterpret_cast<uint32_t *>(indicesPtr);
 
 	for(uint32_t i = 0; i < count * 3; i += 3)
 	{
-		VertexIndexContainer tri = {indices[i + 0], indices[i + 2], indices[i + 1]};
-		mesh->getPolygons().add( tri, 0 );
+		VertexIndexContainer tri = {
+			VertexIndex(indices[i + 0]), 
+			VertexIndex(indices[i + 2]), 
+			VertexIndex(indices[i + 1])
+		};
+		mesh->getPolygons().add( tri );
 	}
 
-	return startFace;
+	return uint32_t(startFace);
 }
 
 CAPI auto CGE_AddQuads( MeshHandle meshHandle, uint32_t count, intptr_t indicesPtr ) -> uint32_t
@@ -232,17 +246,22 @@ CAPI auto CGE_AddQuads( MeshHandle meshHandle, uint32_t count, intptr_t indicesP
 	assert( unityOwnedMeshes[(size_t) meshHandle] );
 
 	using namespace MeshMod;
-	Mesh::Ptr mesh = unityOwnedMeshes[(size_t) meshHandle];
-	MeshMod::PolygonIndex startFace = mesh->getPolygons().getCount();
+	auto mesh = unityOwnedMeshes[(size_t) meshHandle];
+	auto startFace = mesh->getPolygons().getCount();
 
 	uint32_t *indices = reinterpret_cast<uint32_t *>(indicesPtr);
 	for(uint32_t i = 0; i < count * 4; i += 4)
 	{
-		VertexIndexContainer quad = {indices[i + 0], indices[i + 2], indices[i + 1], indices[i + 3]};
-		mesh->getPolygons().add( quad, 0 );
+		VertexIndexContainer quad = {
+			VertexIndex(indices[i + 0]), 
+			VertexIndex(indices[i + 2]), 
+			VertexIndex(indices[i + 1]), 
+			VertexIndex(indices[i + 3])
+		};
+		mesh->getPolygons().add( quad );
 	}
 
-	return startFace;
+	return uint32_t(startFace);
 }
 
 CAPI auto CGE_MeshCreationComplete( MeshHandle meshHandle ) -> void
@@ -251,7 +270,7 @@ CAPI auto CGE_MeshCreationComplete( MeshHandle meshHandle ) -> void
 	assert( unityOwnedMeshes[(size_t) meshHandle] );
 
 	using namespace MeshMod;
-	Mesh::Ptr mesh = unityOwnedMeshes[(size_t) meshHandle];
+	auto mesh = unityOwnedMeshes[(size_t) meshHandle];
 
 	mesh->updateEditState( MeshMod::Mesh::TopologyEdits );
 	mesh->updateFromEdits();
@@ -263,7 +282,7 @@ CAPI auto CGE_GenerateConvexHulls(MeshHandle meshHandle, MeshOps::ConvexHullPara
 	assert( unityOwnedMeshes[(size_t) meshHandle] );
 
 	using namespace MeshMod;
-	Mesh::Ptr in = unityOwnedMeshes[(size_t) meshHandle];
+	auto in = unityOwnedMeshes[(size_t) meshHandle];
 
 	MeshOps::ConvexHullParameters params;
 	if (params_ != nullptr)
@@ -287,7 +306,7 @@ CAPI auto CGE_GenerateConvexHullInline(MeshHandle meshHandle) -> void
 	assert( unityOwnedMeshes[(size_t) meshHandle] );
 
 	using namespace MeshMod;
-	Mesh::Ptr mesh = unityOwnedMeshes[(size_t) meshHandle];
+	auto mesh = unityOwnedMeshes[(size_t) meshHandle];
 	MeshOps::ConvexHullComputer::generateInline(mesh);
 }
 
@@ -297,7 +316,7 @@ CAPI auto CGE_ExportMeshToGLTF( MeshHandle meshHandle, char *filename ) -> void
 	assert( unityOwnedMeshes[(size_t) meshHandle] );
 
 	using namespace MeshMod;
-	Mesh::Ptr mesh = unityOwnedMeshes[(size_t) meshHandle];
+	auto mesh = unityOwnedMeshes[(size_t) meshHandle];
 
 	SceneNode::Ptr rootNode = std::make_shared<SceneNode>();
 	rootNode->addObject( mesh );
@@ -310,7 +329,7 @@ CAPI auto CGE_MeshToSimpleMesh(MeshHandle meshHandle, SimpleMesh* out) -> bool
 	assert( unityOwnedMeshes[(size_t) meshHandle] );
 
 	using namespace MeshMod;
-	Mesh::Ptr in = unityOwnedMeshes[(size_t) meshHandle];
+	auto in = unityOwnedMeshes[(size_t) meshHandle];
 
 	auto const& vertices = in->getVertices();
 	auto const& polygons = in->getPolygons();
@@ -322,19 +341,19 @@ CAPI auto CGE_MeshToSimpleMesh(MeshHandle meshHandle, SimpleMesh* out) -> bool
 	if( out->positionCount == 0 ||
 		out->triangleCount == 0)
 	{
-		out->positionCount = vertices.getCount();
-		out->triangleCount = polygons.getCount();
+		out->positionCount = uint32_t(vertices.getCount());
+		out->triangleCount = uint32_t(polygons.getCount());
 		return false;
 	}
 	assert(out->positions != nullptr);
 	assert(out->triangleIndices != nullptr);
-	assert(out->positionCount == vertices.getCount());
-	assert(out->triangleCount == polygons.getCount());
+	assert(out->positionCount == uint32_t(vertices.getCount()));
+	assert(out->triangleCount == uint32_t(polygons.getCount()));
 
 	float* points = out->positions;
 	for(auto const& pos : positions)
 	{
-		size_t i = positions.distance<size_t>( pos ) * 3;
+		size_t i = size_t(positions.distance(pos)) * 3;
 		points[i + 0] = pos.x;
 		points[i + 1] = pos.y;
 		points[i + 2] = pos.z;
@@ -345,12 +364,12 @@ CAPI auto CGE_MeshToSimpleMesh(MeshHandle meshHandle, SimpleMesh* out) -> bool
 	for(auto i = 0u; i < polygons.getCount(); ++i)
 	{
 		vertexIndices.clear();
-		polygons.getVertexIndices( i, vertexIndices );
+		polygons.getVertexIndices(PolygonIndex(i), vertexIndices );
 		assert(vertexIndices.size()==3);
 
-		indices[i*3+0] = vertexIndices[0];
-		indices[i*3+1] = vertexIndices[2];
-		indices[i*3+2] = vertexIndices[1];
+		indices[i*3+0] = (uint32_t) vertexIndices[0];
+		indices[i*3+1] = (uint32_t) vertexIndices[2];
+		indices[i*3+2] = (uint32_t) vertexIndices[1];
 	}
 	return true;
 }
@@ -409,14 +428,14 @@ CAPI static auto DestroyAll() -> void
 }
 
 // for other native libraries to consume CGeometryEngine handles
-EXPORT_CPP auto UnityOwnedMesh(MeshHandle meshHandle) -> MeshMod::Mesh::Ptr
+EXPORT_CPP auto UnityOwnedMesh(MeshHandle meshHandle) -> std::shared_ptr<MeshMod::Mesh>
 {
 	assert( meshHandle < unityOwnedMeshes.size());
 	assert( unityOwnedMeshes[(size_t) meshHandle] );
 	return unityOwnedMeshes[(size_t) meshHandle];
 }
 
-EXPORT_CPP auto TakeOwnershipOfMesh(MeshMod::Mesh::Ptr mesh) -> MeshHandle
+EXPORT_CPP auto TakeOwnershipOfMesh(std::shared_ptr<MeshMod::Mesh> mesh) -> MeshHandle
 {
 	size_t index = unityOwnedMeshes.size();
 	MeshMod::Mesh::Ptr ptr = unityOwnedMeshes.emplace_back(mesh);

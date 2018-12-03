@@ -662,8 +662,7 @@ class Node {
 struct Buffer {
   std::string name;
   std::vector<unsigned char> data;
-  std::string
-      uri;  // considered as required here but not in the spec (need to clarify)
+  std::string uri;  // considered as required here but not in the spec (need to clarify)
   Value extras;
 };
 

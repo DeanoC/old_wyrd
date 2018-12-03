@@ -80,7 +80,9 @@ struct Normal
 	}
 
 	//! name is used to get this data
-	static const std::string getName() { return "Normal"; };
+	static constexpr std::string_view const getName() {
+		using namespace std::literals;
+		return "Normal"sv; };
 };
 //! normal vertex element (x,y,z)
 typedef BaseElements<VertexData::Normal, Vertex_, true, DerivedType::DerivedFromTopology> Normals;

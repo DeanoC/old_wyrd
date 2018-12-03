@@ -8,52 +8,38 @@
 #if !defined( MESH_MOD_TYPES_H_ )
 #define MESH_MOD_TYPES_H_
 
-//---------------------------------------------------------------------------
-// Defines
-//---------------------------------------------------------------------------
+#include "meshmod/indextypes.h"
 
-//---------------------------------------------------------------------------
-// Includes
-//---------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------
-// Enums and typedefs
-//---------------------------------------------------------------------------
 namespace MeshMod
 {
-	//---------------------------------------------------------------------------
-	// Classes and structures
-	//---------------------------------------------------------------------------
 	extern const float s_epsilon1e_5;	//!< epsilon used in various places
 	extern const float s_floatMarker;	//!< float NAN used to mark invalid
 
 	//! Tag for vertex data, use this for custom vertex data types
-	struct Vertex_{};
+	struct Vertex_{
+		using IndexType = VertexIndex;
+	};
 
 	//! Tag for half edge data, use this for custom half edge data types
-	struct HalfEdge_{};
+	struct HalfEdge_{
+		using IndexType = HalfEdgeIndex;
+	};
 
 	//! Tag for face data, use this for custom per face data types
-	struct Polygon_{};
+	struct Polygon_{
+		using IndexType = PolygonIndex;
+	};
 
 	//! Tag for mesh data, use this for custom per mesh data types
-	struct Mesh_{};
+	struct Mesh_{
+		using IndexType = SceneNodeIndex;
+	};
 
 	//! Tag for material parameter data, use this for types of material parameters
-	struct MaterialParameters_{};
+	struct MaterialParameters_{
+		using IndexType = MaterialIndex;
+	};
 
 } // end namespace
 
-//---------------------------------------------------------------------------
-// Prototypes
-//---------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------
-// Externals
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-// End Header file
-//---------------------------------------------------------------------------
 #endif
-
-
