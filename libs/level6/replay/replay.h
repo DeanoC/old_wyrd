@@ -5,6 +5,7 @@
 #include "core/core.h"
 #include <vector>
 #include <mutex>
+#include <unordered_map>
 
 namespace Replay {
 

@@ -89,12 +89,12 @@ inline HalfEdgeData::HalfEdges& HalfEdges::halfEdges()
 template<typename attribute>
 inline attribute const& HalfEdges::getAttributes() const
 {
-	return *halfEdgesContainer.getElements<attribute>();
+	return *halfEdgesContainer.getElement<attribute>();
 }
 template<typename attribute>
 inline attribute& HalfEdges::getAttributes()
 {
-	return *halfEdgesContainer.getElements<attribute>();
+	return *halfEdgesContainer.getElement<attribute>();
 }
 template<typename attribute>
 inline attribute& HalfEdges::getOrAddAttributes()

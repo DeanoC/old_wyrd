@@ -353,7 +353,8 @@ void TacticalMapBuilder::addMeshAt( MeshMod::MeshPtr const& mesh, TacticalMapLev
 {
 	using namespace MeshMod;
 	Geometry::AABB wipAABB;
-	auto wip = std::shared_ptr(mesh->clone());
+
+	auto wip = std::shared_ptr<Mesh>(mesh->clone());
 	MeshOps::BasicMeshOps::transform(wip, transform);
 	MeshOps::BasicMeshOps::triangulate( wip);
 	MeshOps::BasicMeshOps::computeFacePlaneEquations(wip);

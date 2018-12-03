@@ -133,9 +133,9 @@ public:
 		// cos adding a new type resizes it to the size of the array. This encapsulates
 		// the slight complicated and quite frankly odd logic.. it basically does
 		// what I expect by pushBack
-		if(getElementsNameAndSubName(Type::getName(), subName) == 0)
+		if(getElementsFromNameAndSubName(Type::getName(), subName) == 0)
 		{
-			std::shared_ptr<Type> pType = getOrAddElements<Type>(subName);
+			std::shared_ptr<Type> pType = getOrAddElement<Type>(subName);
 			if(pType->size() == 0)
 			{
 				pType->push_back(data);
@@ -146,7 +146,7 @@ public:
 			}
 		} else
 		{
-			Type *pType = getElements<Type>(subName);
+			Type *pType = getElement<Type>(subName);
 			pType->push_back(data);
 			notValids.push_back(false);
 		}
@@ -209,7 +209,7 @@ public:
 private:
 	// we have a flag per element item saying if that element item is not valid
 	using elementContainer = std::vector<std::shared_ptr<ContainerType>>;
-	using notValidContainer = std::vector<bool>;
+	using notValidContainer = std::vector<uint8_t>;
 
 	elementContainer elements;
 	notValidContainer notValids;

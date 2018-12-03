@@ -474,7 +474,7 @@ inline VertexIndex Mesh::addVertexAttributeToFace(const VertexIndex vPosIndex,
 
 	// if this fires the position passed in doesn't belong to the face
 	// passed it, which makes this whole thing useless...
-	assert(vfPosIndex != MM_INVALID_INDEX);
+	assert(vfPosIndex != InvalidVertexIndex);
 
 	// does this face vertex already have the attribute data
 	if(eleContainer[vfPosIndex].equal(data) == true)

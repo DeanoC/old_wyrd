@@ -156,7 +156,7 @@ inline attribute& Vertices::getOrAddAttribute(std::string const& subname)
 template<typename attribute>
 inline void Vertices::removeAttributes()
 {
-	auto verticesContainer.removeElements.getElements<attribute>();
+	verticesContainer.removeElements<attribute>();
 }
 
 
