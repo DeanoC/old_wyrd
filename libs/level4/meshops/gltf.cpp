@@ -168,9 +168,28 @@ bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, ti
 
 	auto const accessorByteStride = accessor.ByteStride(posBufferView);
 
-	if (accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) return false;
-	if (accessor.type != TINYGLTF_TYPE_VEC3) return false;
-	if (accessorByteStride != sizeof(float) * 3) return false;
+	if (accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT)
+	{
+		LOG_F(WARNING, "Vertex buffer position component type %u not supported", accessor.componentType);
+		return false;
+	}
+	if (accessor.type != TINYGLTF_TYPE_VEC3)
+	{
+		LOG_F(WARNING, "Vertex buffer position type %u not supported", accessor.type);
+		return false;
+	}
+
+	if (accessorByteStride != sizeof(float) * 3)
+	{
+		LOG_F(WARNING, "Vertex buffer position stride %u not supported", accessorByteStride);
+		return false;
+	}
+
+	if (posBufferView.target != TINYGLTF_TARGET_ARRAY_BUFFER)
+	{
+		LOG_F(WARNING, "Vertex buffer position view target %u not supported", posBufferView.target);
+		return false;
+	}
 
 	auto& vertices =  mesh->getVertices();
 
@@ -213,6 +232,12 @@ void Gltf::convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tiny
 		}
 
 		tinygltf::BufferView const& bufferView = model.bufferViews[accessor.bufferView];
+		if (bufferView.target != TINYGLTF_TARGET_ARRAY_BUFFER)
+		{
+			LOG_F(WARNING, "Vertex buffer element %s view target %u not supported", accessor.name, bufferView.target);
+			break;
+		}
+
 		VerticesElementsContainer& vertCon = mesh->getVertices().getVerticesContainer();
 		Buffer const &buffer = model.buffers[bufferView.buffer];
 		float *data = (float *)(buffer.data.data() + bufferView.byteOffset + accessor.byteOffset);
@@ -280,6 +305,11 @@ void Gltf::convertPrimitives(tinygltf::Model const& model, tinygltf::Mesh const&
 		auto const &accessor = model.accessors[primitive.indices];
 		BufferView const& bufferView = model.bufferViews[accessor.bufferView];
 		Buffer const &buffer = model.buffers[bufferView.buffer];
+		if (bufferView.target != TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER)
+		{
+			LOG_F(WARNING, "Primitive buffer view target %u not supported", bufferView.target);
+			continue;
+		}
 
 		int sizeOfIndex = sizeof(uint32_t);
 		if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
