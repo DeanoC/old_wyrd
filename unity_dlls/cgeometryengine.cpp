@@ -1,9 +1,12 @@
+#define LOGURU_IMPLEMENTATION 1
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#define LOGURU_IMPLEMENTATION 1
+#define TINYGLTF_IMPLEMENTATION
+
 #include "core/core.h"
 #include "crc32c/crc32c.h"
 #include "core/quick_hash.h"
+#include "tinygltf/tiny_gltf.h"
 #include "meshmod/meshmod.h"
 #include "cgeometryengine.h"
 
@@ -19,8 +22,6 @@
 #include "meshops/basicmeshops.h"
 #include "meshops/convexhullcomputer.h"
 
-#include "tinygltf/stb_image.h"
-#include "tinygltf/stb_image_write.h"
 
 static std::vector<std::shared_ptr<MeshMod::Mesh>> unityOwnedMeshes;
 static std::vector<std::shared_ptr<MeshOps::ConvexHullComputer::ReturnType>> unityOwnedConvexHullComputers;
@@ -75,7 +76,7 @@ CAPI auto CGE_CreateMeshFromSimpleMesh( int type, char *name, SimpleMesh *simple
 				VertexIndex(simpleMesh->triangleIndices[(i * 3) + 2]),
 				VertexIndex(simpleMesh->triangleIndices[(i * 3) + 1])
 		};
-		mesh->getPolygons().add( triIndices );
+		mesh->getPolygons().addPolygon( triIndices );
 	}
 
 	mesh->updateFromEdits();
@@ -195,7 +196,7 @@ CAPI auto CGE_AddTriangle( MeshHandle meshHandle, uint32_t i0, uint32_t i1, uint
 		VertexIndex(i1),
 		VertexIndex(i2)
 	};
-	return (uint32_t) mesh->getPolygons().add( tri );
+	return (uint32_t) mesh->getPolygons().addPolygon( tri );
 }
 
 CAPI auto CGE_AddQuad( MeshHandle meshHandle, uint32_t i0, uint32_t i1, uint32_t i2, uint32_t i3 ) -> uint32_t
@@ -213,7 +214,7 @@ CAPI auto CGE_AddQuad( MeshHandle meshHandle, uint32_t i0, uint32_t i1, uint32_t
 		VertexIndex(i3)
 	};
 
-	return (uint32_t) mesh->getPolygons().add(quad);
+	return (uint32_t) mesh->getPolygons().addPolygon(quad);
 }
 
 CAPI auto CGE_AddTriangles( MeshHandle meshHandle, uint32_t count, intptr_t indicesPtr ) -> uint32_t
@@ -234,7 +235,7 @@ CAPI auto CGE_AddTriangles( MeshHandle meshHandle, uint32_t count, intptr_t indi
 			VertexIndex(indices[i + 2]), 
 			VertexIndex(indices[i + 1])
 		};
-		mesh->getPolygons().add( tri );
+		mesh->getPolygons().addPolygon( tri );
 	}
 
 	return uint32_t(startFace);
@@ -258,7 +259,7 @@ CAPI auto CGE_AddQuads( MeshHandle meshHandle, uint32_t count, intptr_t indicesP
 			VertexIndex(indices[i + 1]), 
 			VertexIndex(indices[i + 3])
 		};
-		mesh->getPolygons().add( quad );
+		mesh->getPolygons().addPolygon( quad );
 	}
 
 	return uint32_t(startFace);

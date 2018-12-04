@@ -1,8 +1,11 @@
+#define LOGURU_IMPLEMENTATION 1
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#define LOGURU_IMPLEMENTATION 1
+#define TINYGLTF_IMPLEMENTATION
 
 #include "core/core.h"
+#include "tinygltf/tiny_gltf.h"
+
 #include "cgeometryengine.h"
 #include "tacticalmap/tacticalmap.h"
 #include "tacticalmap/builder.h"
@@ -19,8 +22,7 @@
 #include "core/blob.h"
 
 enki::TaskScheduler g_EnkiTS;
-#include "tinygltf/stb_image.h"
-#include "tinygltf/stb_image_write.h"
+
 
 #include "ctacticalmap.h"
 
@@ -262,7 +264,7 @@ CAPI auto CTMB_ExportToGLTF(TacticalMapBuilderHandle tmHandle, char const* fileN
 					VertexIndex outVIndex = out->getVertices().add(pos.x, pos.y, pos.z);
 					polyIndices.push_back(outVIndex);
 				});
-			out->getPolygons().add(polyIndices);
+			out->getPolygons().addPolygon(polyIndices);
 		}
 	}
 	out->updateFromEdits();
