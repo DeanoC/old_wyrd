@@ -289,8 +289,9 @@ auto MeshModRenderer::render(
 							PushConstantRange{0, sizeof(float)*16, ShaderType::Vertex},
 							&worldMat);
 					renderEncoder->bindVertexBuffer(vertexBuffer);
-					renderEncoder->bindIndexBuffer(indexBuffer, 32);
-					renderEncoder->drawIndexed(rd.numIndices);
+//					renderEncoder->bindIndexBuffer(indexBuffer, 32);
+//					renderEncoder->drawIndexed(rd.numIndices);
+					renderEncoder->draw(rd.numIndices);
 				});
 	};
 
