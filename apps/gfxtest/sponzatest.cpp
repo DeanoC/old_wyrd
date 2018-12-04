@@ -23,7 +23,7 @@ struct SponzaGltfTest : public GfxTest
 		meshModRenderer->init(rm);
 
 		rootScene = std::make_shared<MeshMod::SceneNode>();
-		rootScene->transform.position = Math::vec3(0, 0, -400);
+		rootScene->transform.position = Math::vec3(0, 0, -40);
 
 		std::shared_ptr sponza = MeshOps::Gltf::LoadAscii("gltf/Sponza/Sponza.gltf");
 		rootScene->addChild(sponza);

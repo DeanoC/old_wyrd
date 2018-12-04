@@ -21,9 +21,9 @@
 #include "gltf.h"
 #include <stack>
 #include <string_view>
+#include <unordered_set>
 
-namespace MeshOps
-{
+namespace MeshOps {
 
 MeshMod::SceneNode::Ptr Gltf::LoadAscii(std::string const& fileName_)
 {
@@ -43,6 +43,7 @@ MeshMod::SceneNode::Ptr Gltf::LoadAscii(std::string const& fileName_)
 
 	return LoadInternal(model);
 }
+
 MeshMod::SceneNode::Ptr Gltf::LoadBinary(std::string const& fileName_)
 {
 	using namespace tinygltf;
@@ -53,7 +54,7 @@ MeshMod::SceneNode::Ptr Gltf::LoadBinary(std::string const& fileName_)
 
 	std::string err;
 	bool okay = tinyGLTF.LoadBinaryFromFile(&model, &err, fileName_);
-	if (!okay)
+	if(!okay)
 	{
 		printf("GLTF Loading Error : %s", err.c_str());
 		return nullptr;
@@ -73,11 +74,12 @@ MeshMod::SceneNode::Ptr Gltf::LoadInternal(tinygltf::Model const& model)
 	SceneNode::Ptr rootNode = std::make_shared<SceneNode>();
 
 	std::stack<int> nodeStack;
-	for (int nodeIndex : gltfScene.nodes) nodeStack.push(nodeIndex);
+	for(int nodeIndex : gltfScene.nodes) nodeStack.push(nodeIndex);
 
 	do
 	{
-		int nodeIndex = nodeStack.top(); nodeStack.pop();
+		int nodeIndex = nodeStack.top();
+		nodeStack.pop();
 
 		Node const& node = model.nodes[nodeIndex];
 		SceneNode::Ptr sceneNode = std::make_shared<SceneNode>();
@@ -87,231 +89,235 @@ MeshMod::SceneNode::Ptr Gltf::LoadInternal(tinygltf::Model const& model)
 		for(int childIndex : node.children) nodeStack.push(childIndex);
 
 		// TODO nodes other than meshes
-		if (node.mesh != -1)
+		if(node.mesh != -1)
 		{
 			tinygltf::Mesh const& gltfMesh = model.meshes[node.mesh];
-			auto mesh = std::make_shared<MeshMod::Mesh>(gltfMesh.name);
+			auto mesh = std::make_shared<MeshMod::Mesh>(gltfMesh.name, false, false);
 			sceneNode->addObject(mesh);
 
-			std::map<uint32_t, uint32_t> accessorAttributeMap;
-			for (size_t i = 0; i < gltfMesh.primitives.size(); i++)
-			{
-				auto const& prim = gltfMesh.primitives[i];
-
-				for (auto const& it : prim.attributes)
-				{
-					auto accessorNameHash = Core::QuickHash(it.first);
-
-					auto const aamIt = accessorAttributeMap.find(accessorNameHash);
-					if (aamIt != accessorAttributeMap.end())
-					{
-						//check they are the same
-						if (aamIt->second != it.second)
-						{
-							LOG_F(WARNING, "GLTF parser error: primitives attribute parse fail\n");
-						}
-					}
-					else
-					{
-						accessorAttributeMap[accessorNameHash] = it.second;
-					}
-				}
-			}
-
-			bool posOkay = convertPositionData(accessorAttributeMap, model, mesh);
-			if (posOkay)
-			{
-				convertVertexData(accessorAttributeMap, model, mesh);
-				convertPrimitives(model, gltfMesh, mesh);
-			}
+			convertPrimitives(model, gltfMesh, mesh);
 		}
 	} while(!nodeStack.empty());
 
 	return rootNode;
 }
 
-void Gltf::convertTransform(tinygltf::Node const &node_, MeshMod::SceneNode::Ptr &sceneNode_)
+void Gltf::convertTransform(tinygltf::Node const& node_, MeshMod::SceneNode::Ptr& sceneNode_)
 {
-	if (!node_.translation.empty())
+	if(!node_.translation.empty())
 	{
-		sceneNode_->transform.position.x = (float)node_.translation[0];
-		sceneNode_->transform.position.y = (float)node_.translation[1];
-		sceneNode_->transform.position.z = (float)node_.translation[2];
+		sceneNode_->transform.position.x = (float) node_.translation[0];
+		sceneNode_->transform.position.y = (float) node_.translation[1];
+		sceneNode_->transform.position.z = (float) node_.translation[2];
 	}
-	if (!node_.scale.empty())
+	if(!node_.scale.empty())
 	{
-		sceneNode_->transform.scale.x = (float)node_.scale[0];
-		sceneNode_->transform.scale.y = (float)node_.scale[1];
-		sceneNode_->transform.scale.z = (float)node_.scale[2];
+		sceneNode_->transform.scale.x = (float) node_.scale[0];
+		sceneNode_->transform.scale.y = (float) node_.scale[1];
+		sceneNode_->transform.scale.z = (float) node_.scale[2];
 	}
-	if (!node_.rotation.empty())
+	if(!node_.rotation.empty())
 	{
-		sceneNode_->transform.orientation.x = (float)node_.rotation[0];
-		sceneNode_->transform.orientation.y = (float)node_.rotation[1];
-		sceneNode_->transform.orientation.z = (float)node_.rotation[2];
-		sceneNode_->transform.orientation.w = (float)node_.rotation[3];
+		sceneNode_->transform.orientation.x = (float) node_.rotation[0];
+		sceneNode_->transform.orientation.y = (float) node_.rotation[1];
+		sceneNode_->transform.orientation.z = (float) node_.rotation[2];
+		sceneNode_->transform.orientation.w = (float) node_.rotation[3];
 	}
 }
 
-bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, tinygltf::Model const& model, std::shared_ptr<MeshMod::Mesh>& mesh)
+void Gltf::convertPositionData(int posAttribIndex, tinygltf::Model const& model_,
+							   std::shared_ptr<MeshMod::Mesh>& mesh_)
 {
 	using namespace tinygltf;
 	using namespace MeshMod;
 
-	// we require position attribute and need to do it first
-	assert(attribMap.find("POSITION"_hash) != attribMap.end());
-	int posAttribIndex = attribMap.find("POSITION"_hash)->second;
-
-	tinygltf::Accessor const& accessor = model.accessors[posAttribIndex];
-	BufferView const& posBufferView = model.bufferViews[accessor.bufferView];
-	Buffer const& posBuffer = model.buffers[posBufferView.buffer];
+	tinygltf::Accessor const& accessor = model_.accessors[posAttribIndex];
+	BufferView const& posBufferView = model_.bufferViews[accessor.bufferView];
+	Buffer const& posBuffer = model_.buffers[posBufferView.buffer];
 
 	auto const accessorByteStride = accessor.ByteStride(posBufferView);
 
-	if (accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) return false;
-	if (accessor.type != TINYGLTF_TYPE_VEC3) return false;
-	if (accessorByteStride != sizeof(float) * 3) return false;
+	if(accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) return;
+	if(accessor.type != TINYGLTF_TYPE_VEC3) return;
+	if(accessorByteStride != sizeof(float) * 3) return;
 
-	auto& vertices =  mesh->getVertices();
+	auto& vertices = mesh_->getVertices();
 
-	float* posData = (float*)(posBuffer.data.data() + posBufferView.byteOffset + accessor.byteOffset);
-	for (uint64_t i = 0; i < accessor.count; ++i)
+	float* posData = (float*) (posBuffer.data.data() + posBufferView.byteOffset + accessor.byteOffset);
+	for(uint64_t i = 0; i < accessor.count; ++i)
 	{
 		vertices.add(posData[0], posData[1], posData[2]);
 		posData += 3;
 	}
-
-	return true;
 }
 
-
-
-void Gltf::convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tinygltf::Model const& model, std::shared_ptr<MeshMod::Mesh>& mesh)
+auto Gltf::convertVertexData(tinygltf::Primitive const& prim_, tinygltf::Model const& model_,
+							 std::shared_ptr<MeshMod::Mesh>& mesh_) -> bool
 {
 	using namespace tinygltf;
 	using namespace MeshMod;
+	using namespace std::literals;
 
-	for(auto const& it : attribMap)
+	auto& vertices = mesh_->getVertices();
+
+	// do position element first for meshmod
+	auto const posIt = prim_.attributes.find("POSITION"s);
+	if(posIt == prim_.attributes.cend()) return false;
+
+	convertPositionData(posIt->second, model_, mesh_);
+	for(auto const[name, index] : prim_.attributes)
 	{
-		auto const &accessor = model.accessors[it.second];
+		auto nameHash = Core::QuickHash(name);
+
 		// TODO generalise this
 		bool vec2Data = false;
-		switch(it.first)
+		switch(nameHash)
 		{
-			case "POSITION"_hash: // skip already done
-				return;
+			case "POSITION"_hash: // skip as already done
+				continue;
+			default:
+				LOG_S(WARNING) <<
+							   "Unknown vertex attribute " << name <<
+							   " on " << mesh_->getName();
+				continue;
+
 			case "NORMAL"_hash:
 				break;
 			case "TEXCOORD_0"_hash:
-				vec2Data = true;
-				break;
+				[[fallthrough]];
 			case "TEXCOORD_1"_hash:
 				vec2Data = true;
 				break;
-			default:
-				LOG_F(WARNING, "Unknown vertex attribute %s", accessor.name.c_str());
 		}
 
-		tinygltf::BufferView const& bufferView = model.bufferViews[accessor.bufferView];
-		VerticesElementsContainer& vertCon = mesh->getVertices().getVerticesContainer();
-		Buffer const &buffer = model.buffers[bufferView.buffer];
-		float *data = (float *)(buffer.data.data() + bufferView.byteOffset + accessor.byteOffset);
+		tinygltf::Accessor const& accessor = model_.accessors[index];
+		tinygltf::BufferView const& bufferView = model_.bufferViews[accessor.bufferView];
+		Buffer const& buffer = model_.buffers[bufferView.buffer];
+		float* data = (float*) (buffer.data.data() + bufferView.byteOffset + accessor.byteOffset);
 		auto const accessorByteStride = accessor.ByteStride(bufferView);
 
 		if(vec2Data)
 		{
 			// skip attrib if not vec2
-			if(accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) break;
-			if(accessor.type != TINYGLTF_TYPE_VEC2) break;
-			if(accessorByteStride != sizeof(float) * 2) break;
+			if(accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) continue;
+			if(accessor.type != TINYGLTF_TYPE_VEC2) continue;
+			if(accessorByteStride != sizeof(float) * 2) continue;
 
-			std::string elementSubName = "";
-			switch(it.first)
+			switch(nameHash)
 			{
 				case "TEXCOORD_0"_hash:
+					[[fallthrough]];
 				case "TEXCOORD_1"_hash:
 				{
-					if(it.first == "TEXCOORD_0"_hash) elementSubName = "0";
-					else elementSubName = "1";
+					auto const elementSubName =
+							(nameHash == "TEXCOORD_0"_hash) ? "0"s : "1"s;
 
-					VertexData::UVs& uvEle = *vertCon.getOrAddElement<VertexData::UVs>(elementSubName);
-					for(size_t i = 0; i < accessor.count; ++i)
+					auto& uvs = vertices.getOrAddAttribute<VertexData::UVs>(elementSubName);
+					for(auto j = 0u; j < accessor.count; ++j)
 					{
-						uvEle[VertexIndex(i)].u = data[0];
-						uvEle[VertexIndex(i)].v = data[1];
-						data += accessorByteStride;
+						VertexIndex dstIndex = VertexIndex((accessor.byteOffset / accessorByteStride) + j);
+						uvs[dstIndex].u = data[0];
+						uvs[dstIndex].v = data[1];
+						data += 2;
 					}
 					break;
 				}
+				default:
+					LOG_S(WARNING) <<
+								   "Unknown vec2 vertex attribute " << name <<
+								   " on " << mesh_->getName();
+					break;
 			}
-
 		} else
 		{
 			// skip attrib if not vec3
-			if(accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) break;
-			if(accessor.type != TINYGLTF_TYPE_VEC3) break;
-			if(accessor.ByteStride(bufferView) != sizeof(float) * 3) break;
+			if(accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) continue;
+			if(accessor.type != TINYGLTF_TYPE_VEC3) continue;
+			if(accessor.ByteStride(bufferView) != sizeof(float) * 3) continue;
 
-			switch(it.first)
+			switch(nameHash)
 			{
 				case "NORMAL"_hash:
 				{
-					VertexData::Normals& nvEle = *vertCon.getOrAddElement<VertexData::Normals>();
-					for(size_t i = 0; i < accessor.count; ++i)
+					auto& normals = vertices.getOrAddAttribute<VertexData::Normals>();
+					for(auto j = 0; j < accessor.count; ++j)
 					{
-						nvEle[VertexIndex(i)].x = data[0];
-						nvEle[VertexIndex(i)].y = data[1];
-						nvEle[VertexIndex(i)].z = data[2];
-						data += accessorByteStride;
+						VertexIndex dstIndex = VertexIndex(((accessor.byteOffset) / accessorByteStride) + j);
+						normals[dstIndex].x = data[0];
+						normals[dstIndex].y = data[1];
+						normals[dstIndex].z = data[2];
+						data += 3;
 					}
 					break;
 				}
+				default:
+					LOG_S(WARNING) <<
+								   "Unknown vec3 vertex attribute " << name <<
+								   " on " << mesh_->getName();
+					break;
 			}
 		}
 	}
+	return true;
 }
 
-void Gltf::convertPrimitives(tinygltf::Model const& model, tinygltf::Mesh const& gltfMesh, std::shared_ptr<MeshMod::Mesh>& mesh)
+void Gltf::convertPrimitives(tinygltf::Model const& model_,
+							 tinygltf::Mesh const& gltfMesh_,
+							 std::shared_ptr<MeshMod::Mesh>& mesh_)
 {
+	using namespace MeshMod;
 	using namespace tinygltf;
-	for (size_t i = 0; i < gltfMesh.primitives.size(); i++)
+
+	auto& vertices = mesh_->getVertices();
+
+	for(size_t i = 0; i < gltfMesh_.primitives.size(); i++)
 	{
-		Primitive const& primitive = gltfMesh.primitives[i];
-		auto const &accessor = model.accessors[primitive.indices];
-		BufferView const& bufferView = model.bufferViews[accessor.bufferView];
-		Buffer const &buffer = model.buffers[bufferView.buffer];
+		Primitive const& primitive = gltfMesh_.primitives[i];
+
+		VertexIndex baseIndex = VertexIndex(vertices.getCount());
+		if(convertVertexData(primitive, model_, mesh_) == false) continue;
+
+		auto const& accessor = model_.accessors[primitive.indices];
+		BufferView const& bufferView = model_.bufferViews[accessor.bufferView];
+		Buffer const& buffer = model_.buffers[bufferView.buffer];
 
 		int sizeOfIndex = sizeof(uint32_t);
-		if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
+		if(accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
 			sizeOfIndex = sizeof(uint16_t);
-	
-		MeshMod::VertexIndexContainer indices(accessor.count);
+
+		VertexIndexContainer indices(accessor.count);
 
 		assert(bufferView.byteLength == accessor.count * sizeOfIndex);
-		if (sizeOfIndex == sizeof(uint16_t))
+		if(sizeOfIndex == sizeof(uint16_t))
 		{
-			uint16_t *data = (uint16_t*)(buffer.data.data() + bufferView.byteOffset + accessor.byteOffset);
-			for (uint64_t j = 0; j < accessor.count; ++j)
+			uint16_t* data = (uint16_t*) (buffer.data.data() + bufferView.byteOffset + accessor.byteOffset);
+			for(uint64_t j = 0; j < accessor.count; ++j)
 			{
-				indices[j] = (MeshMod::VertexIndex)data[j];
+				assert(data[j] <= accessor.maxValues[0]);
+				indices[j] = (VertexIndex) data[j];
 			}
 		} else
 		{
-			std::memcpy(indices.data(), buffer.data.data() + bufferView.byteOffset + accessor.byteOffset, bufferView.byteLength);
+			uint32_t* data = (uint32_t*) (buffer.data.data() + bufferView.byteOffset + accessor.byteOffset);
+			for(uint64_t j = 0; j < accessor.count; ++j)
+			{
+				assert(data[j] <= accessor.maxValues[0]);
+				indices[j] = (VertexIndex) data[j];
+			}
 		}
 
 		// TODO other primitive modes
-		if (primitive.mode != TINYGLTF_MODE_TRIANGLES)
+		if(primitive.mode != TINYGLTF_MODE_TRIANGLES)
 		{
 			LOG_F(WARNING, "Primitive mode %u not supported", primitive.mode);
 			continue;
 		}
 
-		mesh->getPolygons().addTriangles(indices);
+		mesh_->getPolygons().addTriangles(indices, baseIndex);
 	}
 
-	mesh->updateEditState(MeshMod::Mesh::TopologyEdits);
-	mesh->updateFromEdits();
+	mesh_->updateEditState(MeshMod::Mesh::TopologyEdits);
+	mesh_->updateFromEdits();
 }
 
 void Gltf::SaveAscii(MeshMod::SceneNode::Ptr mesh_, std::string const fileName_)
@@ -322,10 +328,10 @@ void Gltf::SaveAscii(MeshMod::SceneNode::Ptr mesh_, std::string const fileName_)
 
 	// skip root node if empty
 	MeshMod::SceneNode::Ptr rootNode = mesh_;
-	if (rootNode->getObjectCount() == 0 && rootNode->getChildCount() == 1)
+	if(rootNode->getObjectCount() == 0 && rootNode->getChildCount() == 1)
 	{
 		// now see if the transform is identical
-		if (rootNode->transform.isIdentity())
+		if(rootNode->transform.isIdentity())
 		{
 			rootNode = rootNode->getChild(0);
 		}
@@ -335,7 +341,7 @@ void Gltf::SaveAscii(MeshMod::SceneNode::Ptr mesh_, std::string const fileName_)
 	SaveInternal(rootNode, model);
 	tinygltf::TinyGLTF loader;
 
-	if (model.buffers.size() == 1 && model.buffers[0].data.size() == 0)
+	if(model.buffers.size() == 1 && model.buffers[0].data.size() == 0)
 	{
 		printf("No data to save, this crashes tiny GLTF, so aborting\n");
 		return;
@@ -344,7 +350,7 @@ void Gltf::SaveAscii(MeshMod::SceneNode::Ptr mesh_, std::string const fileName_)
 	loader.WriteGltfSceneToFile(&model, output_filename, true, true);
 }
 
-void Gltf::convertTransform(MeshMod::SceneNode::Ptr const& sceneNode_, tinygltf::Node &node_ )
+void Gltf::convertTransform(MeshMod::SceneNode::Ptr const& sceneNode_, tinygltf::Node& node_)
 {
 	node_.translation.resize(3);
 	node_.translation[0] = sceneNode_->transform.position.x;
@@ -363,10 +369,11 @@ void Gltf::convertTransform(MeshMod::SceneNode::Ptr const& sceneNode_, tinygltf:
 	node_.rotation[2] = sceneNode_->transform.orientation.z;
 	node_.rotation[3] = sceneNode_->transform.orientation.w;
 }
-bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, 
-	std::vector<uint8_t>& dataBuffer, 
-	std::shared_ptr<MeshMod::Mesh> const& mesh,
-	tinygltf::Model& model)
+
+bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap,
+							   std::vector<uint8_t>& dataBuffer,
+							   std::shared_ptr<MeshMod::Mesh> const& mesh,
+							   tinygltf::Model& model)
 {
 	using namespace tinygltf;
 	using namespace MeshMod;
@@ -385,16 +392,16 @@ bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap,
 
 	auto const dataBufferSize = dataBuffer.size();
 	dataBuffer.resize(dataBufferSize + accessor.count * sizeof(float) * 3);
-	for (auto i = 0u; i < accessor.count; ++i)
+	for(auto i = 0u; i < accessor.count; ++i)
 	{
 		Math::vec3 pos = posEle[VertexIndex(i)].getVec3();
 		memcpy(dataBuffer.data() + dataBufferSize + i * sizeof(float) * 3, &pos.x, sizeof(float) * 3);
-	}	
+	}
 
 	auto bufferViewIndex = model.bufferViews.size();
 	model.bufferViews.resize(bufferViewIndex + 1);
-	accessor.bufferView = (int)bufferViewIndex;
-	BufferView & bufferView = model.bufferViews[accessor.bufferView];
+	accessor.bufferView = (int) bufferViewIndex;
+	BufferView& bufferView = model.bufferViews[accessor.bufferView];
 	bufferView.buffer = 0;
 	bufferView.byteLength = accessor.count * sizeof(float) * 3;
 	bufferView.byteOffset = dataBufferSize;
@@ -403,11 +410,12 @@ bool Gltf::convertPositionData(std::map<uint32_t, uint32_t> const& attribMap,
 
 	return true;
 }
-void Gltf::convertPrimitives(std::map<uint32_t, uint32_t> const& attribMap, 
-	std::vector<uint8_t>& dataBuffer, 
-	std::shared_ptr<MeshMod::Mesh> const& mesh,
-	tinygltf::Model & model, 
-	tinygltf::Mesh & gltfMesh)
+
+void Gltf::convertPrimitives(std::map<uint32_t, uint32_t> const& attribMap,
+							 std::vector<uint8_t>& dataBuffer,
+							 std::shared_ptr<MeshMod::Mesh> const& mesh,
+							 tinygltf::Model& model,
+							 tinygltf::Mesh& gltfMesh)
 {
 	using namespace tinygltf;
 	using namespace MeshMod;
@@ -417,27 +425,26 @@ void Gltf::convertPrimitives(std::map<uint32_t, uint32_t> const& attribMap,
 	assert(attribMap.find("INDICIES"_hash) != attribMap.end());
 	int attribIndex = attribMap.find("INDICIES"_hash)->second;
 	tinygltf::Accessor& accessor = model.accessors[attribIndex];
-	
+
 	VertexIndexContainer facesVertexIndices;
 	facesVertexIndices.reserve(faceEle.size());
 
 	VertexIndexContainer swapperfacesVertexIndices;
 	swapperfacesVertexIndices.reserve(10);
 
-	for( auto i = 0u; i < faceEle.size(); ++i)
+	for(auto i = 0u; i < faceEle.size(); ++i)
 	{
 		swapperfacesVertexIndices.clear();
 		polygons.getVertexIndices(PolygonIndex(i), swapperfacesVertexIndices);
-		if (swapperfacesVertexIndices.size() == 3)
+		if(swapperfacesVertexIndices.size() == 3)
 		{
 			facesVertexIndices.push_back(swapperfacesVertexIndices[0]);
 			facesVertexIndices.push_back(swapperfacesVertexIndices[2]);
 			facesVertexIndices.push_back(swapperfacesVertexIndices[1]);
-		}
-		else
+		} else
 		{
 			static bool warnedAboutPrims = false;
-			if (warnedAboutPrims == false)
+			if(warnedAboutPrims == false)
 			{
 				printf("GLTF saving supports triangles only currently, ignoring other primitives\n");
 				warnedAboutPrims = true;
@@ -445,8 +452,8 @@ void Gltf::convertPrimitives(std::map<uint32_t, uint32_t> const& attribMap,
 		}
 	}
 
-	size_t maxIndex { 0 };
-	for (auto const& fi : facesVertexIndices) { maxIndex = std::max(maxIndex, size_t(fi)); }
+	size_t maxIndex{0};
+	for(auto const& fi : facesVertexIndices) { maxIndex = std::max(maxIndex, size_t(fi)); }
 
 	auto const dataBufferSize = dataBuffer.size();
 
@@ -455,18 +462,17 @@ void Gltf::convertPrimitives(std::map<uint32_t, uint32_t> const& attribMap,
 	accessor.type = TINYGLTF_TYPE_SCALAR;
 
 	size_t indexBufferSize;
-	if (maxIndex >= (1 << 16))
+	if(maxIndex >= (1 << 16))
 	{
 		indexBufferSize = accessor.count * sizeof(uint32_t);
 		dataBuffer.resize(dataBufferSize + indexBufferSize);
 		memcpy(dataBuffer.data() + dataBufferSize, facesVertexIndices.data(), indexBufferSize);
 		accessor.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
-	}
-	else
+	} else
 	{
 		indexBufferSize = accessor.count * sizeof(uint16_t);
 		dataBuffer.resize(dataBufferSize + indexBufferSize);
-		for (auto i = 0u; i < accessor.count; ++i)
+		for(auto i = 0u; i < accessor.count; ++i)
 		{
 			uint16_t index = (uint16_t) facesVertexIndices[i];
 			memcpy(dataBuffer.data() + dataBufferSize + i * sizeof(uint16_t), &index, sizeof(uint16_t));
@@ -476,9 +482,9 @@ void Gltf::convertPrimitives(std::map<uint32_t, uint32_t> const& attribMap,
 
 	auto bufferViewIndex = model.bufferViews.size();
 	model.bufferViews.resize(bufferViewIndex + 1);
-	accessor.bufferView = (int)bufferViewIndex;
+	accessor.bufferView = (int) bufferViewIndex;
 
-	BufferView & bufferView = model.bufferViews[accessor.bufferView];
+	BufferView& bufferView = model.bufferViews[accessor.bufferView];
 	bufferView.buffer = 0;
 	bufferView.byteLength = indexBufferSize;
 	bufferView.byteOffset = dataBufferSize;
@@ -510,22 +516,23 @@ void Gltf::SaveInternal(MeshMod::SceneNode::Ptr node_, tinygltf::Model& model_)
 	model_.accessors.resize(2); // TODO more than just positions and indices
 	accessorAttributeMap["INDICIES"_hash] = 0;
 	accessorAttributeMap["POSITION"_hash] = 1;
-	while (!nodeStack.empty())
+	while(!nodeStack.empty())
 	{
-		MeshMod::SceneNode::Ptr node = nodeStack.top(); nodeStack.pop();
-		int nodeIndex = (int)model_.nodes.size();
+		MeshMod::SceneNode::Ptr node = nodeStack.top();
+		nodeStack.pop();
+		int nodeIndex = (int) model_.nodes.size();
 		model_.nodes.resize(nodeIndex + 1);
 		gltfScene.nodes.push_back(nodeIndex);
 		tinygltf::Node& gltfNode = model_.nodes[nodeIndex];
 		convertTransform(node, gltfNode);
 
-		for (auto i = 0u; i < node->getObjectCount(); ++i)
+		for(auto i = 0u; i < node->getObjectCount(); ++i)
 		{
 			auto const& obj = node->getObject(i);
-			if (Core::QuickHash(obj->getType()) == meshTypeHash)
+			if(Core::QuickHash(obj->getType()) == meshTypeHash)
 			{
 				auto mesh = std::dynamic_pointer_cast<MeshMod::Mesh>(obj);
-				int meshIndex = (int)model_.meshes.size();
+				int meshIndex = (int) model_.meshes.size();
 				model_.meshes.resize(meshIndex + 1);
 				// TODO a node in MeshMod can have multiple objects attached gltf can't
 				gltfNode.mesh = meshIndex;
@@ -537,7 +544,7 @@ void Gltf::SaveInternal(MeshMod::SceneNode::Ptr node_, tinygltf::Model& model_)
 			}
 		}
 
-		for (auto i = 0u; i < node->getChildCount(); ++i)
+		for(auto i = 0u; i < node->getChildCount(); ++i)
 		{
 			nodeStack.push(node->getChild(i));
 		}
@@ -545,10 +552,10 @@ void Gltf::SaveInternal(MeshMod::SceneNode::Ptr node_, tinygltf::Model& model_)
 
 	model_.defaultScene = 0;
 	model_.scenes.emplace_back(gltfScene);
-	model_.buffers.emplace_back(tinygltf::Buffer {
-		"",
-		dataBuffer
-		});
+	model_.buffers.emplace_back(tinygltf::Buffer{
+			"",
+			dataBuffer
+	});
 }
 
 }

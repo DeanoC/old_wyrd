@@ -16,6 +16,7 @@ namespace tinygltf
 	class Node;
 	class Model;
 	struct Mesh;
+	struct Primitive;
 }
 
 namespace MeshOps {
@@ -32,9 +33,11 @@ public:
 private:
 	static MeshMod::SceneNode::Ptr LoadInternal(tinygltf::Model const& model);
 	static void convertTransform(tinygltf::Node const &node_, MeshMod::SceneNode::Ptr &sceneNode_);
-	static bool convertPositionData(std::map<uint32_t, uint32_t> const& attribMap, tinygltf::Model const& model, std::shared_ptr<MeshMod::Mesh>& mesh);
-	static void convertVertexData(std::map<uint32_t, uint32_t> const& attribMap, tinygltf::Model const& model, std::shared_ptr<MeshMod::Mesh>& mesh);
-	static void convertPrimitives(tinygltf::Model const& model, tinygltf::Mesh const& gltfMesh, std::shared_ptr<MeshMod::Mesh>& mesh);
+
+	static auto convertVertexData(tinygltf::Primitive const& prim_, tinygltf::Model const& model_, std::shared_ptr<MeshMod::Mesh>& mesh_) -> bool;
+	static void convertPrimitives(tinygltf::Model const& model_, tinygltf::Mesh const& gltfMesh_, std::shared_ptr<MeshMod::Mesh>& mesh_);
+
+	static void convertPositionData(int posAttribIndex, tinygltf::Model const& model_, std::shared_ptr<MeshMod::Mesh>& mesh_);
 
 	static void SaveInternal(MeshMod::SceneNode::Ptr node_, tinygltf::Model& model_);
 
