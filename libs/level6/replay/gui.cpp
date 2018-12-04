@@ -14,6 +14,7 @@
 #include "meshmod/vertices.h"
 #include "meshops/platonicsolids.h"
 #include "meshops/shapes.h"
+#include "fmt/format.h"
 #include <cctype>
 
 namespace Replay {
@@ -279,7 +280,9 @@ auto Gui::decodeLog(Item const& item_) -> void
 
 	try
 	{
-		nlohmann::json const j = json::parse(item_.data);
+		std::string test = fmt::format("\n");
+		LOG_S(INFO) << test;
+		nlohmann::json const j = json::parse(test);
 		auto text = j["text"];
 		std::string logString;
 		std::string level = "info";

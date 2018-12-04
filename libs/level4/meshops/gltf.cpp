@@ -293,7 +293,10 @@ void Gltf::convertPrimitives(tinygltf::Model const& model_,
 			uint16_t* data = (uint16_t*) (buffer.data.data() + bufferView.byteOffset + accessor.byteOffset);
 			for(uint64_t j = 0; j < accessor.count; ++j)
 			{
-				assert(data[j] <= accessor.maxValues[0]);
+				if (!accessor.maxValues.empty())
+				{
+					assert(data[j] <= accessor.maxValues[0]);
+				}
 				indices[j] = (VertexIndex) data[j];
 			}
 		} else
@@ -301,7 +304,10 @@ void Gltf::convertPrimitives(tinygltf::Model const& model_,
 			uint32_t* data = (uint32_t*) (buffer.data.data() + bufferView.byteOffset + accessor.byteOffset);
 			for(uint64_t j = 0; j < accessor.count; ++j)
 			{
-				assert(data[j] <= accessor.maxValues[0]);
+				if (!accessor.maxValues.empty())
+				{
+					assert(data[j] <= accessor.maxValues[0]);
+				}
 				indices[j] = (VertexIndex) data[j];
 			}
 		}
@@ -458,7 +464,7 @@ void Gltf::convertPrimitives(std::map<uint32_t, uint32_t> const& attribMap,
 	auto const dataBufferSize = dataBuffer.size();
 
 	accessor.count = facesVertexIndices.size();
-	accessor.byteOffset = dataBufferSize;
+	accessor.byteOffset = 0;
 	accessor.type = TINYGLTF_TYPE_SCALAR;
 
 	size_t indexBufferSize;

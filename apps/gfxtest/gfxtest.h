@@ -18,5 +18,6 @@ struct GfxTest
 std::unique_ptr<GfxTest> CreateBasicMeshTest();
 std::unique_ptr<GfxTest> CreateDuckGltfTest();
 std::unique_ptr<GfxTest> CreateSponzaGltfTest();
+std::unique_ptr<GfxTest> CreateTacmapGltfTest();
 
 #endif //WYRD_GFXTEST_H

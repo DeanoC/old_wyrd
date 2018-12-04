@@ -156,6 +156,7 @@ struct App
 //		underTest = CreateBasicMeshTest();
 //		underTest = CreateDuckGltfTest();
 		underTest = CreateSponzaGltfTest();
+		underTest = CreateTacmapGltfTest();
 		underTest->init(resourceManager);
 
 		return okay;
