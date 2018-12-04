@@ -279,6 +279,7 @@ auto MeshModRenderer::render(
 					auto mesh = std::dynamic_pointer_cast<MeshMod::Mesh const>(obj);
 					auto meshIt = scene.meshMap.find(mesh.get());
 					if(meshIt == scene.meshMap.end()) return;
+					if (meshIt->second == InvalidMeshIndex) return;
 
 					auto const& rd = meshes[size_t(meshIt->second)];
 

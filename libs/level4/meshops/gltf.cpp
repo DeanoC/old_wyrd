@@ -154,7 +154,7 @@ void Gltf::convertPositionData(int posAttribIndex, tinygltf::Model const& model_
 		return;
 	}
 
-	if (posBufferView.target != TINYGLTF_TARGET_ARRAY_BUFFER)
+	if (posBufferView.target != 0 && posBufferView.target != TINYGLTF_TARGET_ARRAY_BUFFER)
 	{
 		LOG_F(WARNING, "Vertex buffer position view target %u not supported", posBufferView.target);
 		return;
@@ -212,7 +212,7 @@ auto Gltf::convertVertexData(tinygltf::Primitive const& prim_, tinygltf::Model c
 		tinygltf::Accessor const& accessor = model_.accessors[index];
 		tinygltf::BufferView const& bufferView = model_.bufferViews[accessor.bufferView];
 		Buffer const& buffer = model_.buffers[bufferView.buffer];
-		if (bufferView.target != TINYGLTF_TARGET_ARRAY_BUFFER)
+		if (bufferView.target != 0 && bufferView.target != TINYGLTF_TARGET_ARRAY_BUFFER)
 		{
 			LOG_F(WARNING, "Vertex buffer element %s view target %u not supported", name, bufferView.target);
 			break;
@@ -303,7 +303,7 @@ void Gltf::convertPrimitives(tinygltf::Model const& model_,
 
 		auto const& accessor = model_.accessors[primitive.indices];
 		BufferView const& bufferView = model_.bufferViews[accessor.bufferView];
-		if (bufferView.target != TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER)
+		if (bufferView.target != 0 && bufferView.target != TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER)
 		{
 			LOG_F(WARNING, "Primitive buffer view target %u not supported", bufferView.target);
 			continue;
