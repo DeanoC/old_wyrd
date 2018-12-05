@@ -1,4 +1,6 @@
 #--------- Wyrd's third party sources
+find_package(vulkan REQUIRED)
+
 set( CRC32C_SRC
 		crc32c/crc32c.cpp
 		crc32c/crc32c.h)
@@ -140,8 +142,26 @@ set(ICONFONTCPPHEADERS_SRC
 		IconFontCppHeaders/IconsMaterialDesign.h
 		IconFontCppHeaders/IconsMaterialDesignIcons.h
 		)
-set( NLOHMANN_SRC nlohmann/json.h)
+
+set( PICOJSON_SRC picojson/picojson.h)
+
 set(CLIPP_SRC clipp/clipp.h)
+
+set(NATIVEFILEDIALOG_SRC
+		nativefiledialog/src/nfd_common.c
+		nativefiledialog/src/nfd_common.h
+		)
+if(APPLE)
+set(NATIVEFILEDIALOG_SRC
+		${NATIVEFILEDIALOG_SRC}
+		nativefiledialog/src/nfd_cocoa.m
+		)
+elseif(WIN32)
+	set(NATIVEFILEDIALOG_SRC
+			${NATIVEFILEDIALOG_SRC}
+			nativefiledialog/src/nfd_win.cpp
+			)
+endif()
 
 option(SHADERC_SKIP_INSTALL "" ON)
 option(SHADERC_SKIP_TESTS "" ON)
@@ -188,6 +208,28 @@ if (WIN32)
 		-D_WIN32_WINNT=0x603)
 endif(WIN32)
 
+set( wyrd_DEFINITIONS
+		${wyrd_DEFINITIONS}
+		-D__TBB_NO_IMPLICIT_LINKAGE=1
+		-D__TBBMALLOC_NO_IMPLICIT_LINKAGE=1
+		-D_CRT_SECURE_NO_WARNINGS -D__STDC_FORMAT_MACROS
+		-D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1
+		-D_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING=1
+		)
+
+set( wyrd_INCLUDES
+		${wyrd_INCLUDES}
+		${Vulkan_INCLUDE_DIRS}
+		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty
+		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/tbb/include
+		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/fmt/include
+		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glm
+		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/cppfs/include
+		)
+
+set( wyrd_DEFINITIONS ${wyrd_DEFINITIONS} PARENT_SCOPE )
+set( wyrd_INCLUDES ${wyrd_INCLUDES} PARENT_SCOPE )
+
 add_definitions(${wyrd_DEFINITIONS})
 include_directories(${wyrd_INCLUDES})
 
@@ -201,9 +243,10 @@ add_library( thirdparty STATIC
 		${FMT_SRC}
 		${LZ4_SRC}
 		${ICONFONTCPPHEADERS_SRC}
-		${NLOHMANN_SRC}
+		${PICOJSON_SRC}
 		${CLIPP_SRC}
+		${NATIVEFILEDIALOG_SRC}
 		)
 target_link_libraries(thirdparty ${THIRDPARTY_LIBS})
 
-
+set( wyrd_INCLUDES ${wyrd_INCLUDES} PARENT_SCOPE )

@@ -535,6 +535,7 @@ auto Gui::decodeSimpleMesh(Item const& item_) -> void
 	rootScene->addObject(mesh);
 	auto sceneIndex = meshModRenderer->addScene(rootScene);
 	meshMap[name] = sceneIndex;
+	meshObjectMap[name].index = sceneIndex;
 }
 
 auto Gui::decodeMeshObject(Item const& item_) -> void
@@ -600,7 +601,7 @@ auto Gui::decodeMeshObject(Item const& item_) -> void
 
 auto Gui::meshCallback(Item const& item_) -> bool
 {
-
+	decodeSimpleMesh(item_);
 	return true;
 }
 

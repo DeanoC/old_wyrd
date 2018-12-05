@@ -4,7 +4,6 @@ set( REPLAY_SRC
 		gui.cpp
 		gui.h
 		items.h
-		propertyeditor.h
 )
 
 add_definitions(${wyrd_DEFINITIONS})

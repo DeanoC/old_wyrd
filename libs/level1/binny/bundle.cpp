@@ -233,7 +233,7 @@ auto Bundle::read(
 										 {
 											 for(auto const[stage, destroyer] : destroyers)
 											 {
-												 destroyer(stage, ptr);
+												 if (destroyer) { destroyer(stage, ptr); }
 											 }
 											 localFree(ptr);
 										 });

@@ -24,6 +24,7 @@ set( wyrd_INCLUDES
 		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/fmt/include
 		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glm
 		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/cppfs/include
+		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/nativefiledialog/src/include
 		)
 add_subdirectory(thirdparty)
 
