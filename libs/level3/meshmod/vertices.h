@@ -80,9 +80,9 @@ public:
 	VertexIndex add( const float x, const float y, const float z );
 	//! removes the indicated vertex (position + extra data at index ).
 	void remove(VertexIndex index);
-	// moves this vertex to a similar and marks this vertex as deleted
-	// return false if similar vertex was available, true if not
-	bool moveToSimilarIfPossible(VertexIndex index);
+
+	// collapses all similar vertices to this one
+	void weldSimilar(VertexIndex vertexIndex_);
 
 	void createPointReps(VertexData::Axis axis = VertexData::Axis::X, float fEpsilon = 1e-5f);
 

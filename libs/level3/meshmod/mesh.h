@@ -80,14 +80,15 @@ public:
 	enum EditState
 	{
 		NoEdits = 0,
-		VertexAttributeEdits = 0x1,    // vertex attributes (except positions) have changed
-		PositionEdits = 0x2,    // vertex positions have changed
-		TopologyAttributesEdits = 0x4, // topology based attributes (not actual topology changed)
-		TopologyEdits = 0x8,    // topology (polygons/half edges) changed
+		VertexAttributeEdits = 0x1,		// vertex attributes (except positions) have changed
+		PositionEdits = 0x2,			// vertex positions have changed
+		TopologyAttributesEdits = 0x4,	// topology based attributes (not actual topology changed)
+		TopologyEdits = 0x8,			// topology (polygons/half edges) changed
+		MaintenanceEdits = 0x16,			// change to the Maintenance settings
 	};
 
 	//! ctor.
-	Mesh(const std::string &name, bool maintainPointRep = true, bool maintainEdgeConnection = true);
+	Mesh(const std::string &name_, bool maintainPointReps_ = true, bool maintainEdgeConnections_ = true);
 	// clone from another mesh
 	Mesh(Mesh const& rhs);
 
@@ -106,6 +107,11 @@ public:
 	void updateEditState( EditState editState_ );
 	uint32_t getEdited() const { return edits; }
 	void updateFromEdits();
+
+	auto isMaintainPointReps() -> bool { return maintain & Maintenance::PointReps; }
+	auto isMaintainEdgeConnections() -> bool { return maintain & Maintenance::EdgeConnections; }
+	void maintainPointReps(bool enable) { maintain &= ~Maintenance::PointReps; maintain |= enable ? Maintenance::PointReps : 0; edits |= MaintenanceEdits; }
+	void maintainEdgeConnections(bool enable) { maintain &= ~Maintenance::EdgeConnections; maintain |= enable ? Maintenance::EdgeConnections : 0; edits |= MaintenanceEdits; };
 
 	Vertices& getVertices() { return vertices; }
 	Vertices const& getVertices() const { return vertices; }

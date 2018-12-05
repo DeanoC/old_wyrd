@@ -349,7 +349,7 @@ inline void VariContainer<CT>::cloneTo(VariContainer<CT> &nvc) const
 {
 	for (auto const& ptr : elements)
 	{
-		nvc.elements.push_back(ptr);
+		nvc.elements.push_back(ptr->clone());
 	}
 	nvc.notValids = notValids;
 }

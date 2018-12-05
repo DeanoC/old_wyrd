@@ -891,7 +891,7 @@ void TacticalMapBuilder::processHeightsForTile( TacticalMapTileBuilder& tileBuil
 				float lastT = -FLT_MAX;
 				size_t lastSolid = ~0;
 
-				for(auto i = 0; i < cloneList.size(); i++)
+				for(auto i = 0u; i < cloneList.size(); i++)
 				{
 					auto& frag = cloneList[i];
 					bool reject = false;

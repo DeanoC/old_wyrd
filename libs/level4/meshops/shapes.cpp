@@ -77,13 +77,6 @@ auto Shapes::createSphere(uint32_t subdivisionSteps_) -> std::unique_ptr<MeshMod
 		mesh = std::move(BasicMeshOps::tesselate4(std::move(mesh)));
 	}
 
-	// TODO fix weld functionality
-	//	mesh->getVertices().removeAllSimilarPositions();
-
-	mesh->updateEditState(MeshMod::Mesh::TopologyEdits);
-	mesh->updateFromEdits();
-
-
 	BasicMeshOps::spherize(mesh, 1.0f);
 	mesh->updateEditState(MeshMod::Mesh::PositionEdits);
 	mesh->updateFromEdits();

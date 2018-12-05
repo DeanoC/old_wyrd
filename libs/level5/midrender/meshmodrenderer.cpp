@@ -6,6 +6,7 @@
 #include "meshmod/polygons.h"
 #include "meshmod/mesh.h"
 #include "meshmod/scene.h"
+#include "meshmod/vertexdata/normalvertex.h"
 #include "meshops/basicmeshops.h"
 #include "resourcemanager/textresource.h"
 #include "resourcemanager/resourceman.h"
@@ -104,19 +105,25 @@ auto MeshModRenderer::destroy() -> void
 
 
 auto MeshModRenderer::addMeshMod(std::shared_ptr<MeshMod::Mesh> const& mesh_,
-								 bool colourUsingPolygonNormal_) -> MeshIndex
+									bool smoothColours) -> MeshIndex
 {
 	using namespace MeshMod;
-
-	if(colourUsingPolygonNormal_)
-	{
-		MeshOps::BasicMeshOps::computeFacePlaneEquations(mesh_, false);
-	}
-	MeshOps::BasicMeshOps::triangulate(mesh_);
 
 	auto const& vertices = mesh_->getVertices();
 	auto const& polygons = mesh_->getPolygons();
 	if(polygons.getCount() == 0) return InvalidMeshIndex;
+
+	MeshOps::BasicMeshOps::triangulate(mesh_);
+	mesh_->getVertices().removeAllSimilarPositions();
+	mesh_->updateFromEdits();
+
+	if(smoothColours)
+	{
+		MeshOps::BasicMeshOps::computeVertexNormalsEx(mesh_, false);
+	} else
+	{
+		MeshOps::BasicMeshOps::computeFacePlaneEquations(mesh_, false);
+	}
 
 	struct PosColorVertex
 	{
@@ -128,62 +135,75 @@ auto MeshModRenderer::addMeshMod(std::shared_ptr<MeshMod::Mesh> const& mesh_,
 	VertexContainer renderVertices;
 	IndexContainer indices;
 
-	static const int maxVerticesPerFace = 20;
-	for(auto iFace = 0u; iFace < polygons.getCount(); iFace++)
+	VertexIndexContainer faceVertexIndices(3);
+	if (smoothColours)
 	{
-		auto polygonIndex = PolygonIndex(iFace);
-		if(!polygons.isValid(polygonIndex)) continue;
-
-		VertexIndexContainer faceVertexIndices;
-		polygons.getVertexIndices(polygonIndex, faceVertexIndices);
-		assert(faceVertexIndices.size() < maxVerticesPerFace);
-
 		size_t baseVertex = renderVertices.size();
-		renderVertices.resize(baseVertex + faceVertexIndices.size());
+		renderVertices.resize(baseVertex + vertices.getCount());
+		auto& rv = renderVertices;
+		auto const& normals = vertices.getAttribute<VertexData::Normals>();
 
-		static const uint32_t colMap[] =
+		for (auto i = 0u; i < vertices.getCount(); i++)
 		{
-				0x80FF0000,
-				0x8000FF00,
-				0x800000FF,
-				0x8000FFFF,
-				0x80FF00FF,
-				0x80FFFF00,
-				0x808000FF,
-				0x80008080,
-		};
-
-		for(auto i = 0u; i < faceVertexIndices.size(); ++i)
-		{
-			VertexData::Position const pos = vertices.position(faceVertexIndices[i]);
-			renderVertices[baseVertex + i].x = pos.x;
-			renderVertices[baseVertex + i].y = pos.y;
-			renderVertices[baseVertex + i].z = pos.z;
-
-			if(colourUsingPolygonNormal_)
-			{
-				auto const& planeEqs = polygons.getAttribute<PolygonData::PlaneEquations>();
-				Math::vec3 normal = planeEqs[polygonIndex].planeEq.normal();
-
-				uint8_t a = 0xFF;
-				uint8_t r = (uint8_t) (((normal.x + 1) * 0.5f) * 255.f);
-				uint8_t g = (uint8_t) (((normal.y + 1) * 0.5f) * 255.f);
-				uint8_t b = (uint8_t) (((normal.z + 1) * 0.5f) * 255.f);
-				renderVertices[baseVertex + i].argb = (a << 24) |
-													  (r << 16) |
-													  (g << 8) |
-													  (b << 0);
-			} else
-			{
-				renderVertices[baseVertex + i].argb = colMap[iFace & 0x7];
-			}
+			VertexIndex vertexIndex = VertexIndex(i);
+			VertexData::Position const pos = vertices.position(vertexIndex);
+			Math::vec3 const normal = normals.at(vertexIndex).getVec3();
+			rv[baseVertex + i].x = pos.x;
+			rv[baseVertex + i].y = pos.y;
+			rv[baseVertex + i].z = pos.z;
+			uint8_t a = 0xFF;
+			uint8_t r = (uint8_t)(((normal.x + 1) * 0.5f) * 255.f);
+			uint8_t g = (uint8_t)(((normal.y + 1) * 0.5f) * 255.f);
+			uint8_t b = (uint8_t)(((normal.z + 1) * 0.5f) * 255.f);
+			rv[baseVertex + i].argb = (a << 24) | (r << 16) | (g << 8) | (b << 0);
 		}
-
-		for(unsigned int iCoord = 2; iCoord < faceVertexIndices.size(); iCoord++)
+		indices.resize(polygons.getCount()*3);
+		for (auto i = 0u; i < polygons.getCount(); i++)
 		{
-			indices.push_back((uint32_t) (baseVertex + iCoord - 2));
-			indices.push_back((uint32_t) (baseVertex + iCoord - 1));
-			indices.push_back((uint32_t) (baseVertex + iCoord));
+			auto polygonIndex = PolygonIndex(i);
+			if(!polygons.isValid(polygonIndex)) continue;
+
+			faceVertexIndices.clear();
+			polygons.getVertexIndices(polygonIndex, faceVertexIndices);
+
+			indices[i*3+0] = (uint32_t)faceVertexIndices[0];
+			indices[i*3+1] = (uint32_t)faceVertexIndices[1];
+			indices[i*3+2] = (uint32_t)faceVertexIndices[2];
+		}
+	}
+	else
+	{
+		auto const& planeEqs = polygons.getAttribute<PolygonData::PlaneEquations>();
+		for (auto i = 0u; i < polygons.getCount(); i++)
+		{
+			auto polygonIndex = PolygonIndex(i);
+			if (!polygons.isValid(polygonIndex)) continue;
+
+			faceVertexIndices.clear();
+			polygons.getVertexIndices(polygonIndex, faceVertexIndices);
+			if(faceVertexIndices.size() != 3) continue;
+
+			size_t baseVertex = renderVertices.size();
+			renderVertices.resize(baseVertex + 3);
+			auto& rv = renderVertices;
+
+			for (auto j = 0u; j < 3; ++j)
+			{
+				VertexData::Position const pos = vertices.position(faceVertexIndices[j]);
+				Math::vec3 const normal = planeEqs[polygonIndex].planeEq.normal();
+				rv[baseVertex + j].x = pos.x;
+				rv[baseVertex + j].y = pos.y;
+				rv[baseVertex + j].z = pos.z;
+				uint8_t a = 0xFF;
+				uint8_t r = (uint8_t)(((normal.x + 1) * 0.5f) * 255.f);
+				uint8_t g = (uint8_t)(((normal.y + 1) * 0.5f) * 255.f);
+				uint8_t b = (uint8_t)(((normal.z + 1) * 0.5f) * 255.f);
+				rv[baseVertex + i].argb = (a << 24) | (r << 16) | (g << 8) | (b << 0);
+			}
+
+			indices.push_back((uint32_t)(baseVertex + 0));
+			indices.push_back((uint32_t)(baseVertex + 1));
+			indices.push_back((uint32_t)(baseVertex + 2));
 		}
 	}
 
@@ -290,9 +310,8 @@ auto MeshModRenderer::render(
 							PushConstantRange{0, sizeof(float)*16, ShaderType::Vertex},
 							&worldMat);
 					renderEncoder->bindVertexBuffer(vertexBuffer);
-//					renderEncoder->bindIndexBuffer(indexBuffer, 32);
-//					renderEncoder->drawIndexed(rd.numIndices);
-					renderEncoder->draw(rd.numIndices);
+					renderEncoder->bindIndexBuffer(indexBuffer, 32);
+					renderEncoder->drawIndexed(rd.numIndices);
 				});
 	};
 

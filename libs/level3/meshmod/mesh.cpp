@@ -37,17 +37,17 @@ const float s_floatMarker = *(reinterpret_cast<float *>( &dummy_UINTFloatMarker 
 /**
 defualt ctor
 */
-Mesh::Mesh(const std::string& name, bool maintainPointRep, bool maintainEdgeConnection) :
-		SceneObject("Mesh", name),
+Mesh::Mesh(const std::string& name_, bool maintainPointReps_, bool maintainEdgeConnections_) :
+		SceneObject("Mesh", name_),
 		vertices(*new Vertices(*this)),
 		halfEdges(*new HalfEdges(*this)),
 		polygons(*new Polygons(*this))
 {
 	edits = (EditState)~0;
 	maintain = 0;
-	if(maintainPointRep)
+	if(maintainPointReps_)
 		maintain |= Maintenance::PointReps;
-	if(maintainEdgeConnection)
+	if(maintainEdgeConnections_)
 		maintain |= Maintenance::EdgeConnections;
 
 	// helps the auto copier and diagnostics
@@ -116,23 +116,7 @@ void Mesh::updateFromEdits()
 		halfEdges.getHalfEdgesContainer().removeDerived( DerivedFromTopology );
 		polygons.getPolygonsContainer().removeDerived( DerivedFromTopology );
 		materialContainer.removeDerived( DerivedFromTopology );
-
-		if(maintain & Maintenance::PointReps)
-		{
-			vertices.createPointReps();
-		}
-
-		// TODO fix cleanAndRepack
-//		cleanAndRepack();
-
-		if(maintain & Maintenance::EdgeConnections)
-		{
-			halfEdges.breakPairs();
-			halfEdges.connectPairs();
-		}
-
-		validate();
-
+		edits |= MaintenanceEdits;
 	} else if(edits & TopologyAttributesEdits)
 	{
 		vertices.getVerticesContainer().removeDerived( DerivedFromAttributes );
@@ -145,10 +129,7 @@ void Mesh::updateFromEdits()
 		halfEdges.getHalfEdgesContainer().removeDerived( DerivedFromPositions );
 		polygons.getPolygonsContainer().removeDerived( DerivedFromPositions );
 		materialContainer.removeDerived( DerivedFromPositions );
-
-		vertices.createPointReps();
-		halfEdges.breakPairs();
-		halfEdges.connectPairs();
+		edits |= MaintenanceEdits;
 	} else if(edits & VertexAttributeEdits)
 	{
 		vertices.getVerticesContainer().removeDerived( DerivedFromAttributes );
@@ -156,6 +137,24 @@ void Mesh::updateFromEdits()
 		polygons.getPolygonsContainer().removeDerived( DerivedFromAttributes );
 		materialContainer.removeDerived( DerivedFromAttributes );
 	}
+
+	if (edits & MaintenanceEdits)
+	{
+		if (maintain & Maintenance::PointReps)
+		{
+			vertices.createPointReps();
+			cleanAndRepack();
+		}
+
+		if (maintain & Maintenance::EdgeConnections)
+		{
+			halfEdges.breakPairs();
+			halfEdges.connectPairs();
+		}
+	}
+
+	validate();
+
 	edits = NoEdits;
 }
 
@@ -223,7 +222,7 @@ void Mesh::validate() const
 		std::vector<VertexIndex> similarVertices;
 		similarVertices.push_back(vertexIndex);
 		vertices.visitSimilarVertexIndices(vertexIndex, [this, &similarVertices](VertexIndex simVIndex) {
-			assert(simVIndex < vertices.getCount());
+			assert(size_t(simVIndex) < vertices.getCount());
 			assert(vertices.isValid(simVIndex));
 			assert(std::find(similarVertices.cbegin(), similarVertices.cend(),simVIndex) == similarVertices.cend());
 			similarVertices.push_back(simVIndex);
@@ -231,20 +230,20 @@ void Mesh::validate() const
 
 		std::unordered_map<HalfEdgeIndex, int> visitedHalfEdges;
 		vertices.visitHalfEdges(vertexIndex, [this, &visitedHalfEdges](HalfEdgeIndex heIndex) {
-			assert(heIndex < halfEdges.getCount());
+			assert(size_t(heIndex) < halfEdges.getCount());
 			visitedHalfEdges[heIndex]++;
 			assert(visitedHalfEdges[heIndex] <= 2);
 
 			auto const& halfEdge = halfEdges.halfEdge(heIndex);
 
-			assert(halfEdge.prev < halfEdges.getCount());
-			assert(halfEdge.next < halfEdges.getCount());
-			assert(halfEdge.startVertexIndex < vertices.getCount());
-			assert(halfEdge.endVertexIndex < vertices.getCount());
-			assert(halfEdge.polygonIndex < polygons.getCount());
-			if (halfEdge.pair != MM_INVALID_INDEX)
+			assert(size_t(halfEdge.prev) < halfEdges.getCount());
+			assert(size_t(halfEdge.next) < halfEdges.getCount());
+			assert(size_t(halfEdge.startVertexIndex) < vertices.getCount());
+			assert(size_t(halfEdge.endVertexIndex) < vertices.getCount());
+			assert(size_t(halfEdge.polygonIndex) < polygons.getCount());
+			if (halfEdge.pair != InvalidHalfEdgeIndex)
 			{
-				assert(halfEdge.pair < halfEdges.getCount());
+				assert(size_t(halfEdge.pair) < halfEdges.getCount());
 			}
 
 			if (halfEdge.prev != halfEdge.next)
@@ -257,10 +256,10 @@ void Mesh::validate() const
 				assert(nextHalfEdge.startVertexIndex == halfEdge.endVertexIndex);
 			}
 
-			assert(halfEdge.polygonIndex < polygons.getCount());
+			assert(size_t(halfEdge.polygonIndex) < polygons.getCount());
 
 			auto const& polygon = polygons.polygon(halfEdge.polygonIndex);
-			assert(polygon.anyHalfEdge < halfEdges.getCount());
+			assert(size_t(polygon.anyHalfEdge) < halfEdges.getCount());
 
 		});
 	});
@@ -270,8 +269,8 @@ void Mesh::validate() const
 			assert(halfEdges.isValid(heIndex));
 			auto const& halfEdge = halfEdges.halfEdge(heIndex);
 			assert(halfEdge.polygonIndex == polygonIndex);
-			assert(halfEdge.startVertexIndex < vertices.getCount());
-			assert(halfEdge.endVertexIndex < vertices.getCount());
+			assert(size_t(halfEdge.startVertexIndex) < vertices.getCount());
+			assert(size_t(halfEdge.endVertexIndex) < vertices.getCount());
 		});
 	});
 #endif
@@ -314,6 +313,7 @@ void Mesh::cleanAndRepack()
 	vertices.getVerticesContainer().removeElements<VertexData::HalfEdges>();
 	vertices.getVerticesContainer().addElements<VertexData::HalfEdges>();
 
+
 	std::vector<VertexIndex> oldToNew;
 	vertices.repack(oldToNew);
 
@@ -325,9 +325,11 @@ void Mesh::cleanAndRepack()
 			newPolyIndices.resize(poly.size());
 			for (auto i = 0u; i < poly.size(); ++i)
 			{
-				newPolyIndices[i] = oldToNew[size_t(poly[i])];
+				VertexIndex newIndex = oldToNew[size_t(poly[i])];
+				assert(size_t(newIndex) < vertices.getCount());
+				newPolyIndices[i] = newIndex;
 			}
-			polygons.addPolygon(poly);
+			polygons.addPolygon(newPolyIndices);
 		}
 	}
 
@@ -459,7 +461,6 @@ void Mesh::cleanAndRepackWIP()
 	}
 
 	polygons.repack();
-
 }
 template<class T, bool interpolatable, DerivedType derived>
 inline VertexIndex Mesh::addVertexAttributeToFace(const VertexIndex vPosIndex,

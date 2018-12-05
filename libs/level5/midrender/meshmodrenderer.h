@@ -42,7 +42,7 @@ public:
 	auto init(std::shared_ptr<ResourceManager::ResourceMan> const& rm_) -> void;
 	auto destroy() -> void;
 
-	auto addMeshMod(std::shared_ptr<MeshMod::Mesh> const& mesh_, bool colourUsingPolygonNormal_) -> MeshIndex;
+	auto addMeshMod(std::shared_ptr<MeshMod::Mesh> const& mesh_, bool smoothColours = false) -> MeshIndex;
 	auto addScene(std::shared_ptr<MeshMod::SceneNode> const& rootNode) -> SceneIndex;
 
 	auto render(Math::mat4x4 const& rootMatrix_, SceneIndex index_, std::shared_ptr<Render::Encoder> const& encoder_) -> void;

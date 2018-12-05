@@ -294,6 +294,9 @@ auto BasicMeshOps::computeVertexNormals(std::shared_ptr<MeshMod::Mesh> const& me
 		return; // we already have normal and don't want to overwrite existing so just return
 	}
 
+	bool backupMaintainPointReps = mesh->isMaintainPointReps();
+	mesh->maintainPointReps(true);
+
 	// clear normals
 	auto normals = vertices.getAttribute <VertexData::Normals>();
 	vertices.visitAll(
@@ -346,6 +349,7 @@ auto BasicMeshOps::computeVertexNormals(std::shared_ptr<MeshMod::Mesh> const& me
 				}
 			});
 
+	mesh->maintainPointReps(backupMaintainPointReps);
 	mesh->updateEditState(Mesh::VertexAttributeEdits);
 }
 
@@ -364,20 +368,22 @@ auto BasicMeshOps::computeVertexNormalsEx(std::shared_ptr<MeshMod::Mesh> const& 
 	using namespace MeshMod;
 	using namespace Math;
 
-	mesh->updateFromEdits();
 
 	auto& vertices = mesh->getVertices();
 	auto const& halfEdges = mesh->getHalfEdges();
 	auto const& polygons = mesh->getPolygons();
 
-	if(vertices.hasAttribute<VertexData::Normals>() &&
-	   replaceExisting == false)
+	if(vertices.hasAttribute<VertexData::Normals>() && replaceExisting == false)
 	{
 		return; // we already have normal and don't want to overwrite existing so just return
 	}
 
+	bool backupMaintainPointReps = mesh->isMaintainPointReps();
+	mesh->maintainPointReps(true);
+	mesh->updateFromEdits();
+
 	// clear normals
-	auto normals = vertices.getAttribute <VertexData::Normals>();
+	auto& normals = vertices.getOrAddAttribute <VertexData::Normals>();
 	vertices.visitAll(
 			[&normals](VertexIndex const vertexIndex_)
 			{
@@ -400,6 +406,7 @@ auto BasicMeshOps::computeVertexNormalsEx(std::shared_ptr<MeshMod::Mesh> const& 
 	{
 		// get the vertex and edges connected to this vertex
 		auto const vertexIndex = normals.distance(normal);
+		if (vertices.isValid(vertexIndex) == false) continue;
 
 		vertexHalfEdges.clear();
 		vertices.getVertexHalfEdges(vertexIndex, vertexHalfEdges);
@@ -468,6 +475,8 @@ auto BasicMeshOps::computeVertexNormalsEx(std::shared_ptr<MeshMod::Mesh> const& 
 		normal.y += vertexNormal.y;
 		normal.z += vertexNormal.z;
 	}
+
+	mesh->maintainPointReps(backupMaintainPointReps);
 	mesh->updateEditState(Mesh::VertexAttributeEdits);
 
 }
@@ -523,7 +532,7 @@ auto BasicMeshOps::tesselate4(std::shared_ptr<MeshMod::Mesh const> const& mesh_)
 					(PolygonIndex const polygonIndex_)
 			{
 				assert(polygons.getVertexCount(polygonIndex_) == 3);
-				vertexIndexContainer.resize(0);
+				vertexIndexContainer.clear();
 				polygons.getVertexIndices(polygonIndex_, vertexIndexContainer);
 
 				Math::vec3 verts[6];
@@ -547,6 +556,9 @@ auto BasicMeshOps::tesselate4(std::shared_ptr<MeshMod::Mesh const> const& mesh_)
 				tessMesh->getPolygons().addPolygon({vi[4], vi[2], vi[1]});
 				tessMesh->getPolygons().addPolygon({vi[3], vi[5], vi[4]});
 			});
+
+	tessMesh->getVertices().removeAllSimilarPositions();
+	tessMesh->updateFromEdits();
 
 	return tessMesh;
 }
