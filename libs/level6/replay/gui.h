@@ -5,9 +5,9 @@
 #include "core/core.h"
 #include "replay/replay.h"
 #include "math/vector_math.h"
-#include "nlohmann/json.h"
 #include <string>
 
+namespace picojson { class value; }
 namespace ResourceManager { class ResourceMan; }
 namespace Render { struct Encoder; }
 namespace MidRender {
@@ -71,7 +71,6 @@ protected:
 	} mainView = MainViewType::Scene;
 
 
-	static auto GetVec(std::string const& field_, nlohmann::json const& j_) -> Math::vec3;
 	auto menu() -> void;
 	auto processReplaySection() -> void;
 	auto log() -> void;

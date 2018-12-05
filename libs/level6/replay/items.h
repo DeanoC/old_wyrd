@@ -3,7 +3,6 @@
 #define WYRD_REPLAY_ITEMS_H
 
 #include "core/core.h"
-#include "nlohmann/json.h"
 #include "math/vector_math.h"
 
 namespace Replay

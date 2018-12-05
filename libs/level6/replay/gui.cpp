@@ -4,7 +4,6 @@
 #include "midrender/imguibindings.h"
 #include "fmt/format.h"
 #include "replay/items.h"
-#include "replay/propertyeditor.h"
 #include "render/encoder.h"
 #include "midrender/meshmodrenderer.h"
 #include "resourcemanager/resourceman.h"
@@ -16,6 +15,7 @@
 #include "meshops/shapes.h"
 #include "fmt/format.h"
 #include <cctype>
+#include "picojson/picojson.h"
 
 namespace Replay {
 Gui::Gui(std::shared_ptr<ResourceManager::ResourceMan> const& rm_,
@@ -182,6 +182,7 @@ auto Gui::menu() -> void
 		ImGui::EndMenuBar();
 	}
 }
+
 auto Gui::processReplaySection() -> void
 {
 	double const time = (viewerTime < 0.0) ? replay->getCurrentTime() : viewerTime;
@@ -202,7 +203,6 @@ auto Gui::processReplaySection() -> void
 
 auto Gui::log() -> void
 {
-	using namespace nlohmann;
 	using namespace std::literals;
 
 	ImGuiWindowFlags logWindowFlags =
@@ -247,206 +247,354 @@ auto Gui::log() -> void
 
 }
 
-auto Gui::GetVec(std::string const& field_, nlohmann::json const& j_) -> Math::vec3
+template<typename T>
+auto safe_get(picojson::object const& j_,
+			  std::string_view const& s_,
+			  T const&& default_ = {}) -> T const
 {
-	using namespace nlohmann;
-
-	glm::vec3 pos{};
-	auto jfield = j_[field_];
-	if(jfield.is_string())
+	auto const it = j_.find(std::string(s_));
+	if(it != j_.cend())
 	{
-		jfield = json::parse(jfield.get<std::string>());
+		if(it->second.is<T>())
+		{
+			return std::move(it->second.get<T>());
+		}
+	}
+	return std::move(default_);
+}
+
+template<typename T>
+auto safe_get(picojson::array const& j_,
+			  size_t index_,
+			  T const&& default_ = {}) -> T const
+{
+	if(index_ < j_.size())
+	{
+		auto const& f = j_[index_];
+		if(f.is<T>())
+		{
+			return std::move(f.get<T>());
+		}
+	}
+	return std::move(default_);
+}
+
+template<typename T>
+auto safe_get(picojson::array const& j_) -> T const
+{
+	using t = typename T::value_type;
+
+	T result(j_.size());
+	for(auto i = 0u; i < j_.size(); ++i)
+	{
+		result[i] = safe_get<t>(j_, i);
 	}
 
-	if(jfield.is_object())
+	return result;
+}
+
+template<>
+auto safe_get<std::vector<float>>(
+		picojson::object const& j_,
+		std::string_view const& s_,
+		std::vector<float> const&& default_) -> std::vector<float> const
+{
+	auto const it = j_.find(std::string(s_));
+	if(it != j_.cend())
 	{
-		pos.x = jfield["x"];
-		pos.y = jfield["y"];
-		pos.z = jfield["z"];
-	} else if(jfield.is_array())
+		if(it->second.is<picojson::array>())
+		{
+			auto pa = it->second.get<picojson::array>();
+			return safe_get<std::vector<float>>(pa);
+		}
+	}
+	return default_;
+}
+template<>
+auto safe_get<std::vector<uint32_t>>(
+		picojson::object const& j_,
+		std::string_view const& s_,
+		std::vector<uint32_t> const&& default_) -> std::vector<uint32_t> const
+{
+	auto const it = j_.find(std::string(s_));
+	if(it != j_.cend())
 	{
-		pos.x = jfield[0];
-		pos.y = jfield[1];
-		pos.z = jfield[2];
+		if(it->second.is<picojson::array>())
+		{
+			auto pa = it->second.get<picojson::array>();
+			return safe_get<std::vector<uint32_t>>(pa);
+		}
+	}
+	return default_;
+}
+template<>
+auto safe_get<float>(
+		picojson::object const& j_,
+		std::string_view const& s_,
+		float const&& default_) -> float const
+{
+	auto d = safe_get<double>(j_, s_, double(default_));
+	// TODO assert range?
+	return (float) d;
+}
+
+template<>
+auto safe_get<float>(
+		picojson::array const& j_,
+		size_t index_,
+		float const&& default_) -> float const
+{
+	auto d = safe_get<double>(j_, index_, double(default_));
+	// TODO assert range?
+	return (float) d;
+}
+
+template<>
+auto safe_get<uint32_t>(
+		picojson::object const& j_,
+		std::string_view const& s_,
+		uint32_t const&& default_) -> uint32_t const
+{
+	auto d = safe_get<double>(j_, s_, double(default_));
+	// TODO assert range?
+	return (uint32_t) d;
+}
+
+template<>
+auto safe_get<uint32_t>(
+		picojson::array const& j_,
+		size_t index_,
+		uint32_t const&& default_) -> uint32_t const
+{
+	auto d = safe_get<double>(j_, index_, double(default_));
+	// TODO assert range?
+	return (uint32_t) d;
+}
+
+template<>
+auto safe_get<Math::vec3>(
+		picojson::object const& j_,
+		std::string_view const& s_,
+		Math::vec3 const&& default_) -> Math::vec3 const
+{
+	using namespace std::literals;
+	auto const it = j_.find(std::string(s_));
+	if(it != j_.cend())
+	{
+		picojson::value field = it->second;
+		if(field.is<std::string>())
+		{
+			auto const& pj = it->second.get<std::string>();
+			picojson::parse(field, pj);
+			auto const& err = picojson::get_last_error();
+			if(!err.empty())
+			{
+				auto logString = fmt::format("!ERROR!Vec3 Parse error {} from {}",
+											 err,
+											 pj);
+				LOG_S(WARNING) << logString;
+				ImGui::Text("%s", logString.c_str());
+				return Math::vec3{};
+			}
+		}
+
+		if(field.is<picojson::object>())
+		{
+			auto const& jo = field.get<picojson::object>();
+			return Math::vec3{
+					safe_get<float>(jo, "x"sv),
+					safe_get<float>(jo, "y"sv),
+					safe_get<float>(jo, "z"sv)};
+		} else if(field.is<picojson::array>())
+		{
+			auto const& ja = field.get<picojson::array>();
+			return Math::vec3{
+					safe_get<float>(ja, 0),
+					safe_get<float>(ja, 1),
+					safe_get<float>(ja, 2) };
+		}
 	}
 
-	return pos;
+	return default_;
 }
 
 auto Gui::decodeLog(Item const& item_) -> void
 {
-	using namespace nlohmann;
 	using namespace std::literals;
 
-	try
-	{
-		std::string test = fmt::format("\n");
-		LOG_S(INFO) << test;
-		nlohmann::json const j = json::parse(test);
-		auto text = j["text"];
-		std::string logString;
-		std::string level = "info";
-		if(j.find("level") != j.cend())
-		{
-			auto jlevel = j["level"];
-			if(jlevel.is_string())
-			{
-				std::string stringLevel = jlevel.get<std::string>();
-				transform(
-						stringLevel.cbegin(),
-						stringLevel.cend(),
-						stringLevel.begin(), &tolower);
-
-				switch(Core::QuickHash(stringLevel))
-				{
-					default:
-					case "info"_hash:
-						level = "info";
-						break;
-					case "warning"_hash:
-						level = "warning";
-						break;
-					case "error"_hash:
-						level = "error";
-						break;
-				}
-			}
-		}
-
-		logString = fmt::format("({}s):[{}]{}",
-								item_.timeStamp,
-								level,
-								text);
-		if(j.find("position") != j.cend() && ImGui::IsItemHovered())
-		{
-			glm::vec3 pos = GetVec("position"s, j);
-			logString += fmt::format(" {},{},{}", pos.x, pos.y, pos.z);
-			spatialMarkers.push_back({pos});
-		}
-		ImGui::Text("%s", logString.c_str());
-
-	} catch(json::parse_error error)
+	picojson::value pj;
+	picojson::parse(pj, item_.data);
+	auto err = picojson::get_last_error();
+	if(!err.empty())
 	{
 		auto logString = fmt::format("({}s):!ERROR!Log Parse error {} from {}",
 									 item_.timeStamp,
-									 error.what(),
+									 err,
 									 item_.data);
 		LOG_S(WARNING) << logString;
 		ImGui::Text("%s", logString.c_str());
+		return;
 	}
+
+	picojson::object o;
+	if(!pj.is<picojson::object>())
+	{
+		auto logString = fmt::format("({}s):!ERROR!Log not a json object {}",
+									 item_.timeStamp,
+									 item_.data);
+		return;
+	}
+
+	o = pj.get<picojson::object>();
+
+	auto text = safe_get<std::string>(o, "text"sv);
+	std::string level = safe_get<std::string>(o, "level"sv, "info"s);
+
+	transform(level.cbegin(),
+			  level.cend(),
+			  level.begin(), &tolower);
+
+	std::string logString = fmt::format(
+			"({}s):[{}]{}",
+			item_.timeStamp,
+			level,
+			text);
+	if(o.find("position") != o.cend() && ImGui::IsItemHovered())
+	{
+		Math::vec3 pos = safe_get<Math::vec3>(o, "position"sv);
+		logString += fmt::format(" {},{},{}", pos.x, pos.y, pos.z);
+		spatialMarkers.push_back({pos});
+	}
+
+	ImGui::Text("%s", logString.c_str());
 }
 
 auto Gui::decodeSimpleMesh(Item const& item_) -> void
 {
-	using namespace nlohmann;
 	using namespace std::literals;
 
-	try
+	picojson::value pj;
+	picojson::parse(pj, item_.data);
+	auto err = picojson::get_last_error();
+	if(!err.empty())
 	{
-		nlohmann::json const j = json::parse(item_.data);
-		auto jname = j["name"];
-		auto name = jname.get<std::string>();
-		// check cache
-		if(meshMap.find(name) != meshMap.end())
-		{
-			return;
-		}
-
-		auto jposCount = j["positioncount"];
-		auto jpositions = j["positions"];
-		auto jtriCount = j["trianglecount"];
-		auto jindices = j["indices"];
-
-		auto posCount = jposCount.get<uint32_t>();
-		auto triCount = jtriCount.get<uint32_t>();
-
-		std::vector<float> positions;
-		std::vector<MeshMod::VertexIndex> indices;
-		positions = jpositions.get<std::vector<float>>();
-		indices = jindices.get<std::vector<MeshMod::VertexIndex>>();
-
-		using namespace MeshMod;
-		auto mesh = std::make_shared<Mesh>(name, false, true);
-		Vertices& vertices = mesh->getVertices();
-		for(auto i = 0u; i < posCount; ++i)
-		{
-			vertices.add(positions[(i * 3) + 0],
-						 positions[(i * 3) + 1],
-						 positions[(i * 3) + 2]);
-		}
-
-		Polygons& polygons = mesh->getPolygons();
-		for(auto i = 0u; i < triCount; ++i)
-		{
-			VertexIndexContainer triIndices = {
-					indices[(i * 3) + 0],
-					indices[(i * 3) + 2],
-					indices[(i * 3) + 1]
-			};
-			mesh->getPolygons().addPolygon(triIndices);
-		}
-		mesh->updateFromEdits();
-
-		auto rootScene = std::make_shared<SceneNode>();
-		rootScene->addObject(mesh);
-		auto sceneIndex = meshModRenderer->addScene(rootScene);
-		meshMap[name] = sceneIndex;
-
-	} catch(json::parse_error error)
-	{
-		auto logString = fmt::format("({}s):!ERROR!Log Parse error {} from {}",
+		auto logString = fmt::format("({}s):!ERROR!SimpleMesh Parse error {} from {}",
 									 item_.timeStamp,
-									 error.what(),
+									 err,
 									 item_.data);
 		LOG_S(WARNING) << logString;
+		ImGui::Text("%s", logString.c_str());
+		return;
 	}
+	picojson::object o;
+	if(!pj.is<picojson::object>())
+	{
+		auto logString = fmt::format("({}s):!ERROR!SimpleMesh not a json object {}",
+									 item_.timeStamp,
+									 item_.data);
+		return;
+	}
+
+	o = pj.get<picojson::object>();
+	auto name = safe_get<std::string>(o, "name"sv);
+
+	// check cache
+	if(meshMap.find(name) != meshMap.end())
+	{
+		return;
+	}
+
+	auto posCount = safe_get<uint32_t>(o, "positioncount"sv);
+	auto triCount = safe_get<uint32_t>(o, "trianglecount"sv);
+	auto positions = safe_get<std::vector<float>>(o, "positions"sv);
+	auto indices = safe_get<std::vector<uint32_t>>(o, "indices"sv);
+
+	using namespace MeshMod;
+	auto mesh = std::make_shared<Mesh>(name, false, true);
+	Vertices& vertices = mesh->getVertices();
+	for(auto i = 0u; i < posCount; ++i)
+	{
+		vertices.add(positions[(i * 3) + 0],
+					 positions[(i * 3) + 1],
+					 positions[(i * 3) + 2]);
+	}
+
+	Polygons& polygons = mesh->getPolygons();
+	for(auto i = 0u; i < triCount; ++i)
+	{
+		VertexIndexContainer triIndices = {
+				VertexIndex(indices[(i * 3) + 0]),
+				VertexIndex(indices[(i * 3) + 2]),
+				VertexIndex(indices[(i * 3) + 1])
+		};
+		mesh->getPolygons().addPolygon(triIndices);
+	}
+	mesh->updateFromEdits();
+
+	auto rootScene = std::make_shared<SceneNode>();
+	rootScene->addObject(mesh);
+	auto sceneIndex = meshModRenderer->addScene(rootScene);
+	meshMap[name] = sceneIndex;
 }
 
 auto Gui::decodeMeshObject(Item const& item_) -> void
 {
-	using namespace nlohmann;
 	using namespace std::literals;
 
-	try
+	picojson::value pj;
+	picojson::parse(pj, item_.data);
+	auto err = picojson::get_last_error();
+	if(!err.empty())
 	{
-		nlohmann::json const j = json::parse(item_.data);
-		auto name = j["name"].get<std::string>();
-
-		MeshObject& o = meshObjectMap[name];
-		if(o.index == MidRender::SceneIndex(~0))
-		{
-			o.index = fallbackSceneIndex;
-		}
-
-		if(j.find("meshname") != j.end())
-		{
-			auto meshname = j["meshname"].get<std::string>();
-			auto meshIt = meshMap.find(meshname);
-			if(meshIt != meshMap.end())
-			{
-				o.index = meshIt->second;
-			}
-		}
-		if(j.find("position") != j.end())
-		{
-			o.position = GetVec("position", j);
-		}
-		if(j.find("rotation") != j.end())
-		{
-			o.scale = GetVec("rotation", j);
-		}
-		if(j.find("scale") != j.end())
-		{
-			o.scale = GetVec("scale", j);
-		}
-
-	} catch(json::parse_error error)
-	{
-		auto logString = fmt::format("({}s):!ERROR!Log Parse error {} from {}",
+		auto logString = fmt::format("({}s):!ERROR!MeshObject Parse error {} from {}",
 									 item_.timeStamp,
-									 error.what(),
+									 err,
 									 item_.data);
 		LOG_S(WARNING) << logString;
+		ImGui::Text("%s", logString.c_str());
+		return;
+	}
+	picojson::object o;
+	if(!pj.is<picojson::object>())
+	{
+		auto logString = fmt::format("({}s):!ERROR!MeshObject not a json object {}",
+									 item_.timeStamp,
+									 item_.data);
+		return;
+	}
+
+	o = pj.get<picojson::object>();
+	auto name = safe_get<std::string>(o, "name"sv);
+
+	MeshObject& mo = meshObjectMap[name];
+	if(mo.index == MidRender::SceneIndex(~0))
+	{
+		mo.index = fallbackSceneIndex;
+	}
+
+	auto meshname = safe_get<std::string>(o, "meshname"sv);
+	if(!meshname.empty())
+	{
+		auto meshIt = meshMap.find(meshname);
+		if(meshIt != meshMap.cend())
+		{
+			mo.index = meshIt->second;
+		}
+	}
+
+	if(o.find("position") != o.cend())
+	{
+		mo.position = safe_get<Math::vec3>(o, "position"sv);
+	}
+
+	if(o.find("rotation") != o.cend())
+	{
+		mo.rotation = safe_get<Math::vec3>(o, "rotation"sv);
+	}
+
+	if(o.find("scale") != o.cend())
+	{
+		mo.scale = safe_get<Math::vec3>(o, "scale"sv);
 	}
 }
 
