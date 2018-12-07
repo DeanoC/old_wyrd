@@ -2,9 +2,15 @@ cmake_minimum_required(VERSION 3.9)
 
 set(CMAKE_CXX_STANDARD 17)
 set(GFXTEST_SOURCE
-	gfxtest.cpp
-		basicmeshtest.cpp gfxtest.h duckgltf.cpp sponzagltftest.cpp tacmapgltftest.cpp)
-include_directories( ${wyrd_INCLUDES})
+		gfxtest.cpp
+		basicmeshtest.cpp
+		gfxtest.h
+		duckgltf.cpp
+		sponzagltftest.cpp
+		tacmapgltftest.cpp
+		../appcommon/arcballcamera.h
+		../appcommon/simplepadcamera.h)
+include_directories( ${apps_INCLUDES} ${wyrd_INCLUDES})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/live)
 add_executable(gfxtest WIN32 ${GFXTEST_SOURCE})

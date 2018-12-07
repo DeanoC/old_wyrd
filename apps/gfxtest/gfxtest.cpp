@@ -29,57 +29,9 @@
 #include "input/provider.h"
 #include "input/vpadlistener.h"
 #include "meshops/gltf.h"
+#include "appcommon/simplepadcamera.h"
+#include "appcommon/arcballcamera.h"
 
-struct SimplePadCamera : public Input::VPadListener
-{
-	SimplePadCamera()
-	{
-		simpleEye.setProjection(60.0f, 1280.0f / 720.0f, 0.01f);
-		lookatPoint = Math::vec3(0, 0, 0);
-		position = Math::vec3(0, 0, 4);
-		update(0.0);
-	}
-
-	~SimplePadCamera() final
-	{
-
-	}
-
-	void axisMovement(Input::VPadAxisId id_, float delta_) final
-	{
-		switch(id_)
-		{
-			case Input::VPadAxisId::LX:
-				lookatPoint.x += delta_ * 0.1f;
-				position.x += delta_ * 0.1f;
-				break;
-			case Input::VPadAxisId::LY:
-				lookatPoint.z += delta_ * 0.1f;
-				position.z += delta_ * 0.1f;
-				break;
-
-			default: break;
-
-		}
-	}
-
-	void button(Input::VPadButtonId id_, float delta_) final
-	{
-	}
-
-	auto update(double deltaT_) -> void
-	{
-		Math::mat4x4 view = Math::lookAt(position,
-										 lookatPoint,
-										 Math::vec3(0, 1, 0));
-		simpleEye.setView(view);
-	}
-
-	Math::vec3 position;
-	Math::vec3 lookatPoint;
-
-	MidRender::SimpleEye simpleEye;
-};
 
 struct App
 {
@@ -154,8 +106,8 @@ struct App
 		createResources();
 
 //		underTest = CreateBasicMeshTest();
-//		underTest = CreateDuckGltfTest();
-		underTest = CreateSponzaGltfTest();
+		underTest = CreateDuckGltfTest();
+//		underTest = CreateSponzaGltfTest();
 //		underTest = CreateTacmapGltfTest();
 		underTest->init(resourceManager);
 
@@ -219,6 +171,8 @@ struct App
 		auto rEncoderPool = device->makeEncoderPool(true, CommandQueueFlavour::Render);
 
 		simplePadCamera = std::make_shared<SimplePadCamera>();
+		arcBallCamera = std::make_unique<ArcBallCamera>();
+
 		inputProvider = shell.getInputProvider(window);
 		inputProvider->setVirtualPadListener(0, simplePadCamera);
 		tickerClock->update();
@@ -229,10 +183,11 @@ struct App
 			auto deltaT = tickerClock->update();
 			inputProvider->update(deltaT);
 			simplePadCamera->update(deltaT);
+			arcBallCamera->update(deltaT);
 
 			rEncoderPool->reset();
 
-			auto const simpleEye = &simplePadCamera->simpleEye;
+			auto const simpleEye = &arcBallCamera->simpleEye;
 			SimpleForwardGlobals* globals = (SimpleForwardGlobals*) globalBuffer->map();
 			std::memcpy(globals->viewMatrix, &simpleEye->getView(), sizeof(float) * 16);
 			std::memcpy(globals->projectionMatrix, &simpleEye->getProjection(), sizeof(float) * 16);
@@ -282,6 +237,7 @@ struct App
 	std::unique_ptr<Timing::TickerClock> tickerClock;
 	std::shared_ptr<SimplePadCamera> simplePadCamera;
 	std::unique_ptr<Input::Provider> inputProvider;
+	std::unique_ptr<ArcBallCamera> arcBallCamera;
 
 	std::unique_ptr<MidRender::ImguiBindings> imguiBindings;
 	std::unique_ptr<GfxTest> underTest;

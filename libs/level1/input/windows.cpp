@@ -10,6 +10,8 @@ bool Keyboard::WinProcessMessages(uint32_t message, uint64_t wParam, uint64_t lP
 {
 	if(g_Keyboard == nullptr) return false;
 
+	g_Keyboard->clearConsumedState();
+
 	/* TODO
 		case WM_CHAR:
 			// You can also use ToAscii()+GetKeyboardState() to retrieve characters.
@@ -18,16 +20,38 @@ bool Keyboard::WinProcessMessages(uint32_t message, uint64_t wParam, uint64_t lP
 			return 0;
 	 */
 	// Consolidate the keyboard messages and pass them to the app's keyboard callback
-	if(message == WM_KEYDOWN ||
-	   message == WM_SYSKEYDOWN ||
-	   message == WM_KEYUP ||
-	   message == WM_SYSKEYUP)
+	if (message == WM_KEYDOWN ||
+		message == WM_SYSKEYDOWN ||
+		message == WM_KEYUP ||
+		message == WM_SYSKEYUP)
 	{
 		bool bKeyDown = (message == WM_KEYDOWN || message == WM_SYSKEYDOWN);
 		DWORD dwMask = (1 << 29);
 		bool bAltDown = ((lParam & dwMask) != 0);
 		Key key = Key(wParam & 0xFF);
 
+		if (bAltDown)
+		{
+			g_Keyboard->keyDownBitMap[(uint16_t)Key::KT_LALT] = true;
+
+			if (g_Keyboard->keyDown(Key::KT_LALT))
+			{
+				// still down set the held flag
+				g_Keyboard->keyDataState[(uint16_t)Key::KT_LALT] |= Keyboard::KeyHeldFlag;
+				uint8_t count = g_Keyboard->keyDataState[(uint16_t)Key::KT_LALT] & Keyboard::KeyDownMask;
+				if (count < 255) g_Keyboard->keyDataState[(uint16_t)Key::KT_LALT] |= count + 1;
+			}
+			else
+			{
+				// also sets held count to 0
+				g_Keyboard->keyDataState[(uint16_t)Key::KT_LALT] = Keyboard::KeyDownFlag;
+			}
+		}
+		else
+		{
+			g_Keyboard->keyDownBitMap[(uint16_t)Key::KT_LALT] = false;
+			g_Keyboard->keyDataState[(uint16_t)Key::KT_LALT] = 0;
+		}
 
 		if(bKeyDown)
 		{
@@ -40,7 +64,7 @@ bool Keyboard::WinProcessMessages(uint32_t message, uint64_t wParam, uint64_t lP
 				if(count < 255) g_Keyboard->keyDataState[(uint16_t) key] |= count + 1;
 			} else
 			{
-				// also set held count to 0
+				// also sets held count to 0
 				g_Keyboard->keyDataState[(uint16_t) key] = Keyboard::KeyDownFlag;
 			}
 		} else
@@ -57,6 +81,21 @@ bool Mouse::WinProcessMessages(uint32_t message, uint64_t wParam, uint64_t lPara
 {
 	if(g_Mouse == nullptr) return false;
 
+	g_Mouse->clearConsumedState();
+
+	if (g_Mouse->buttonDown(MouseButton::Left))
+	{
+		g_Mouse->buttonState[(uint16_t)MouseButton::Left] |= Mouse::ButtonHeldFlag;
+	}
+	if (g_Mouse->buttonDown(MouseButton::Middle))
+	{
+		g_Mouse->buttonState[(uint16_t)MouseButton::Middle] |= Mouse::ButtonHeldFlag;
+	}
+	if (g_Mouse->buttonDown(MouseButton::Right))
+	{
+		g_Mouse->buttonState[(uint16_t)MouseButton::Right] |= Mouse::ButtonHeldFlag;
+	}
+
 	switch (message)
 	{
 		case WM_LBUTTONDOWN: case WM_LBUTTONDBLCLK:
@@ -70,14 +109,7 @@ bool Mouse::WinProcessMessages(uint32_t message, uint64_t wParam, uint64_t lPara
 
 			if(button != ~0)
 			{
-				if(g_Mouse->buttonDown(MouseButton(button)))
-				{
-					g_Mouse->buttonState[button] |= Mouse::ButtonHeldFlag;
-				}
-				else
-				{
-					g_Mouse->buttonState[button] |= Mouse::ButtonDownFlag;
-				}
+				g_Mouse->buttonState[button] |= Mouse::ButtonDownFlag;
 			}
 			uint32_t dbutton = ~0;
 			if(message == WM_LBUTTONDBLCLK) dbutton = 0;

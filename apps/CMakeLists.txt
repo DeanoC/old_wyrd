@@ -1,6 +1,10 @@
 option(BUILD_GFXTEST "Build the gfxtest apps." ON)
 option(BUILD_REPLAY "Build the replay app." ON)
 
+set(apps_INCLUDES
+		${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 if(BUILD_GFXTEST)
 	add_subdirectory(gfxtest)
 endif(BUILD_GFXTEST)

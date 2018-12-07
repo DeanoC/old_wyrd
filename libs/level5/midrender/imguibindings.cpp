@@ -269,17 +269,15 @@ auto ImguiBindings::newFrame(uint32_t width_, uint32_t height_) -> void
 	using namespace Input;
 	if(g_Keyboard != nullptr)
 	{
-		g_Keyboard->clearConsumedState();
 		std::memcpy(io.KeysDown, g_Keyboard->getKeyDownBitmap(), sizeof(bool) * Keyboard::MaxKeyCount);
 		io.KeyCtrl = (g_Keyboard->keyDown(Key::KT_LCONTROL) || g_Keyboard->keyDown(Key::KT_RCONTROL));
 		io.KeyShift = (g_Keyboard->keyDown(Key::KT_LSHIFT) || g_Keyboard->keyDown(Key::KT_RSHIFT));
-		io.KeyAlt = (g_Keyboard->keyDown(Key::KT_LMENU) || g_Keyboard->keyDown(Key::KT_RMENU));
+		io.KeyAlt = g_Keyboard->keyDown(Key::KT_LALT);
 		io.KeySuper = (g_Keyboard->keyDown(Key::KT_LWIN) || g_Keyboard->keyDown(Key::KT_RWIN));
 		// TODO AddInputCharacter
 	}
 	if(g_Mouse != nullptr)
 	{
-		g_Mouse->clearConsumedState();
 		io.MousePos.x = g_Mouse->getAbsMouseX();
 		io.MousePos.y = g_Mouse->getAbsMouseY();
 		io.MouseDown[0] = g_Mouse->buttonDown(MouseButton::Left);

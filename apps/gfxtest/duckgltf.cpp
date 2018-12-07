@@ -41,7 +41,7 @@ struct DuckGltfTest : public GfxTest
 		rootScene->transform.orientation = Math::rotate(
 				rootScene->transform.orientation,
 				yrot / 2.0f,
-				Math::vec3(0, 0, 2));
+				Math::vec3(0, 0, 1));
 
 		meshModRenderer->render(Math::identity<Math::mat4x4>(), sceneIndex, encoder_);
 	}
