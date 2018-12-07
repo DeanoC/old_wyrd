@@ -214,7 +214,7 @@ auto Gltf::convertVertexData(tinygltf::Primitive const& prim_, tinygltf::Model c
 		Buffer const& buffer = model_.buffers[bufferView.buffer];
 		if (bufferView.target != 0 && bufferView.target != TINYGLTF_TARGET_ARRAY_BUFFER)
 		{
-			LOG_F(WARNING, "Vertex buffer element %s view target %u not supported", name, bufferView.target);
+			LOG_F(WARNING, "Vertex buffer element %s view target %u not supported", name.c_str(), bufferView.target);
 			break;
 		}
 		float* data = (float*) (buffer.data.data() + bufferView.byteOffset + accessor.byteOffset);

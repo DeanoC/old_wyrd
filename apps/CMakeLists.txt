@@ -18,6 +18,6 @@ if(BUILD_TESTER)
 endif(BUILD_TESTER)
 
 if (BUILD_TOOLS)
-	#	add_subdirectory(tools/vulkaninfo)
+	add_subdirectory(tools/vulkaninfo)
 endif (BUILD_TOOLS)
 

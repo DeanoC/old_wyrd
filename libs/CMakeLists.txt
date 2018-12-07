@@ -14,8 +14,6 @@ set( wyrd_DEFINITIONS
 		-DCRC32C_STATIC
 		)
 
-set( wyrd_DEFINITIONS ${wyrd_DEFINITIONS} PARENT_SCOPE )
-
 set( wyrd_INCLUDES
 		${Vulkan_INCLUDE_DIRS}
 		${CMAKE_CURRENT_SOURCE_DIR}
@@ -46,10 +44,39 @@ add_subdirectory(level6)
 
 add_definitions(${wyrd_DEFINITIONS})
 include_directories( ${wyrd_INCLUDES})
-add_library(wyrd_static dummy.cpp)
 
+set( wyrd_DEFINITIONS ${wyrd_DEFINITIONS} PARENT_SCOPE )
 set( wyrd_INCLUDES ${wyrd_INCLUDES} PARENT_SCOPE )
+
+# targeted groups of libraries if you don't want dependency on everything
+add_library(wyrd_base dummy.cpp)
+target_link_libraries(wyrd_base
+		thirdparty
+		core
+		math
+		geometry)
+
+add_library(wyrd_resource dummy.cpp)
+target_link_libraries(wyrd_resource
+		binify
+		binny
+		resourcemanager
+		meshmod
+		meshops
+)
+add_library(wyrd_realtime dummy.cpp)
+target_link_libraries(wyrd_realtime
+		input
+		timing
+		render
+		vulkan
+		midrender
+)
+
+# if you just want all the librarys (only shell isn't auto added)
+add_library(wyrd_static dummy.cpp)
 target_link_libraries(wyrd_static thirdparty)
 foreach(LIB ${ALL_WYRD_LIBS})
 	target_link_libraries(wyrd_static ${LIB})
 endforeach(LIB)
+

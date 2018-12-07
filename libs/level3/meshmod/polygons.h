@@ -64,7 +64,7 @@ public:
 	void getSurroundingPolygonIndices(PolygonIndex const index, PolygonIndexContainer &polygonIndexContainer) const;
 
 	PolygonIndex addPolygon(VertexIndexContainer const &indices, VertexIndex const baseVertex = VertexIndex(0));
-	void Polygons::addTriangles(VertexIndexContainer const &indices, VertexIndex const baseVertex = VertexIndex(0));
+	void addTriangles(VertexIndexContainer const &indices, VertexIndex const baseVertex = VertexIndex(0));
 	void remove(PolygonIndex const index);
 
 

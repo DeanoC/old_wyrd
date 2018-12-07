@@ -7,7 +7,7 @@
 #include <mutex>
 #include <unordered_map>
 
-namespace Replay {
+namespace Replay  {
 
 enum class ItemType : uint32_t;
 
@@ -53,5 +53,3 @@ protected:
 }
 
 #endif //WYRD_REPLAY_REPLAY_H
-
-
