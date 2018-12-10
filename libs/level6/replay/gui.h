@@ -26,6 +26,15 @@ public:
 		std::shared_ptr<Replay> const& replay_);
 	~Gui();
 
+	enum class CameraMode
+	{
+		None,
+		ArcBall,
+		FPS,
+	};
+
+	auto getCameraMode() const->CameraMode { return cameraMode; }
+
 	// replay gui expects to be inside a simple forward render pass when render
 	// is called
 
@@ -50,6 +59,7 @@ protected:
 
 	std::shared_ptr<Replay> replay;
 	bool windowOpen = true;
+	CameraMode cameraMode = CameraMode::ArcBall;
 
 	std::shared_ptr<ResourceManager::ResourceMan> rm;
 	std::unique_ptr<MidRender::MeshModRenderer> meshModRenderer;
@@ -70,6 +80,7 @@ protected:
 		Mesh,
 	} mainView = MainViewType::Scene;
 
+	int meshViewSelectedItem = 0;
 
 	auto menu() -> void;
 	auto processReplaySection() -> void;
@@ -85,6 +96,7 @@ protected:
 	auto meshView(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void;
 
 	auto meshCallback(Item const& item_) -> bool;
+	auto tacmapCallback(Item const& item_) -> bool;
 
 };
 

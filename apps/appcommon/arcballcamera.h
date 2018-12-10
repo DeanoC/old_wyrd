@@ -11,11 +11,11 @@
 
 struct ArcBallCamera
 {
-	ArcBallCamera()
+	ArcBallCamera(Math::vec3 default_ = Math::vec3(0,0,400), double distance_ = 400.0)
 	{
 		simpleEye.setProjection(60.0f, 1280.0f / 720.0f, 0.01f);
-		lookatPoint = Math::vec3(0, 0, 0);
-		position = Math::vec3(0, 0, 4);
+		lookatPoint = default_;
+		distance = distance_;
 		update(0.0);
 	}
 
@@ -24,49 +24,13 @@ struct ArcBallCamera
 		using namespace Input;
 		using namespace Math;
 
-		mat4x4 lookAtMatrix = lookAt(position,
-									lookatPoint,
-									vec3(0, 1, 0));
-
-		vec3 right = lookAtMatrix[0];
-		vec3 up = lookAtMatrix[1];
-		vec3 forward = lookAtMatrix[2];
-
 		bool altDown = false;
-		if(g_Keyboard != nullptr)
+		if (g_Keyboard != nullptr)
 		{
 			altDown = g_Keyboard->keyDown(Key::KT_LALT);
-
-			if(g_Keyboard->keyDown(Key::KT_W))
-			{
-				auto t = float(10.0 * deltaT_);
-				position += forward * t;
-				lookatPoint += forward * t;
-			}
-			if(g_Keyboard->keyDown(Key::KT_S))
-			{
-				auto t = float(10.0 * deltaT_);
-				position -= forward * t;
-				lookatPoint -= forward * t;
-			}
-
-			if(g_Keyboard->keyDown(Key::KT_A))
-			{
-				auto t = float(100.0 * deltaT_);
-				position += right * t;
-				lookatPoint += right * t;
-			}
-			if(g_Keyboard->keyDown(Key::KT_D))
-			{
-				auto t = float(100.0 * deltaT_);
-				position -= right * t;
-				lookatPoint -= right * t;
-			}
 		}
-		vec3 pos = position;
-		vec3 lap = lookatPoint;
 
-		if(g_Mouse != nullptr)
+		if (g_Mouse != nullptr)
 		{
 			float mouseVertical = g_Mouse->getMouseWheelVertical();
 
@@ -83,48 +47,67 @@ struct ArcBallCamera
 
 			if (lmbIsDown)
 			{
-				float dmx = g_Mouse->getAbsMouseX() - lmbDownStartPosX;
-				float dmy = g_Mouse->getAbsMouseY() - lmbDownStartPosY;
+				double dmx = g_Mouse->getAbsMouseX() - lmbDownStartPosX;
+				double dmy = g_Mouse->getAbsMouseY() - lmbDownStartPosY;
 
-				dmx = dmx * float(10.0 * deltaT_);
-				dmy = dmy * float(10.0 * deltaT_);
+				lmbDownStartPosX = g_Mouse->getAbsMouseX();
+				lmbDownStartPosY = g_Mouse->getAbsMouseY();
 
-				mat4x4 center = translate(
-					Math::identity<Math::mat4x4>(),
-					-lookatPoint
-				);
-				mat4x4 rotX = rotate(
-					Math::identity<Math::mat4x4>(),
-					dmx,
-					vec3(0, 1, 0));
+				dmx = dmx * float(10 * deltaT_);
+				dmy = dmy * float(10 * deltaT_);
 
-				mat4x4 rotY = rotate(
-					Math::identity<Math::mat4x4>(),
-					dmy,
-					vec3(1, 0, 0));
+				yaw = yaw + dmx;
+				pitch = pitch + dmy;
 
-				lookAtMatrix = (rotX * rotY) * lookAtMatrix;
-				pos = -lookAtMatrix[3];
-
-				if(g_Mouse->buttonUp(MouseButton::Left))
+				if (g_Mouse->buttonUp(MouseButton::Left))
 				{
 					// end of the drag operation
 					lmbIsDown = false;
-					lmbDownStartPosX = 0;
-					lmbDownStartPosY = 0;
-					position = pos;
-					lookatPoint = lap;
 				}
 			}
 		}
 
-		simpleEye.setView(Math::lookAt(pos,
-										lap,
-										vec3(0, 1, 0)));
+		mat4x4 rotation = Math::yawPitchRoll((float)yaw, (float)pitch, (float)roll);
+
+		vec3 right = Math::normalize(rotation[0]);
+		vec3 up = Math::normalize(rotation[1]);
+		vec3 forward = Math::normalize(rotation[2]);
+
+		if (g_Keyboard != nullptr)
+		{
+			if(g_Keyboard->keyDown(Key::KT_W))
+			{
+				distance += 100.0 * deltaT_;
+			}
+			if(g_Keyboard->keyDown(Key::KT_S))
+			{
+				distance -= 100.0 * deltaT_;
+			}
+
+			if(g_Keyboard->keyDown(Key::KT_A))
+			{
+				auto t = float(100.0 * deltaT_);
+				lookatPoint += right * t;
+			}
+			if(g_Keyboard->keyDown(Key::KT_D))
+			{
+				auto t = float(100.0 * deltaT_);
+				lookatPoint -= right * t;
+			}
+		}
+
+		vec3 pos = lookatPoint - (forward * (float)distance);
+		mat4x4 translation = translate(identity<mat4x4>(), pos);
+		mat4x4 view = transpose(rotation) * translation;
+		simpleEye.setView(view);
 	}
 
-	Math::vec3 position;
 	Math::vec3 lookatPoint;
+
+	double distance;
+	double yaw = 0.0f;
+	double pitch = 0.0f;
+	double roll = 0.0f;
 
 	bool lmbIsDown = false;
 	float lmbDownStartPosX;

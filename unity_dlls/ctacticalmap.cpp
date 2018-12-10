@@ -15,7 +15,7 @@
 #include "meshops/basicmeshops.h"
 #include "meshops/platonicsolids.h"
 #include "meshops/gltf.h"
-#include <enkiTS/src/TaskScheduler.h>
+#include "enkiTS/src/TaskScheduler.h"
 #include <limits>
 #include <fstream>
 #include "core/freelist.h"

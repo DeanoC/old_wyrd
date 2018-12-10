@@ -6,7 +6,8 @@
 #include "shell/consoleapp.h"
 #include "vulkan/system.h"
 #include "tinygltf/tiny_gltf.h"
-
+#include "enkiTS/src/TaskScheduler.h"
+enki::TaskScheduler g_EnkiTS;
 
 namespace Shell {
 ConsoleApp::~ConsoleApp()

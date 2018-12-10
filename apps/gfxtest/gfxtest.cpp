@@ -235,8 +235,8 @@ struct App
 	Render::Display::WeakPtr weakDisplay;
 	Shell::PresentableWindow* window;
 	std::unique_ptr<Timing::TickerClock> tickerClock;
-	std::shared_ptr<SimplePadCamera> simplePadCamera;
 	std::unique_ptr<Input::Provider> inputProvider;
+	std::shared_ptr<SimplePadCamera> simplePadCamera;
 	std::unique_ptr<ArcBallCamera> arcBallCamera;
 
 	std::unique_ptr<MidRender::ImguiBindings> imguiBindings;

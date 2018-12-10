@@ -14,6 +14,7 @@
 #include "meshops/platonicsolids.h"
 #include "meshops/shapes.h"
 #include "fmt/format.h"
+#include "tacticalmap/tacticalmap.h"
 #include <cctype>
 #include "picojson/picojson.h"
 
@@ -41,6 +42,8 @@ Gui::Gui(std::shared_ptr<ResourceManager::ResourceMan> const& rm_,
 
 	using namespace std::placeholders;
 	replay->registerCallback(Items::SimpleMeshType, std::bind(&Gui::meshCallback, this, _1));
+	replay->registerCallback(Items::TacticalMapType, std::bind(&Gui::tacmapCallback, this, _1));
+
 }
 
 Gui::~Gui()
@@ -141,6 +144,36 @@ auto Gui::sceneView(double deltaT_, std::shared_ptr<Render::Encoder> const& enco
 
 auto Gui::meshView(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void
 {
+	cameraMode = CameraMode::ArcBall;
+
+	std::string comboString = {};
+	std::vector<std::string> nameLookup;
+	nameLookup.reserve(meshMap.size());
+	for(auto const& [name, index] : meshMap)
+	{
+		comboString += name + '\0';
+		nameLookup.push_back(name);
+	}
+
+	ImGui::Combo("Select Mesh", &meshViewSelectedItem, comboString.c_str());
+	if (meshViewSelectedItem >= nameLookup.size()) return;
+
+	auto const sceneIndex = meshMap[nameLookup[meshViewSelectedItem]];
+
+	yrot += float(deltaT_ * 0.5);
+/*		rootScene->transform.orientation = Math::rotate(
+			Math::identity<Math::quat>(),
+			yrot,
+			Math::vec3(0, 1, 0));
+	rootScene->transform.orientation = Math::rotate(
+			rootScene->transform.orientation,
+			yrot / 2.0f,
+			Math::vec3(0, 0, 1));
+*/
+	meshModRenderer->render(
+			Math::identity<Math::mat4x4>(),
+			sceneIndex,
+			encoder_);
 }
 
 auto Gui::pause() -> void
@@ -234,8 +267,22 @@ auto Gui::log() -> void
 			std::memcpy(typeString, &item.type, sizeof(uint32_t));
 			typeString[4] = 0;
 
-			auto logString = fmt::format("({}s)[{}]: {}", item.timeStamp, typeString, item.data);
-			ImGui::Text("%s", logString.c_str());
+			// special case some binary in json format
+			switch (item.type)
+			{
+			case Items::TacticalMapType:
+			{
+				auto logString = fmt::format("({}s)[{}]: BINARY_DATA", item.timeStamp, typeString);
+				ImGui::Text("%s", logString.c_str());
+				break;
+			}
+			default:
+			{
+				auto logString = fmt::format("({}s)[{}]: {}", item.timeStamp, typeString, item.data);
+				ImGui::Text("%s", logString.c_str());
+				break;
+			}
+			}
 		}
 		if(item.type == Items::LogType)
 		{
@@ -535,7 +582,6 @@ auto Gui::decodeSimpleMesh(Item const& item_) -> void
 	rootScene->addObject(mesh);
 	auto sceneIndex = meshModRenderer->addScene(rootScene);
 	meshMap[name] = sceneIndex;
-	meshObjectMap[name].index = sceneIndex;
 }
 
 auto Gui::decodeMeshObject(Item const& item_) -> void
@@ -603,6 +649,41 @@ auto Gui::meshCallback(Item const& item_) -> bool
 {
 	decodeSimpleMesh(item_);
 	return true;
+}
+
+auto Gui::tacmapCallback(Item const& item_) -> bool
+{
+	using namespace std::literals;
+
+	return true;
+
+	picojson::value pj;
+	picojson::parse(pj, item_.data);
+	auto err = picojson::get_last_error();
+	if(!err.empty())
+	{
+		auto logString = fmt::format("({}s):!ERROR!MeshObject Parse error {} from {}",
+									 item_.timeStamp,
+									 err,
+									 item_.data);
+		LOG_S(WARNING) << logString;
+		ImGui::Text("%s", logString.c_str());
+		return false;
+	}
+
+	picojson::object o;
+	if(!pj.is<picojson::object>())
+	{
+/*		std::string str = safe_get<std::string>(o, "data"sv);
+		std::istringstream stream(str);
+
+		std::vector<TacticalMap::Ptr> tactMaps;
+		bool okay = TacticalMap::createFromStream(stream, tactMaps);
+
+		return okay;*/
+		return true;
+	}
+	return false;
 }
 
 }
