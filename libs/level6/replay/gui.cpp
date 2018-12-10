@@ -156,7 +156,7 @@ auto Gui::meshView(double deltaT_, std::shared_ptr<Render::Encoder> const& encod
 	}
 
 	ImGui::Combo("Select Mesh", &meshViewSelectedItem, comboString.c_str());
-	if (meshViewSelectedItem >= nameLookup.size()) return;
+	if (meshViewSelectedItem >= (int)nameLookup.size()) return;
 
 	auto const sceneIndex = meshMap[nameLookup[meshViewSelectedItem]];
 

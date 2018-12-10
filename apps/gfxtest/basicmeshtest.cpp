@@ -22,7 +22,7 @@ struct BasicMeshTest : public GfxTest
 		meshModRenderer->init(rm);
 
 		rootScene = std::make_shared<MeshMod::SceneNode>();
-		rootScene->transform.position = Math::vec3(0, 0, -4);
+		rootScene->transform.position = Math::vec3(0, 0, 0);
 
 		std::shared_ptr<MeshMod::Mesh> sphere = MeshOps::Shapes::createSphere(3);
 		auto child0 = std::make_shared<MeshMod::SceneNode>();

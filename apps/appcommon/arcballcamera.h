@@ -11,7 +11,7 @@
 
 struct ArcBallCamera
 {
-	ArcBallCamera(Math::vec3 default_ = Math::vec3(0,0,400), double distance_ = 400.0)
+	ArcBallCamera(Math::vec3 default_ = Math::vec3(0,0,0), double distance_ = 400.0)
 	{
 		simpleEye.setProjection(60.0f, 1280.0f / 720.0f, 0.01f);
 		lookatPoint = default_;

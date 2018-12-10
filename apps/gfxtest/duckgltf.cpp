@@ -23,7 +23,7 @@ struct DuckGltfTest : public GfxTest
 		meshModRenderer->init(rm);
 
 		rootScene = std::make_shared<MeshMod::SceneNode>();
-		rootScene->transform.position = Math::vec3(0, 0, -400);
+		rootScene->transform.position = Math::vec3(0, 0, 0);
 
 		std::shared_ptr duck = MeshOps::Gltf::LoadAscii("gltf/Duck.gltf");
 		rootScene->addChild(duck);

@@ -37,6 +37,10 @@ auto MeshModRenderer::init(std::shared_ptr<ResourceManager::ResourceMan> const& 
 	TextResource::CreateFromFile(rm, ResourceNameView("mem$MMR_VertexShaderText"), "text/shaders/meshmodrenderer_vert.glsl");
 	TextResource::CreateFromFile(rm, ResourceNameView("mem$MMR_FragmentShaderText"), "text/shaders/meshmodrenderer_frag.glsl");
 
+	TextResource::CreateFromFile(rm, ResourceNameView("mem$MMR_Wire_GeometryShaderText"), "text/shaders/meshmodrendererwireframe_geom.glsl");
+	TextResource::CreateFromFile(rm, ResourceNameView("mem$MMR_Wire_VertexShaderText"), "text/shaders/meshmodrendererwireframe_vert.glsl");
+	TextResource::CreateFromFile(rm, ResourceNameView("mem$MMR_Wire_FragmentShaderText"), "text/shaders/meshmodrendererwireframe_frag.glsl");
+
 	vertexShaderHandle = SPIRVShader::Compile(rm,
 						 ResourceNameView("mem$MMR_VertexShader"),
 						 {rm->openByName<TextResourceId>(ResourceNameView("mem$MMR_VertexShaderText"))},
@@ -50,6 +54,28 @@ auto MeshModRenderer::init(std::shared_ptr<ResourceManager::ResourceMan> const& 
 						 ShaderSourceLanguage::GLSL,
 						 ShaderType::Fragment,
 						 0);
+
+	wireGeometryShaderHandle = SPIRVShader::Compile(rm,
+												  ResourceNameView("mem$MMR_Wire_GeometryShader"),
+												  {rm->openByName<TextResourceId>(ResourceNameView("mem$MMR_Wire_GeometryShaderText"))},
+												  ShaderSourceLanguage::GLSL,
+												  ShaderType::Geometry,
+												  0);
+
+	wireVertexShaderHandle = SPIRVShader::Compile(rm,
+											  ResourceNameView("mem$MMR_Wire_VertexShader"),
+											  {rm->openByName<TextResourceId>(ResourceNameView("mem$MMR_Wire_VertexShaderText"))},
+											  ShaderSourceLanguage::GLSL,
+											  ShaderType::Vertex,
+											  0);
+
+	wireFragmentShaderHandle = SPIRVShader::Compile(rm,
+												ResourceNameView("mem$MMR_Wire_FragmentShader"),
+												{rm->openByName<TextResourceId>(ResourceNameView("mem$MMR_Wire_FragmentShaderText"))},
+												ShaderSourceLanguage::GLSL,
+												ShaderType::Fragment,
+												0);
+
 
 	memoryMapHandle = BindingTableMemoryMap::Create(
 			rm_,
@@ -87,6 +113,28 @@ auto MeshModRenderer::init(std::shared_ptr<ResourceManager::ResourceMan> const& 
 			{
 					vertexShaderHandle,
 					fragmentShaderHandle
+			},
+			rm->openByName<RasterisationStateId>(Stock::simpleForwardRasterState),
+			rm->openByName<RenderPassId>(Stock::simpleForwardRenderPass),
+			rm->openByName<ROPBlenderId>(Stock::singleOpaqueROPBlender),
+			vertexInputHandle,
+			rm->openByName<ViewportId>(Stock::simpleForwardViewport)
+	);
+
+	wireRenderPipelineHandle = RenderPipeline::Create(
+			rm_,
+			ResourceNameView("mem$MMR_Wire_RenderPipeline"),
+			Topology::Triangles,
+			RenderPipelineFlags::None,
+			DynamicPipelineState::None,
+			{ memoryMapHandle },
+			{
+					{0, sizeof(float)*16, ShaderType::Vertex} // world matrix
+			},
+			{
+					wireVertexShaderHandle,
+					wireFragmentShaderHandle,
+					wireGeometryShaderHandle
 			},
 			rm->openByName<RasterisationStateId>(Stock::simpleForwardRasterState),
 			rm->openByName<RenderPassId>(Stock::simpleForwardRenderPass),
@@ -286,7 +334,7 @@ auto MeshModRenderer::render(
 	auto rootMatrix = rootMatrix_;
 
 	auto renderEncoder = encoder_->asRenderEncoder();
-	auto renderPipeline = renderPipelineHandle.acquire<RenderPipeline>();
+	auto renderPipeline = wireRenderPipelineHandle.acquire<RenderPipeline>();
 	auto bindingTable = bindingTableHandle.acquire<BindingTable>();
 
 	renderEncoder->bind(renderPipeline, bindingTable);

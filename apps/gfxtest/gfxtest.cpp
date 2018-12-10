@@ -205,6 +205,17 @@ struct App
 			renderEncoder->beginRenderPass(renderPass, renderTarget);
 
 			underTest->tick(deltaT, encoder);
+			if (ImGui::BeginMainMenuBar())
+			{
+				if (ImGui::BeginMenu("Camera Controls"))
+				{
+					if (ImGui::MenuItem("WASD FPS")) {}
+					if (ImGui::MenuItem("ArcBall")) {}
+//					ImGui::Separator();
+					ImGui::EndMenu();
+				}
+				ImGui::EndMainMenuBar();
+			}
 
 			imguiBindings->render(encoder);
 			renderEncoder->endRenderPass();

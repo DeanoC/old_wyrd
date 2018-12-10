@@ -55,9 +55,15 @@ protected:
 	Render::BindingTableMemoryMapHandle memoryMapHandle;
 	Render::BindingTableHandle bindingTableHandle;
 	Render::VertexInputHandle vertexInputHandle;
+
 	Render::RenderPipelineHandle renderPipelineHandle;
 	Render::SPIRVShaderHandle vertexShaderHandle;
 	Render::SPIRVShaderHandle fragmentShaderHandle;
+
+	Render::RenderPipelineHandle wireRenderPipelineHandle;
+	Render::SPIRVShaderHandle wireGeometryShaderHandle;
+	Render::SPIRVShaderHandle wireVertexShaderHandle;
+	Render::SPIRVShaderHandle wireFragmentShaderHandle;
 
 };
 
