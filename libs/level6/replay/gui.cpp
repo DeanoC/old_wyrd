@@ -655,35 +655,12 @@ auto Gui::tacmapCallback(Item const& item_) -> bool
 {
 	using namespace std::literals;
 
-	return true;
+	std::istringstream stream(item_.data);
 
-	picojson::value pj;
-	picojson::parse(pj, item_.data);
-	auto err = picojson::get_last_error();
-	if(!err.empty())
-	{
-		auto logString = fmt::format("({}s):!ERROR!MeshObject Parse error {} from {}",
-									 item_.timeStamp,
-									 err,
-									 item_.data);
-		LOG_S(WARNING) << logString;
-		ImGui::Text("%s", logString.c_str());
-		return false;
-	}
+	std::vector<TacticalMap::Ptr> tactMaps;
+	bool okay = TacticalMap::createFromStream(stream, tactMaps);
 
-	picojson::object o;
-	if(!pj.is<picojson::object>())
-	{
-/*		std::string str = safe_get<std::string>(o, "data"sv);
-		std::istringstream stream(str);
-
-		std::vector<TacticalMap::Ptr> tactMaps;
-		bool okay = TacticalMap::createFromStream(stream, tactMaps);
-
-		return okay;*/
-		return true;
-	}
-	return false;
+	return okay;
 }
 
 }

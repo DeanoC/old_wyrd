@@ -33,6 +33,8 @@
 #include "replay/gui.h"
 #include "server.h"
 #include "fakeclient.h"
+#include "appcommon/simplepadcamera.h"
+#include "appcommon/arcballcamera.h"
 
 struct InputListener : public Input::VPadListener
 {
@@ -220,12 +222,9 @@ struct App
 		auto renderQueue = device->getGeneralQueue();
 		auto rEncoderPool = device->makeEncoderPool(true, CommandQueueFlavour::Render);
 
-		auto simpleEye = new SimpleEye();
-		simpleEye->setProjection(60.0f, 1280.0f / 720.0f, 0.01f);
-		Math::mat4x4 view = Math::lookAt(Math::vec3(0, 0, 4),
-										 Math::vec3(0, 0, 0),
-										 Math::vec3(0, 1, 0));
-		simpleEye->setView(view);
+		simplePadCamera = std::make_shared<SimplePadCamera>();
+		arcBallCamera = std::make_unique<ArcBallCamera>(Math::vec3(0,0,0), 20.0);
+
 		tickerClock->update();
 
 		using namespace Core::bitmask;
@@ -233,10 +232,13 @@ struct App
 		{
 			auto deltaT = tickerClock->update();
 			replay->update(deltaT);
+			simplePadCamera->update(deltaT);
+			arcBallCamera->update(deltaT);
 
 			rEncoderPool->reset();
 
-			SimpleForwardGlobals* globals = (SimpleForwardGlobals*) globalBuffer->map();
+			auto const simpleEye = &arcBallCamera->simpleEye;
+			SimpleForwardGlobals* globals = (SimpleForwardGlobals*)globalBuffer->map();
 			std::memcpy(globals->viewMatrix, &simpleEye->getView(), sizeof(float) * 16);
 			std::memcpy(globals->projectionMatrix, &simpleEye->getProjection(), sizeof(float) * 16);
 			auto viewProj = simpleEye->getProjection() * simpleEye->getView();
@@ -293,6 +295,8 @@ struct App
 	std::unique_ptr<MidRender::ImguiBindings> imguiBindings;
 	std::unique_ptr<Server> server;
 	std::unique_ptr<FakeClient> client;
+	std::shared_ptr<SimplePadCamera> simplePadCamera;
+	std::unique_ptr<ArcBallCamera> arcBallCamera;
 
 	std::shared_ptr<Replay::Replay> replay;
 	std::unique_ptr<Replay::Gui> replayGui;
@@ -300,6 +304,8 @@ struct App
 	Shell::PresentableWindow* window;
 	std::unique_ptr<Input::Provider> inputProvider;
 	std::shared_ptr<InputListener> inputListener;
+
+
 };
 
 int Main(Shell::ShellInterface& shell_)

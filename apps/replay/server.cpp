@@ -15,7 +15,8 @@ auto Server::connection(Net::BasicPayload const& payload_) -> bool
 	using namespace Replay;
 
 	if(payload_.type == "STOP"_basic_payload_type) return false;
-	replay->add(ItemType(payload_.type), (char const*)payload_.getPayload());
+	char const* data = (char const*)payload_.getPayload();
+	replay->add(ItemType(payload_.type), std::string(data, data+payload_.size));
 
 	return true;
 }
