@@ -31,12 +31,12 @@ Gui::Gui(std::shared_ptr<ResourceManager::ResourceMan> const& rm_,
 
 	{
 		auto rootScene = std::make_shared<MeshMod::SceneNode>();
-		rootScene->addObject(MeshOps::Shapes::createDiamond());
+		rootScene->addObject(MeshOps::Shapes::CreateDiamond());
 		diamondSceneIndex = meshModRenderer->addScene(rootScene);
 	}
 	{
 		auto rootScene = std::make_shared<MeshMod::SceneNode>();
-		rootScene->addObject(MeshOps::PlatonicSolids::createIcosahedron());
+		rootScene->addObject(MeshOps::PlatonicSolids::CreateIcosahedron());
 		fallbackSceneIndex = meshModRenderer->addScene(rootScene);
 	}
 
@@ -52,57 +52,63 @@ Gui::~Gui()
 	meshModRenderer.reset();
 }
 
-auto Gui::render(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void
+auto Gui::render(bool showUI_, double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void
 {
+
 	// reset every frame
 	spatialMarkers.clear();
 
-	ImGuiWindowFlags window_flags =
+	if (showUI_)
+	{
+		ImGuiWindowFlags window_flags =
 			ImGuiWindowFlags_NoTitleBar |
 			ImGuiWindowFlags_MenuBar |
 			ImGuiWindowFlags_NoScrollbar |
 			ImGuiWindowFlags_NoMove |
 			ImGuiWindowFlags_NoResize;
 
-	ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSize(ImVec2(1240, 100), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(1240, 100), ImGuiCond_FirstUseEver);
 
-	if(!ImGui::Begin("Replay", &windowOpen, window_flags))
-	{
-		// Early out if the window is collapsed, as an optimization.
-		ImGui::End();
-	} else
-	{
-		double time = (viewerTime < 0.0) ? replay->getCurrentTime() : viewerTime;
-		auto timeString = fmt::format("Time: {}s", time);
-		ImGui::Text("%s", timeString.c_str());
-
-		menu();
-
-		if(ImGui::Button(ICON_FA_PAUSE))
+		if (!ImGui::Begin("Replay", &windowOpen, window_flags))
 		{
-			pause();
+			// Early out if the window is collapsed, as an optimization.
+			ImGui::End();
 		}
-		ImGui::SameLine();
-		if(ImGui::Button(ICON_FA_PLAY))
+		else
 		{
-			play();
-		}
-		static double const timeMin = 0.0;
-		double const timeMax = replay->getCurrentTime();
+			double time = (viewerTime < 0.0) ? replay->getCurrentTime() : viewerTime;
+			auto timeString = fmt::format("Time: {}s", time);
+			ImGui::Text("%s", timeString.c_str());
 
-		if(ImGui::SliderScalar("", ImGuiDataType_Double, &time, &timeMin, &timeMax))
-		{
-			pause();
-			viewerTime = time;
+			menu();
+
+			if (ImGui::Button(ICON_FA_PAUSE))
+			{
+				pause();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button(ICON_FA_PLAY))
+			{
+				play();
+			}
+			static double const timeMin = 0.0;
+			double const timeMax = replay->getCurrentTime();
+
+			if (ImGui::SliderScalar("", ImGuiDataType_Double, &time, &timeMin, &timeMax))
+			{
+				pause();
+				viewerTime = time;
+			}
+			ImGui::End();
 		}
-		ImGui::End();
+
+		log();
 	}
-
-	log();
 
 	processReplaySection();
 
+	std::lock_guard lock(lockMutex);
 	switch(mainView)
 	{
 		default:
@@ -117,7 +123,7 @@ auto Gui::render(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder
 
 auto Gui::sceneView(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void
 {
-
+	cameraMode = CameraMode::FPS;
 	for(auto const& marker : spatialMarkers)
 	{
 		auto translationMat = translate(glm::identity<glm::mat4x4>(), marker.position);
@@ -140,6 +146,13 @@ auto Gui::sceneView(double deltaT_, std::shared_ptr<Render::Encoder> const& enco
 
 		meshModRenderer->render(rootMat, meshObject.index, encoder_);
 	}
+
+	for(auto const& renderTile : renderTiles)
+	{
+		auto rootMat = Math::identity<Math::mat4x4>();
+		meshModRenderer->render(rootMat, renderTile.sceneIndex, encoder_);
+	}
+
 }
 
 auto Gui::meshView(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void
@@ -518,6 +531,7 @@ auto Gui::decodeLog(Item const& item_) -> void
 
 auto Gui::decodeSimpleMesh(Item const& item_) -> void
 {
+	std::lock_guard lock(lockMutex);
 	using namespace std::literals;
 
 	picojson::value pj;
@@ -586,6 +600,7 @@ auto Gui::decodeSimpleMesh(Item const& item_) -> void
 
 auto Gui::decodeMeshObject(Item const& item_) -> void
 {
+	std::lock_guard lock(lockMutex);
 	using namespace std::literals;
 
 	picojson::value pj;
@@ -654,13 +669,52 @@ auto Gui::meshCallback(Item const& item_) -> bool
 auto Gui::tacmapCallback(Item const& item_) -> bool
 {
 	using namespace std::literals;
+	std::lock_guard lock(lockMutex);
 
 	std::istringstream stream(item_.data);
 
-	std::vector<TacticalMap::Ptr> tactMaps;
+	std::vector<std::shared_ptr<TacticalMap>> tactMaps;
 	bool okay = TacticalMap::createFromStream(stream, tactMaps);
+	if(okay)
+	{
+		for(auto const& tmap : tactMaps)
+		{
+			for(auto z = 0;z < tmap->getHeight();++z)
+			{
+				for(auto x = 0;x < tmap->getWidth();++x)
+				{
+					tmapTileGenerateMesh(x, z, tmap);
+				}
+			}
+		}
+	}
 
 	return okay;
+}
+auto Gui::tmapTileGenerateMesh(int x_, int z_, std::shared_ptr<TacticalMap> const& tmap_) -> void
+{
+	auto const& tile = tmap_->getTile(x_,z_);
+	Math::vec2 tilePos = tmap_->getBottomLeft() + Math::vec2(x_,z_);
+
+	TacMapTile renderTile;
+
+	float minHeight = std::numeric_limits<float>::max();
+	float maxHeight = std::numeric_limits<float>::lowest();
+
+	for(auto i = 0u; i < tile.levelCount;++i)
+	{
+		auto const& level = tmap_->getLevel(tile, i);
+		minHeight = std::min(minHeight, level.baseHeight);
+		maxHeight = std::max(maxHeight, level.baseHeight + level.roofDeltaHeight);
+	}
+	renderTile.aabb = Geometry::AABB(
+			Math::vec3(tilePos.x, minHeight, tilePos.y),
+			Math::vec3(tilePos.x+1.0f, maxHeight, tilePos.y+1.0f)
+			);
+	auto rootScene = std::make_shared<MeshMod::SceneNode>();
+	rootScene->addObject(MeshOps::Shapes::CreateAABB(renderTile.aabb));
+	renderTile.sceneIndex = meshModRenderer->addScene(rootScene);
+	renderTiles.push_back(renderTile);
 }
 
 }

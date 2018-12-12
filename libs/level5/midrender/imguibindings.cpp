@@ -286,8 +286,13 @@ auto ImguiBindings::newFrame(uint32_t width_, uint32_t height_) -> void
 	}
 
 	ImGui::NewFrame();
-	if(g_Keyboard && io.WantCaptureKeyboard) g_Keyboard->inputConsumed();
-	if(g_Mouse && io.WantCaptureMouse) g_Mouse->inputConsumed();
+
+	// in relative mouse mode don't consume any input
+	if (g_Mouse && !g_Mouse->isInRelativeMode())
+	{
+		if (g_Keyboard && io.WantCaptureKeyboard) g_Keyboard->inputConsumed();
+		if (g_Mouse && io.WantCaptureMouse) g_Mouse->inputConsumed();
+	}
 
 }
 

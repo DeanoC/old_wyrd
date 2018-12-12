@@ -252,7 +252,7 @@ auto BasicMeshOps::ngulate(std::shared_ptr<MeshMod::Mesh> const& mesh) -> void
 			}
 		}
 	}
-
+	
 	// this is an incremental change so doesn't need an edit state change
 	//mesh->updateEditState(Mesh::TopologyEdits);
 }

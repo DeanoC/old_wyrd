@@ -36,11 +36,11 @@ Geometry::AABB TacticalMapStitcher::rotateAABB(Geometry::AABB const& v, int rota
 	default: assert(false); return v;
 	}
 }
-void TacticalMapStitcher::addTacticalMapInstance(TacticalMap::ConstPtr map_, Math::vec3 const position_, int rotationInDegrees_, int mapParcelId_)
+void TacticalMapStitcher::addTacticalMapInstance(std::shared_ptr<TacticalMap const> map_, Math::vec3 const position_, int rotationInDegrees_, int mapParcelId_)
 {
 	instances.emplace_back(map_, position_, rotationInDegrees_, mapParcelId_);
 }
-TacticalMap::Ptr TacticalMapStitcher::build()
+std::shared_ptr<TacticalMap> TacticalMapStitcher::build()
 {
 	// determine size of the stitched together map
 	static const float fmininit = std::numeric_limits<float>::max();

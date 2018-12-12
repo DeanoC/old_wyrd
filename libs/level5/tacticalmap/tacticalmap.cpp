@@ -303,72 +303,73 @@ bool TacticalMap::saveTo(uint64_t const regenMarker, std::vector<uint8_t>& resul
 	writer.setLogBinifyText();
 
 	bool okay;
-	okay = writer.addChunk("TacticalMap"s,
-						   TacticalMapId,
-						   MajorVersion,
-						   MinorVersion,
-						   0,
-						   {},
-						   [this](WriteHelper& h)
-						   {
-							   h.allow_nan(false);
+	okay = writer.addChunk(
+			"TacticalMap"s,
+			TacticalMapId,
+			MajorVersion,
+			MinorVersion,
+			0,
+			{},
+			[this](WriteHelper& h)
+			{
+				h.allow_nan(false);
 
-							   h.allow_infinity(false);
-							   h.add_enum("TacticalMapTileLevel"s);
-							   h.add_enum_value("TacticalMapTileLevel"s, "Destroyed", TacticalMapLevelFlags::Destroyed);
-							   h.add_enum_value("TacticalMapTileLevel"s, "RoofValid", TacticalMapLevelFlags::RoofValid);
-							   h.add_enum_value("TacticalMapTileLevel"s,
-												"Destructable",
-												TacticalMapLevelFlags::Destructable);
-							   h.add_enum_value("TacticalMapTileLevel"s,
-												"Structural",
-												TacticalMapLevelFlags::Structural);
+				h.allow_infinity(false);
+				h.add_enum("TacticalMapTileLevel"s);
+				h.add_enum_value("TacticalMapTileLevel"s, "Destroyed", TacticalMapLevelFlags::Destroyed);
+				h.add_enum_value("TacticalMapTileLevel"s, "RoofValid", TacticalMapLevelFlags::RoofValid);
+				h.add_enum_value("TacticalMapTileLevel"s,
+								 "Destructable",
+								 TacticalMapLevelFlags::Destructable);
+				h.add_enum_value("TacticalMapTileLevel"s,
+								 "Structural",
+								 TacticalMapLevelFlags::Structural);
 
-							   // header
-							   h.write_as<uint16_t>(sizeOfTacticalMapTile,
-													"sizeof TacticalMapTile when this was built");
-							   h.write_as<uint16_t>(sizeOfTacticalMapTileLevel,
-													"sizeof TacticalMapTileLevel when this was built");
-							   h.write_as<uint32_t>(sizeOfTacticalLevelData,
-													"sizeof Tactical Level Data used for this map");
-							   h.write_as<uint16_t>(width, "map width"s);
-							   h.write_as<uint16_t>(height, "map height"s);
-							   h.write_as<uint16_t>(0xDE, "padd0"s);
-							   h.write_as<uint16_t>(0xDE, "padd0"s);
+				// header
+				h.write_as<uint16_t>(sizeOfTacticalMapTile,
+									 "sizeof TacticalMapTile when this was built");
+				h.write_as<uint16_t>(sizeOfTacticalMapTileLevel,
+									 "sizeof TacticalMapTileLevel when this was built");
+				h.write_as<uint32_t>(sizeOfTacticalLevelData,
+									 "sizeof Tactical Level Data used for this map");
+				h.write_as<uint16_t>(width, "map width"s);
+				h.write_as<uint16_t>(height, "map height"s);
+				h.write_as<uint16_t>(0xDE, "padd0"s);
+				h.write_as<uint16_t>(0xDE, "padd0"s);
 
-							   h.write(levelCount, "layer count"s);
-							   h.write(bottomLeft.x, "bottom left x"s);
-							   h.write(bottomLeft.y, "bottom left y"s);
-							   h.write(minHeight, "min height of map");
-							   h.write(maxHeight, "max height of map");
-							   h.align(8);
+				h.write(levelCount, "layer count"s);
+				h.write(bottomLeft.x, "bottom left x"s);
+				h.write(bottomLeft.y, "bottom left y"s);
+				h.write(minHeight, "min height of map");
+				h.write(maxHeight, "max height of map");
+				h.align(8);
 
-							   h.use_label("Levels"s, ""s, true, true, "ptr to beginning of the level structures"s);
-							   h.use_label("Map"s, ""s, true, true, "ptr to 2D tile map data"s);
-							   h.use_label("LevelDataHeap"s, ""s, true, true, "ptr to heap used to store level data"s);
+				h.use_label("Levels"s, ""s, true, true, "ptr to beginning of the level structures"s);
+				h.use_label("Map"s, ""s, true, true, "ptr to 2D tile map data"s);
+				h.use_label("LevelDataHeap"s, ""s, true, true, "ptr to heap used to store level data"s);
 
-							   h.align();
-							   // levels
-							   h.write_label("Levels"s, false);
-							   for(auto i = 0u; i < levelCount; ++i)
-							   {
-								   TacticalMapTileLevel& level = levels[i];
-								   h.write_label("LevelEntry"s + std::to_string(i), true);
-								   level.write(h);
-							   }
+				h.align();
+				// levels
+				h.write_label("Levels"s, false);
+				for(auto i = 0u; i < levelCount; ++i)
+				{
+					TacticalMapTileLevel& level = levels[i];
+					h.write_label("LevelEntry"s + std::to_string(i), true);
+					level.write(h);
+				}
 
-							   h.align();
-							   h.write_label("Map"s, false);
-							   for(auto i = 0; i < width * height; ++i)
-							   {
-								   TacticalMapTile& tile = map[i];
-								   tile.write(h, levels);
-							   }
+				h.align();
+				h.write_label("Map"s, false);
+				for(auto i = 0; i < width * height; ++i)
+				{
+					TacticalMapTile& tile = map[i];
+					tile.write(h, levels);
+				}
 
-							   h.align();
-							   h.write_label("LevelDataHeap"s, false);
-							   h.write_byte_array(levelDataHeap, levelCount * sizeOfTacticalLevelData);
-						   }
+				h.align();
+				h.write_label("LevelDataHeap"s, false);
+				h.write_byte_array(levelDataHeap, levelCount * sizeOfTacticalLevelData);
+			}
 	);
 	if(!okay) return false;
 
@@ -377,12 +378,13 @@ bool TacticalMap::saveTo(uint64_t const regenMarker, std::vector<uint8_t>& resul
 	return true;
 }
 
-bool TacticalMap::createFromStream(std::istream& in, std::vector<TacticalMap::Ptr>& out_)
+bool TacticalMap::createFromStream(std::istream& in, std::vector<std::shared_ptr<TacticalMap>>& out_)
 {
 	using namespace Binny;
 	std::vector<IBundle::ChunkHandler> handlers = {
 			{{TacticalMapId, 0, 0,
-					 [&out_](std::string_view, int, uint16_t majorVersion_, uint16_t minorVersion_, size_t size_, std::shared_ptr<void> ptr_) -> bool
+					 [&out_](std::string_view, int, uint16_t majorVersion_, uint16_t minorVersion_, size_t size_,
+							 std::shared_ptr<void> ptr_) -> bool
 					 {
 						 auto tmap = std::static_pointer_cast<TacticalMap>(ptr_);
 

@@ -186,10 +186,7 @@ public:
 	using LevelDataPair = std::pair<TacticalMapTileLevel*, TacticalMapLevelDataHeader*>;
 	using ConstLevelDataPair = std::pair<TacticalMapTileLevel const*, TacticalMapLevelDataHeader const*>;
 
-	typedef std::shared_ptr<TacticalMap> Ptr;
-	typedef std::shared_ptr<TacticalMap const> ConstPtr;
-
-	static bool createFromStream(std::istream& in, std::vector<TacticalMap::Ptr>& out_);
+	static bool createFromStream(std::istream& in, std::vector<std::shared_ptr<TacticalMap>>& out_);
 
 	static ITacticalMapBuilder::Ptr allocateBuilder(Math::vec2 const bottomLeft_, TileCoord_t width_, TileCoord_t height_);
 	static ITacticalMapStitcher::Ptr allocateStitcher();

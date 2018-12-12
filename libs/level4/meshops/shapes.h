@@ -7,13 +7,19 @@
 namespace MeshMod {
 class Mesh;
 }
+namespace Geometry
+{
+class AABB;
+}
+
 namespace MeshOps {
 
 class Shapes
 {
 public:
-	static auto createDiamond() -> std::unique_ptr<MeshMod::Mesh>;
-	static auto createSphere(uint32_t subdivisionSteps_ = 2u) -> std::unique_ptr<MeshMod::Mesh>;
+	static auto CreateDiamond() -> std::unique_ptr<MeshMod::Mesh>;
+	static auto CreateSphere(uint32_t subdivisionSteps_ = 2u) -> std::unique_ptr<MeshMod::Mesh>;
+	static auto CreateAABB(Geometry::AABB const& aabb_) -> std::unique_ptr<MeshMod::Mesh>;
 
 };
 

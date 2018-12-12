@@ -5,6 +5,7 @@
 #include "core/core.h"
 #include "replay/replay.h"
 #include "math/vector_math.h"
+#include "geometry/aabb.h"
 #include <string>
 
 namespace picojson { class value; }
@@ -15,6 +16,8 @@ class MeshModRenderer;
 enum class MeshIndex : uint32_t;
 enum class SceneIndex : uint32_t;
 }
+class TacticalMap;
+struct TacticalMapTile;
 
 namespace Replay {
 
@@ -38,7 +41,8 @@ public:
 	// replay gui expects to be inside a simple forward render pass when render
 	// is called
 
-	auto render(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void;
+	auto render(bool showUI_, double deltaT_, 
+				std::shared_ptr<Render::Encoder> const& encoder_) -> void;
 
 protected:
 	struct SpatialMarker
@@ -58,6 +62,7 @@ protected:
 	using MeshObjectMap = std::unordered_map<std::string, MeshObject>;
 
 	std::shared_ptr<Replay> replay;
+	mutable std::mutex lockMutex;
 	bool windowOpen = true;
 	CameraMode cameraMode = CameraMode::ArcBall;
 
@@ -97,6 +102,15 @@ protected:
 
 	auto meshCallback(Item const& item_) -> bool;
 	auto tacmapCallback(Item const& item_) -> bool;
+
+	auto tmapTileGenerateMesh(int x_, int z_, std::shared_ptr<TacticalMap> const& map_) -> void;
+
+	struct TacMapTile
+	{
+		Geometry::AABB aabb;
+		MidRender::SceneIndex sceneIndex;
+	};
+	std::vector<TacMapTile> renderTiles;
 
 };
 

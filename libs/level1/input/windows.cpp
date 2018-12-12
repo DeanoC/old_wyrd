@@ -6,7 +6,7 @@
 #include "keyboardmouselistenerimpl.h"
 
 namespace Input {
-bool Keyboard::WinProcessMessages(uint32_t message, uint64_t wParam, uint64_t lParam)
+bool Keyboard::WinProcessMessages(void* phwnd, uint32_t message, uint64_t wParam, uint64_t lParam)
 {
 	if(g_Keyboard == nullptr) return false;
 
@@ -55,8 +55,7 @@ bool Keyboard::WinProcessMessages(uint32_t message, uint64_t wParam, uint64_t lP
 
 		if(bKeyDown)
 		{
-			g_Keyboard->keyDownBitMap[(uint16_t)key] = true;
-			if(g_Keyboard->keyDown(key))
+			if(g_Keyboard->keyDownBitMap[(uint16_t)key])
 			{
 				// still down set the held flag
 				g_Keyboard->keyDataState[(uint16_t) key] |= Keyboard::KeyHeldFlag;
@@ -67,6 +66,7 @@ bool Keyboard::WinProcessMessages(uint32_t message, uint64_t wParam, uint64_t lP
 				// also sets held count to 0
 				g_Keyboard->keyDataState[(uint16_t) key] = Keyboard::KeyDownFlag;
 			}
+			g_Keyboard->keyDownBitMap[(uint16_t)key] = true;
 		} else
 		{
 			g_Keyboard->keyDownBitMap[(uint16_t)key] = false;
@@ -77,7 +77,7 @@ bool Keyboard::WinProcessMessages(uint32_t message, uint64_t wParam, uint64_t lP
 	return false;
 }
 
-bool Mouse::WinProcessMessages(uint32_t message, uint64_t wParam, uint64_t lParam)
+bool Mouse::WinProcessMessages(void* phwnd, uint32_t message, uint64_t wParam, uint64_t lParam)
 {
 	if(g_Mouse == nullptr) return false;
 
@@ -147,8 +147,61 @@ bool Mouse::WinProcessMessages(uint32_t message, uint64_t wParam, uint64_t lPara
 			int yPosAbsolute = HIWORD( lParam );
 			g_Mouse->absMousePos[0] = (float)xPosAbsolute;
 			g_Mouse->absMousePos[1] = (float)yPosAbsolute;
+
+			static bool cursorCliped = false;
+			if (g_Mouse->relativeMode)
+			{
+				if (cursorCliped == false)
+				{
+					::ShowCursor(FALSE);
+
+					RECT screenRect;
+					GetWindowRect(*(HWND*)phwnd, &screenRect);
+					::ClipCursor(&screenRect);
+					POINT pt;
+					pt.x = (screenRect.right - screenRect.left) / 2;
+					pt.y = (screenRect.bottom - screenRect.top) / 2;
+					::SetCursorPos(pt.x, pt.y);
+					g_Mouse->relativeCenter[0] = (float)pt.x;
+					g_Mouse->relativeCenter[1] = (float)pt.y;
+					cursorCliped = true;
+				}
+				else
+				{
+					// we don't use the message coordinate as different
+					// from SetCursorPos we use to recenter
+					POINT pt;
+					::GetCursorPos(&pt);
+					float rx = pt.x - g_Mouse->relativeCenter[0];
+					float ry = pt.y - g_Mouse->relativeCenter[1];
+					g_Mouse->relMousePos[0] = rx;
+					g_Mouse->relMousePos[1] = ry;
+					::SetCursorPos((int)g_Mouse->relativeCenter[0], (int)g_Mouse->relativeCenter[1]);
+				}
+			}
+			else
+			{
+				if (cursorCliped)
+				{
+
+					RECT screenRect;
+					GetWindowRect(*(HWND*)phwnd, &screenRect);
+					::ClipCursor(&screenRect);
+					POINT pt;
+					pt.x = (screenRect.right - screenRect.left) / 2;
+					pt.y = (screenRect.bottom - screenRect.top) / 2;
+					::SetCursorPos(pt.x, pt.y);
+					::ClipCursor(nullptr);
+					::ShowCursor(TRUE);
+
+					cursorCliped = false;
+				}
+			}
+			break;
 		}
 	}
+
+
 	return false;
 }
 

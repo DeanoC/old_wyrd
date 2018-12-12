@@ -45,7 +45,7 @@ TacticalMapTileBuilder::~TacticalMapTileBuilder()
 	polygons.clear();
 }
 
-TacticalMap::Ptr TacticalMapBuilder::build()
+std::shared_ptr<TacticalMap> TacticalMapBuilder::build()
 {
 	using namespace MeshMod;
 

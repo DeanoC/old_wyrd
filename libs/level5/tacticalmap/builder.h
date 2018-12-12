@@ -134,7 +134,7 @@ public:
 	void setLevelDataSize(uint32_t size_) final { tacticalLevelDataSize = size_; }
 	void addMeshAt(MeshMod::MeshPtr const& mesh, TacticalMapLevelDataHeader const* levelData, Math::mat4x4 const& transform) final;
 	void addBoxAt( Geometry::AABB const& box, TacticalMapLevelDataHeader const* levelData, Math::mat4x4 const& transform) final;
-	TacticalMap::Ptr build() override;
+	std::shared_ptr<TacticalMap> build() override;
 
 private:
 

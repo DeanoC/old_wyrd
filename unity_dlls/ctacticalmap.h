@@ -57,7 +57,7 @@ struct CTacticalMapInterface
 
 // cpp helpers
 EXPORT_CPP auto CTMB_ExportToGLTF(TacticalMapBuilderHandle ctmbHandle, char const* fileName) -> MeshMod::SceneNode::Ptr;
-EXPORT_CPP auto UnityOwnedTacticalMap(TacticalMapHandle handle) -> TacticalMap::Ptr;
+EXPORT_CPP auto UnityOwnedTacticalMap(TacticalMapHandle handle) -> std::shared_ptr<TacticalMap>;
 EXPORT_CPP auto UnityOwnedTacticalMapBuilder(TacticalMapBuilderHandle handle) -> std::shared_ptr<ITacticalMapBuilder>;
 EXPORT_CPP auto UnityOwnedTacticalMapStitcher(TacticalMapStitcherHandle handle) ->std::shared_ptr<ITacticalMapStitcher>;
 
