@@ -26,9 +26,9 @@ static const uint32_t TacticalMapId = "TACM"_bundle_id;
 extern enki::TaskScheduler g_EnkiTS;
 
 ITacticalMapBuilder::Ptr TacticalMap::allocateBuilder(Math::vec2 const bottomLeft_, TileCoord_t width_,
-													  TileCoord_t height_)
+													  TileCoord_t height_, char const* name_)
 {
-	return std::make_shared<TacticalMapBuilder>(bottomLeft_, width_, height_);
+	return std::make_shared<TacticalMapBuilder>(bottomLeft_, width_, height_, name_);
 }
 
 ITacticalMapStitcher::Ptr TacticalMap::allocateStitcher()
@@ -343,6 +343,8 @@ bool TacticalMap::saveTo(uint64_t const regenMarker, std::vector<uint8_t>& resul
 				h.write(minHeight, "min height of map");
 				h.write(maxHeight, "max height of map");
 				h.align(8);
+
+				h.add_string(name);
 
 				h.use_label("Levels"s, ""s, true, true, "ptr to beginning of the level structures"s);
 				h.use_label("Map"s, ""s, true, true, "ptr to 2D tile map data"s);

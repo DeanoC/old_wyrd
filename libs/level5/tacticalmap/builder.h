@@ -114,7 +114,7 @@ public:
 	// these are public only for debug/vis purposes
 	static inline Math::vec2 const extentIncrement = Math::vec2(1, 1);
 
-	TacticalMapBuilder(Math::vec2 const bottomLeft_, TileCoord_t width_, TileCoord_t height_);
+	TacticalMapBuilder(Math::vec2 const bottomLeft_, TileCoord_t width_, TileCoord_t height_, std::string const& name_);
 
 	using FragmentTextureLayer = MeshOps::TextureLayer<TMapTBHeightFragment const *>;
 	using FragmentTexture = MeshOps::LayeredTexture;
@@ -145,6 +145,7 @@ private:
 	TileCoord_t width;
 	TileCoord_t height;
 	Math::vec2 bottomLeft;
+	std::string name;
 	float minHeight, maxHeight;
 	float rayMinHeight = -10000.0f;
 	float maxFloorInclination = Math::degreesToRadians(30.0f);

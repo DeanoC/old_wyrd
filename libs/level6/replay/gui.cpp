@@ -118,6 +118,9 @@ auto Gui::render(bool showUI_, double deltaT_, std::shared_ptr<Render::Encoder> 
 		case MainViewType::Mesh:
 			meshView(deltaT_, encoder_);
 			break;
+		case MainViewType::TacticalMaps:
+			tacticalMapView(deltaT_, encoder_);
+			break;
 	}
 }
 
@@ -146,18 +149,19 @@ auto Gui::sceneView(double deltaT_, std::shared_ptr<Render::Encoder> const& enco
 
 		meshModRenderer->render(rootMat, meshObject.index, encoder_);
 	}
-
+/*
 	for(auto const& renderTile : renderTiles)
 	{
 		auto rootMat = Math::identity<Math::mat4x4>();
 		meshModRenderer->render(rootMat, renderTile.sceneIndex, encoder_);
 	}
-
+*/
 }
 
 auto Gui::meshView(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void
 {
 	cameraMode = CameraMode::ArcBall;
+	arcBallFocusPoint = Math::vec3(0,0,0);
 
 	std::string comboString = {};
 	std::vector<std::string> nameLookup;
@@ -183,6 +187,48 @@ auto Gui::meshView(double deltaT_, std::shared_ptr<Render::Encoder> const& encod
 			yrot / 2.0f,
 			Math::vec3(0, 0, 1));
 */
+	meshModRenderer->render(
+			Math::identity<Math::mat4x4>(),
+			sceneIndex,
+			encoder_);
+}
+
+auto Gui::tacticalMapView(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void
+{
+	cameraMode = CameraMode::FPS;
+
+	std::string comboString = {};
+	std::vector<std::string> nameLookup;
+	nameLookup.reserve(tacticalMaps.size());
+	for(auto const& [name, index] : tacticalMaps)
+	{
+		comboString += name + '\0';
+		nameLookup.push_back(name);
+	}
+
+	ImGui::Combo("Select Mesh", &tacMapViewSelectedItem, comboString.c_str());
+	if (tacMapViewSelectedItem >= (int)nameLookup.size()) return;
+
+	auto const sceneIndex = tacticalMaps[nameLookup[tacMapViewSelectedItem]].first;
+	auto const& tiles = tacticalMaps[nameLookup[tacMapViewSelectedItem]].second;
+
+	Geometry::AABB total;
+	for(auto const& tile : *tiles)
+	{
+		total.expandBy(tile.aabb);
+	}
+	arcBallFocusPoint = total.getBoxCenter();
+
+	yrot += float(deltaT_ * 0.5);
+	/*		rootScene->transform.orientation = Math::rotate(
+				Math::identity<Math::quat>(),
+				yrot,
+				Math::vec3(0, 1, 0));
+		rootScene->transform.orientation = Math::rotate(
+				rootScene->transform.orientation,
+				yrot / 2.0f,
+				Math::vec3(0, 0, 1));
+	*/
 	meshModRenderer->render(
 			Math::identity<Math::mat4x4>(),
 			sceneIndex,
@@ -217,6 +263,10 @@ auto Gui::menu() -> void
 			if(ImGui::MenuItem("Mesh", nullptr))
 			{
 				mainView = MainViewType::Mesh;
+			}
+			if(ImGui::MenuItem("TacticalMaps", nullptr))
+			{
+				mainView = MainViewType::TacticalMaps;
 			}
 			ImGui::EndMenu();
 		}
@@ -679,19 +729,30 @@ auto Gui::tacmapCallback(Item const& item_) -> bool
 	{
 		for(auto const& tmap : tactMaps)
 		{
+			auto rootScene = std::make_shared<MeshMod::SceneNode>();
+			auto renderTiles = std::make_shared<std::vector<TacMapTile>>();
 			for(auto z = 0;z < tmap->getHeight();++z)
 			{
 				for(auto x = 0;x < tmap->getWidth();++x)
 				{
-					tmapTileGenerateMesh(x, z, tmap);
+					tmapTileGenerateMesh(x, z, rootScene, renderTiles, tmap);
 				}
 			}
+			tacticalMaps[tmap->getName()] = {
+					meshModRenderer->addScene(rootScene),
+					renderTiles
+			};
 		}
 	}
 
 	return okay;
 }
-auto Gui::tmapTileGenerateMesh(int x_, int z_, std::shared_ptr<TacticalMap> const& tmap_) -> void
+auto Gui::tmapTileGenerateMesh(
+		int x_,
+		int z_,
+		std::shared_ptr<MeshMod::SceneNode>& rootScene_,
+		std::shared_ptr<std::vector<TacMapTile>>& renderTiles_,
+		std::shared_ptr<TacticalMap> const& tmap_) -> void
 {
 	auto const& tile = tmap_->getTile(x_,z_);
 	Math::vec2 tilePos = tmap_->getBottomLeft() + Math::vec2(x_,z_);
@@ -711,10 +772,10 @@ auto Gui::tmapTileGenerateMesh(int x_, int z_, std::shared_ptr<TacticalMap> cons
 			Math::vec3(tilePos.x, minHeight, tilePos.y),
 			Math::vec3(tilePos.x+1.0f, maxHeight, tilePos.y+1.0f)
 			);
-	auto rootScene = std::make_shared<MeshMod::SceneNode>();
-	rootScene->addObject(MeshOps::Shapes::CreateAABB(renderTile.aabb));
-	renderTile.sceneIndex = meshModRenderer->addScene(rootScene);
-	renderTiles.push_back(renderTile);
+	renderTile.objectIndex = rootScene_->getObjectCount();
+	rootScene_->addObject(MeshOps::Shapes::CreateAABB(renderTile.aabb));
+
+	renderTiles_->push_back(renderTile);
 }
 
 }

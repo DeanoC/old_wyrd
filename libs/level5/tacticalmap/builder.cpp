@@ -18,10 +18,12 @@ extern enki::TaskScheduler g_EnkiTS;
 
 TacticalMapBuilder::TacticalMapBuilder( Math::vec2 const bottomLeft_,
 										TileCoord_t width_,
-										TileCoord_t height_ ) :
+										TileCoord_t height_,
+										std::string const& name_) :
 		bottomLeft( std::floor(bottomLeft_.x + 0.5f), std::floor(bottomLeft_.y + 0.5f)),
 		width( width_ ),
 		height( height_ ),
+		name(name_),
 		tileBuilders( width_ * height_ )
 {
 }
@@ -299,6 +301,11 @@ std::shared_ptr<TacticalMap> TacticalMapBuilder::build()
 	tmap->sizeOfTacticalMapTile = sizeof(TacticalMapTile);
 	tmap->sizeOfTacticalMapTileLevel = sizeof(TacticalMapTileLevel);
 	tmap->sizeOfTacticalLevelData = tacticalLevelDataSize;
+	char* tname = (char*) malloc(name.size()+1);
+	std::memcpy(tname, name.data(), name.size());
+	tname[name.size()] = '\0';
+	tmap->name = tname;
+
 	tmap->levels = levels;
 	tmap->map = map;
 	tmap->levelDataHeap = levelDatasByte;
@@ -306,6 +313,7 @@ std::shared_ptr<TacticalMap> TacticalMapBuilder::build()
 	return std::shared_ptr<TacticalMap>(tmap,
 		[](TacticalMap* ptr)
 	{
+		if(ptr) free((void*)ptr->name);
 		free(ptr);
 	});
 }

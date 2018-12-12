@@ -293,6 +293,11 @@ auto ImguiBindings::newFrame(uint32_t width_, uint32_t height_) -> void
 		if (g_Keyboard && io.WantCaptureKeyboard) g_Keyboard->inputConsumed();
 		if (g_Mouse && io.WantCaptureMouse) g_Mouse->inputConsumed();
 	}
+	else
+	{
+		io.WantCaptureKeyboard = false;
+		io.WantCaptureMouse = false;
+	}
 
 }
 

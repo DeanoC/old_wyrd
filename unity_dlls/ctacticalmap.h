@@ -45,7 +45,7 @@ struct CTacticalMapInterface
 	CAPI auto (*CTMS_Delete)(TacticalMapStitcherHandle ctmsHandle) -> void;
 
 	// build API
-	CAPI auto (*CTMB_CreateBuilder)(float* bounds2D)->TacticalMapBuilderHandle;
+	CAPI auto (*CTMB_CreateBuilder)(float* bounds2D, char const* name)->TacticalMapBuilderHandle;
 	CAPI auto (*CTMB_SetMinimumHeight)(TacticalMapBuilderHandle handle_, float const minHeight_) -> void;
 	CAPI auto (*CTMB_SetOpaqueLevelDataSize)(TacticalMapBuilderHandle handle_, uint32_t const size_) -> void;
 	CAPI auto (*CTMB_AddMeshAt)(TacticalMapBuilderHandle handle, TacticalMapHandle meshHandle, TacticalMapLevelDataHeader const* opaqueData, float const* matrix) -> void;

@@ -213,6 +213,10 @@ struct App
 
 			bool const arcBallCam = (replayGui->getCameraMode() == Replay::Gui::CameraMode::ArcBall);
 			simplePadCamera->enabled = !arcBallCam;
+			if(arcBallCam)
+			{
+				arcBallCamera->lookatPoint = replayGui->getArcBallFocusPoint();
+			}
 			auto const simpleEye = arcBallCam ? arcBallCamera->simpleEye : simplePadCamera->simpleEye;
 
 			SimpleForwardGlobals* globals = (SimpleForwardGlobals*)globalBuffer->map();
@@ -224,8 +228,6 @@ struct App
 
 			imguiBindings->newFrame(display->getWidth(), display->getHeight());
 
-			bool show_demo_window = false;
-
 			auto encoder = rEncoderPool->allocateEncoder(EncoderFlag::RenderEncoder);
 			auto renderEncoder = encoder->asRenderEncoder();
 
@@ -233,7 +235,7 @@ struct App
 			colourRT0->transitionToRenderTarget(encoder);
 			renderEncoder->beginRenderPass(renderPass, renderTarget);
 
-			replayGui->render(showGui, deltaT, encoder);
+			replayGui->render(true, deltaT, encoder);
 			imguiBindings->render(encoder);
 
 			renderEncoder->endRenderPass();
@@ -258,7 +260,8 @@ struct App
 				if(Input::g_Keyboard->keyDown(Key::KT_ESCAPE)) return true;
 	
 				if (Input::g_Mouse && 
-					Input::g_Keyboard->keyDownOnce(Key::KT_1))
+					!imguiBindings->wantCapturedKeyboard() &&
+					Input::g_Keyboard->keyDownOnce(Key::KT_TAB))
 				{
 					if (showGui)
 					{
