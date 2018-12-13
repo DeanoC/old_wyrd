@@ -35,7 +35,8 @@ struct ArcBallCamera
 			float mouseVertical = g_Mouse->getMouseWheelVertical();
 			if (altDown)
 			{
-				distance += 100.0 * deltaT_;
+				distance += mouseVertical * 100.0 * deltaT_;
+				if (distance < 1.0) distance = 1.0;
 			}
 
 			if (altDown && g_Mouse->buttonDown(MouseButton::Left))
@@ -86,7 +87,7 @@ struct ArcBallCamera
 			}
 			if (g_Keyboard->keyDown(Key::KT_S))
 			{
-				lookatPoint += forward * float(100.0 * deltaT_);
+				lookatPoint -= forward * float(100.0 * deltaT_);
 			}
 			if(g_Keyboard->keyDown(Key::KT_A))
 			{

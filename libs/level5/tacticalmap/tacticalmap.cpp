@@ -31,9 +31,9 @@ ITacticalMapBuilder::Ptr TacticalMap::allocateBuilder(Math::vec2 const bottomLef
 	return std::make_shared<TacticalMapBuilder>(bottomLeft_, width_, height_, name_);
 }
 
-ITacticalMapStitcher::Ptr TacticalMap::allocateStitcher()
+ITacticalMapStitcher::Ptr TacticalMap::allocateStitcher(char const* name_)
 {
-	return std::make_shared<TacticalMapStitcher>();
+	return std::make_shared<TacticalMapStitcher>(name_);
 }
 
 TacticalMap::ConstLevelDataPair TacticalMap::lookupAtWorld(

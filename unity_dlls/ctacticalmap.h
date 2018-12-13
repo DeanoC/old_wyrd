@@ -39,7 +39,7 @@ struct CTacticalMapInterface
 	CAPI auto (*CTM_LookupLevelDataAtWorld)(TacticalMapHandle ctmHandle, float const* point, float const range, uint32_t levelMask, TacticalMapLevelDataHeader* out) -> bool;
 	CAPI auto (*CTM_DamageStructure)(TacticalMapHandle ctmHandle, float const* center, float const* extent) -> void;
 
-	CAPI auto (*CTMS_CreateStitcher)() -> TacticalMapStitcherHandle;
+	CAPI auto (*CTMS_CreateStitcher)(char const* name_) -> TacticalMapStitcherHandle;
 	CAPI auto (*CTMS_AddParcelInstances)(TacticalMapStitcherHandle ctmsHandle, TacticalMapHandle tmHandle, ParcelInstances* instances) -> void;
 	CAPI auto (*CTMS_Stitch)(TacticalMapStitcherHandle ctmsHandle)->TacticalMapHandle;
 	CAPI auto (*CTMS_Delete)(TacticalMapStitcherHandle ctmsHandle) -> void;

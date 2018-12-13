@@ -34,17 +34,25 @@ struct BasicMeshTest : public GfxTest
 		auto child3 = std::make_shared<MeshMod::SceneNode>();
 		child3->addObject(sphere);
 
+		std::shared_ptr<MeshMod::Mesh> squareZ = MeshOps::Shapes::CreateSquare(Math::vec3(0,0,0), Math::vec3(0,0,1));
+		auto child4 = std::make_shared<MeshMod::SceneNode>();
+		child4->addObject(squareZ);
+
 		rootScene->addChild(child0);
 		rootScene->addChild(child1);
 		rootScene->addChild(child2);
 		rootScene->addChild(child3);
+		rootScene->addChild(child4);
 
 		child0->transform.position = Math::vec3(-2, 0, 0);
 		child1->transform.position = Math::vec3(2, 0, 0);
 		child2->transform.position = Math::vec3(0, -2, 0);
 		child3->transform.position = Math::vec3(0, 2, 0);
+		child4->transform.position = Math::vec3(0, 0, 0);
 
-		sceneIndex = meshModRenderer->addScene(rootScene);
+		sceneIndex = meshModRenderer->addScene(
+			rootScene, 
+			MidRender::MeshModRenderer::RenderStyle::SolidConstantWire);
 	}
 
 	void tick(double deltaT_, std::shared_ptr<Render::Encoder>& encoder_) final

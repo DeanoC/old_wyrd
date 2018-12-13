@@ -323,14 +323,13 @@ CAPI auto CTMB_AddBoxAt(TacticalMapBuilderHandle handle, TacticalMapLevelDataHea
 	tmb->addBoxAt(box, levelData, transform);
 }
 
-CAPI auto CTMS_CreateStitcher() -> TacticalMapStitcherHandle
+CAPI auto CTMS_CreateStitcher(char const* name_) -> TacticalMapStitcherHandle
 {
 #if !defined(USING_STATIC_LIBS)
 	g_EnkiTS.Initialize();
 #endif
 
-	std::shared_ptr<ITacticalMapStitcher> builder = TacticalMap::allocateStitcher();
-
+	auto builder = TacticalMap::allocateStitcher(name_);
 	return unityOwnedTacticalMapStitchers.push(builder);
 }
 

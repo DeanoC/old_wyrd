@@ -41,6 +41,10 @@ public:
 	//! transform the mesh by a matrix
 	static auto transform(std::shared_ptr<MeshMod::Mesh> const& mesh, Math::mat4x4 const& transform ) -> void;
 
+	// currently only position and polygons are combined
+	static auto combine(std::shared_ptr<MeshMod::Mesh const> const& src_,
+						  std::shared_ptr<MeshMod::Mesh> const& dst_) -> void;
+
 	static auto isTriangleMesh(std::shared_ptr<MeshMod::Mesh const> const& mesh_) -> bool;
 
 	// takes a triangle mesh and generate a mesh with 4 output triangles per input triangle

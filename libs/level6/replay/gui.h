@@ -18,6 +18,7 @@ enum class SceneIndex : uint32_t;
 }
 namespace MeshMod{
 class SceneNode;
+class Mesh;
 }
 
 class TacticalMap;
@@ -122,6 +123,7 @@ protected:
 	auto tmapTileGenerateMesh(	int x_,
 								int z_,
 								std::shared_ptr<MeshMod::SceneNode>& rootScene_,
+								std::shared_ptr<MeshMod::Mesh>& combinedMesh,
 								std::shared_ptr<std::vector<TacMapTile>>& renderTiles_,
 							  	std::shared_ptr<TacticalMap> const& map_) -> void;
 

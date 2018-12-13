@@ -105,8 +105,8 @@ struct App
 		tickerClock = std::make_unique<Timing::TickerClock>();
 		createResources();
 
-//		underTest = CreateBasicMeshTest();
-		underTest = CreateDuckGltfTest();
+		underTest = CreateBasicMeshTest();
+//		underTest = CreateDuckGltfTest();
 //		underTest = CreateSponzaGltfTest();
 //		underTest = CreateTacmapGltfTest();
 		underTest->init(resourceManager);

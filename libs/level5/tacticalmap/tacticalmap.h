@@ -189,7 +189,7 @@ public:
 	static bool createFromStream(std::istream& in, std::vector<std::shared_ptr<TacticalMap>>& out_);
 
 	static ITacticalMapBuilder::Ptr allocateBuilder(Math::vec2 const bottomLeft_, TileCoord_t width_, TileCoord_t height_, char const* name_);
-	static ITacticalMapStitcher::Ptr allocateStitcher();
+	static ITacticalMapStitcher::Ptr allocateStitcher(char const* name_);
 
 	int getWidth() const { return (int)width; }
 	int getHeight() const { return (int)height; }

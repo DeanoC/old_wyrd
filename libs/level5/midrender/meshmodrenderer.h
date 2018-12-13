@@ -8,8 +8,13 @@
 #include "resourcemanager/resourcehandle.h"
 #include <vector>
 #include <unordered_map>
+#include <array>
 
-namespace MeshMod { class Mesh; class SceneNode; }
+namespace MeshMod {
+class Mesh;
+
+class SceneNode;
+}
 namespace ResourceManager { class ResourceMan; }
 namespace Render { struct Encoder; }
 
@@ -17,13 +22,25 @@ namespace MidRender {
 
 enum class MeshIndex : uint32_t;
 enum class SceneIndex : uint32_t;
+struct IMeshModRenderStyle;
 
 class MeshModRenderer
 {
 public:
+	enum class RenderStyle
+	{
+		SolidNormals,
+		SolidNormalsWire,
+		SolidConstant,
+		SolidConstantWire
+	};
+	static constexpr size_t RenderStylesCount = size_t(RenderStyle::SolidConstantWire) + 1;
 
 	struct RenderData
 	{
+		RenderStyle style;
+		std::array<float,4> colour;
+
 		uint32_t numIndices;
 		Render::BufferHandle vertexBufferHandle;
 		Render::BufferHandle indexBufferHandle;
@@ -42,29 +59,25 @@ public:
 	auto init(std::shared_ptr<ResourceManager::ResourceMan> const& rm_) -> void;
 	auto destroy() -> void;
 
-	auto addMeshMod(std::shared_ptr<MeshMod::Mesh> const& mesh_, bool smoothColours = false) -> MeshIndex;
-	auto addScene(std::shared_ptr<MeshMod::SceneNode> const& rootNode) -> SceneIndex;
+	auto addMeshMod(std::shared_ptr<MeshMod::Mesh> const& mesh_,
+					RenderStyle style_ = RenderStyle::SolidNormalsWire,
+					std::array<float,4> const& colour_ = {0.5f,0.5f,0.5f,1.0f},
+					bool smoothColours = false) -> MeshIndex;
 
-	auto render(Math::mat4x4 const& rootMatrix_, SceneIndex index_, std::shared_ptr<Render::Encoder> const& encoder_) -> void;
+	auto addScene(std::shared_ptr<MeshMod::SceneNode> const& rootNode,
+				  RenderStyle style_ = RenderStyle::SolidNormalsWire,
+				  std::array<float,4> const& colour_ = {0.5f,0.5f,0.5f,1.0f}) -> SceneIndex;
+
+	auto render(Math::mat4x4 const& rootMatrix_,
+				SceneIndex index_,
+				std::shared_ptr<Render::Encoder> const& encoder_) -> void;
 
 protected:
 	std::shared_ptr<ResourceManager::ResourceMan> rm;
 	std::vector<RenderData> meshes;
 	std::vector<SceneData> scenes;
 
-	Render::BindingTableMemoryMapHandle memoryMapHandle;
-	Render::BindingTableHandle bindingTableHandle;
-	Render::VertexInputHandle vertexInputHandle;
-
-	Render::RenderPipelineHandle renderPipelineHandle;
-	Render::SPIRVShaderHandle vertexShaderHandle;
-	Render::SPIRVShaderHandle fragmentShaderHandle;
-
-	Render::RenderPipelineHandle wireRenderPipelineHandle;
-	Render::SPIRVShaderHandle wireGeometryShaderHandle;
-	Render::SPIRVShaderHandle wireVertexShaderHandle;
-	Render::SPIRVShaderHandle wireFragmentShaderHandle;
-
+	IMeshModRenderStyle* renderStyles[RenderStylesCount];
 };
 
 }

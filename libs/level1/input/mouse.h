@@ -16,15 +16,25 @@ public:
 	static bool WinProcessMessages(void* phwnd, uint32_t message, uint64_t wParam, uint64_t lParam);
 #endif
 
-	Mouse() : buttonState{} {}
+	Mouse() : buttonState{}, absMousePos{}, mouseWheel{}
+	{}
 
 	bool buttonDown(MouseButton button) const { return ((buttonState[((uint16_t) button)] & ButtonDownFlag) != 0); }
 	bool buttonUp(MouseButton button) const { return !buttonDown(button); }
 	bool buttonHeld(MouseButton button) { return buttonState[((uint16_t) button)] & ButtonHeldFlag; };
 	bool buttonDoubleClicked(MouseButton button) { return buttonState[((uint16_t) button)] & ButtonDoubleClickFlag; };
 
-	float getMouseWheelVertical() const { return mouseWheel[0]; }
-	float getMouseWheelHorizontal() const { return mouseWheel[1]; }
+	float getMouseWheelVertical() { 
+		auto ret = mouseWheel[0];
+		mouseWheel[0] = 0;
+		return ret;
+	}
+	float getMouseWheelHorizontal() {
+		auto ret = mouseWheel[1];
+		mouseWheel[1] = 0;
+		return ret;
+	}
+
 	float getAbsMouseX() const { return absMousePos[0]; };
 	float getAbsMouseY() const { return absMousePos[1]; };
 
