@@ -1,6 +1,8 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 
+/*layout(constant_id = 0) */const int c_drawWire = 0;
+
 layout(push_constant) uniform pushConstants_t 
 { 
 	layout(offset = 64) vec4 pushColour; 
@@ -17,7 +19,9 @@ float edgeFactor(){
 
 void main() 
 {
-	float t = edgeFactor();
+	float t = 0.0;
+	if(c_drawWire !=0) t = edgeFactor();
+
 	vec3 c = vec3(pushConstants.pushColour);
 	vec3 ic = vec3(1) - c;
 	vec3 oc = mix(c, ic, t);

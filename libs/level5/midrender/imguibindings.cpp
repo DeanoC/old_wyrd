@@ -170,6 +170,7 @@ auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan> const& rm
 			{
 				{0, sizeof(float)*4, ShaderType::Vertex}
 			},
+			{},
 			{
 				vertexShaderHandle,
 				fragmentShaderHandle

@@ -231,11 +231,11 @@ bool System::Init(std::string const& appName_,
 	debugCreateInfo.pfnCallback = debug_callback;
 	debugCreateInfo.flags = 0 |
 							// VK_DEBUG_REPORT_INFORMATION_BIT_EXT |
-							//VK_DEBUG_REPORT_WARNING_BIT_EXT |
+							VK_DEBUG_REPORT_WARNING_BIT_EXT |
 							//VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
-							//VK_DEBUG_REPORT_DEBUG_BIT_EXT |
+							VK_DEBUG_REPORT_DEBUG_BIT_EXT |
 							VK_DEBUG_REPORT_ERROR_BIT_EXT;
-		vkCreateDebugReportCallbackEXT(instance, &debugCreateInfo, nullptr, &debugCallbackHandle);
+	vkCreateDebugReportCallbackEXT(instance, &debugCreateInfo, nullptr, &debugCallbackHandle);
 
 	uint32_t physDeviceCount;
 	CHK_F(vkEnumeratePhysicalDevices(instance, &physDeviceCount, nullptr));

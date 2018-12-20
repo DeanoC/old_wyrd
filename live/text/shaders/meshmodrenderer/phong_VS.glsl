@@ -17,10 +17,10 @@ layout(binding = 0) uniform globals_t
 } globals;
 
 out gl_PerVertex { vec4 gl_Position; };
-layout(location = 0) out vec4 outColour;
+layout(location = 0) out vec4 normal;
 
 void main() 
 {
-	outColour = inColour;
+	normal = inColour;
 	gl_Position = globals.viewprojection * pushConstants.world * inPos;
 } 

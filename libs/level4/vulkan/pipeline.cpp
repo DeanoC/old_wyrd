@@ -132,6 +132,10 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 
 		std::vector<VkPipelineShaderStageCreateInfo> stages;
 		stages.reserve(renderPipeline->numShaders);
+		std::array<VkSpecializationInfo, Render::ShaderTypeCount> specInfos;
+		std::array<std::vector<uint8_t>, Render::ShaderTypeCount> specDataBuffers;
+		std::array<std::vector<VkSpecializationMapEntry>, Render::ShaderTypeCount> specEntries;
+
 		for (auto m = 0u; m < renderPipeline->numShaders; ++m)
 		{
 			auto const& handle = renderPipeline->getSPIRVShaderHandles()[m];
@@ -143,7 +147,37 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 				stage.module = vulkanShader->shaderModule;
 				stage.stage = fromSingle(shader->shaderType);
 				stage.pName = "main"; // TODO
-				stage.pSpecializationInfo = nullptr; // TODO 
+
+				specEntries[m].reserve(renderPipeline->numSpecializationConstants);
+
+				auto const& specConstants = renderPipeline->getSpecializationConstants();
+				for(auto i = 0u; i < renderPipeline->numSpecializationConstants; ++i)
+				{
+					if((bool)(specConstants[i].shaderAccess & shader->shaderType))
+					{
+						specEntries[m].push_back({
+							specConstants[i].id,
+							(uint32_t) specDataBuffers[m].size(),
+							specConstants[i].sizeInBytes
+						});
+						specDataBuffers[m].insert(
+								specDataBuffers[m].end(),
+								specConstants[i].data,
+								specConstants[i].data + specConstants[i].sizeInBytes);
+					}
+				}
+				specInfos[m].mapEntryCount = (uint32_t)specEntries[m].size();
+				specInfos[m].dataSize = (uint32_t) specDataBuffers[m].size();
+				specInfos[m].pData = specDataBuffers[m].data();
+				specInfos[m].pMapEntries = specEntries[m].data();
+
+				if(specInfos[m].mapEntryCount > 0)
+				{
+					stage.pSpecializationInfo = &specInfos[m];
+				} else
+				{
+					stage.pSpecializationInfo = nullptr;
+				}
 				stages.push_back(stage);
 			}
 		}

@@ -32,8 +32,13 @@ public:
 		SolidNormals,
 		SolidNormalsWire,
 		SolidConstant,
-		SolidConstantWire
+		SolidConstantWire,
+		SolidDotFlat,
+		SolidDotFlatWire,
+		SolidDotPhong,
+		SolidDotPhongWire,
 	};
+
 	static constexpr size_t RenderStylesCount = size_t(RenderStyle::SolidConstantWire) + 1;
 
 	struct RenderData

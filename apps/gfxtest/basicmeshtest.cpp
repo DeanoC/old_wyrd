@@ -52,7 +52,8 @@ struct BasicMeshTest : public GfxTest
 
 		sceneIndex = meshModRenderer->addScene(
 			rootScene, 
-			MidRender::MeshModRenderer::RenderStyle::SolidConstantWire);
+			MidRender::MeshModRenderer::RenderStyle::SolidConstantWire,
+			{1.0f, 0.0f, 0.0f, 1.0f});
 	}
 
 	void tick(double deltaT_, std::shared_ptr<Render::Encoder>& encoder_) final

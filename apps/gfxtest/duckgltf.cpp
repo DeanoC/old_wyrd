@@ -33,7 +33,7 @@ struct DuckGltfTest : public GfxTest
 
 	void tick(double deltaT_, std::shared_ptr<Render::Encoder>& encoder_) final
 	{
-		yrot += float(deltaT_ * 0.5);
+//		yrot += float(deltaT_ * 0.5);
 		rootScene->transform.orientation = Math::rotate(
 				Math::identity<Math::quat>(),
 				yrot,

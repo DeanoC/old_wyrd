@@ -27,7 +27,7 @@ constexpr auto is_bitmask_enum(RenderPipelineFlags) -> bool { return true; }
 struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipelineId>
 {
 	static auto RegisterResourceHandler(ResourceManager::ResourceMan& rm_) -> void;
-	static constexpr uint16_t MajorVersion = 1;
+	static constexpr uint16_t MajorVersion = 2;
 	static constexpr uint16_t MinorVersion = 0;
 
 	// the shader array passed to Create should be only the shader used.
@@ -37,6 +37,7 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 	// 3 shaders =  vertex + geometry + fragment
 	// 4 shaders = vertex + tess control + tess eval + fragment
 	// 5 shaders = vertex + tess control + tess eval + geometry + fragment
+	// specialization constants including data are copied as a part of create
 	static auto Create(
 			std::shared_ptr<ResourceManager::ResourceMan> rm_,
 			ResourceManager::ResourceNameView const& name_,
@@ -45,6 +46,7 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 			DynamicPipelineState dynamicPipelineState_,
 			std::vector<BindingTableMemoryMapHandle> const& memoryMap_,
 			std::vector<PushConstantRange> const& pushConstantRanges_,
+			std::vector<SpecializationConstant> const& specializationConstants_,
 			std::vector<SPIRVShaderHandle> const& shaders_,
 			RasterisationStateHandle rasterisationState_,
 			RenderPassHandle renderPass_,
@@ -100,7 +102,6 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::StencilReference);
 	}
 
-
 	PushConstantRange const* getPushConstantRanges() const
 	{
 		return (PushConstantRange*) (getBindingTableMemoryMapHandles() + numBindingTableMemoryMaps);
@@ -111,6 +112,12 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 		return (SPIRVShaderHandle*) (getPushConstantRanges() + numPushConstantRanges);
 	}
 
+	SpecializationConstant const* getSpecializationConstants() const
+	{
+		return (SpecializationConstant*) (getSPIRVShaderHandles() + numShaders);
+
+	}
+
 	DynamicPipelineState dynamicPipelineState;
 	Topology inputTopology;
 	RenderPipelineFlags flags;
@@ -118,7 +125,7 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 	uint8_t numBindingTableMemoryMaps;
 	uint8_t numPushConstantRanges;
 	uint8_t numShaders;
-	uint8_t paddb;
+	uint8_t numSpecializationConstants;
 
 	RasterisationStateHandle rasterisationState;
 	RenderPassHandle renderPass;

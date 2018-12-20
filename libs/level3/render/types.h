@@ -156,6 +156,7 @@ enum class ShaderType : uint8_t
 	Fragment = Core::Bit(4),
 	Compute = Core::Bit(5)
 };
+static constexpr int ShaderTypeCount = 6;
 
 enum class BindingTableType : uint8_t
 {
@@ -325,6 +326,15 @@ struct PushConstantRange
 	uint32_t offset;
 	uint32_t sizeInBytes;
 	ShaderType shaderAccess;
+};
+
+struct SpecializationConstant
+{
+	ShaderType shaderAccess;
+	uint32_t id;
+
+	uint8_t const* data;
+	uint32_t sizeInBytes;
 };
 
 constexpr auto is_bitmask_enum(RenderPipelineStages) -> bool { return true; }

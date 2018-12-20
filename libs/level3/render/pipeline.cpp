@@ -90,6 +90,7 @@ auto RenderPipeline::Create(
 		DynamicPipelineState dynamicPipelineState_,
 		std::vector<BindingTableMemoryMapHandle> const& memoryMap_,
 		std::vector<PushConstantRange> const& pushConstantRanges_,
+		std::vector<SpecializationConstant> const& specializationConstants_,
 		std::vector<SPIRVShaderHandle> const& shaders_, // vertex, fragment, geometry, tess control, tess eval
 		RasterisationStateHandle rasterisationState_,
 		RenderPassHandle renderPass_,
@@ -102,7 +103,8 @@ auto RenderPipeline::Create(
 	size_t const memoryMapSize = sizeof(BindingTableMemoryMapHandle) * memoryMap_.size();
 	size_t const pushSize = sizeof(PushConstantRange) * pushConstantRanges_.size();
 	size_t const shaderSize = sizeof(SPIRVShaderHandle) * shaders_.size();
-	size_t const dataSize = memoryMapSize + pushSize + shaderSize;
+	size_t const specialSize = sizeof(SpecializationConstant) * specializationConstants_.size();
+	size_t const dataSize = memoryMapSize + pushSize + shaderSize + specialSize;
 
 	size_t const totalSize = sizeof(RenderPipeline) + dataSize;
 
@@ -117,6 +119,7 @@ auto RenderPipeline::Create(
 	obj->numBindingTableMemoryMaps = (uint8_t) memoryMap_.size();
 	obj->numPushConstantRanges = (uint8_t) pushConstantRanges_.size();
 	obj->numShaders = (uint8_t) shaders_.size();
+	obj->numSpecializationConstants = (uint8_t)specializationConstants_.size();
 
 	auto memorymapPtr = obj->getBindingTableMemoryMapHandles();
 	std::memcpy(const_cast<BindingTableMemoryMapHandle*>(memorymapPtr), memoryMap_.data(), memoryMapSize);
@@ -124,6 +127,8 @@ auto RenderPipeline::Create(
 	std::memcpy(const_cast<PushConstantRange*>(pushPtr), pushConstantRanges_.data(), pushSize);
 	auto shaderPtr = obj->getSPIRVShaderHandles();
 	std::memcpy(const_cast<SPIRVShaderHandle*>(shaderPtr), shaders_.data(), shaderSize);
+	auto specialPtr = obj->getSpecializationConstants();
+	std::memcpy(const_cast<SpecializationConstant*>(specialPtr), specializationConstants_.data(), specialSize);
 
 	obj->rasterisationState = rasterisationState_;
 	obj->renderPass = renderPass_;
