@@ -65,7 +65,7 @@ struct SolidNormalsRenderStyle : public IMeshModRenderStyle
 	{
 		using namespace Render;
 		using namespace ResourceManager;
-		using namespace Core::bitmask;
+		using namespace Core;
 		using namespace std::literals;
 		using rnv = ResourceNameView;
 
@@ -122,7 +122,7 @@ struct SolidNormalsWireRenderStyle : public IMeshModRenderStyle
 	{
 		using namespace Render;
 		using namespace ResourceManager;
-		using namespace Core::bitmask;
+		using namespace Core;
 		using namespace std::literals;
 		using rnv = ResourceNameView;
 
@@ -179,7 +179,7 @@ struct SolidConstantRenderStyle : public IMeshModRenderStyle
 	{
 		using namespace Render;
 		using namespace ResourceManager;
-		using namespace Core::bitmask;
+		using namespace Core;
 		using namespace std::literals;
 		using rnv = ResourceNameView;
 
@@ -258,7 +258,7 @@ struct SolidConstantWireRenderStyle : public SolidConstantRenderStyle
 	{
 		using namespace Render;
 		using namespace ResourceManager;
-		using namespace Core::bitmask;
+		using namespace Core;
 		using namespace std::literals;
 		using rnv = ResourceNameView;
 
@@ -300,7 +300,7 @@ struct SolidDotFixedFlatLitRenderStyle : public SolidConstantRenderStyle
 	{
 		using namespace Render;
 		using namespace ResourceManager;
-		using namespace Core::bitmask;
+		using namespace Core;
 		using namespace std::literals;
 		using rnv = ResourceNameView;
 
@@ -342,7 +342,7 @@ struct SolidDotFixedFlatLitWireRenderStyle : public SolidConstantRenderStyle
 	{
 		using namespace Render;
 		using namespace ResourceManager;
-		using namespace Core::bitmask;
+		using namespace Core;
 		using namespace std::literals;
 		using rnv = ResourceNameView;
 
@@ -384,7 +384,7 @@ auto MeshModRenderer::init(std::shared_ptr<ResourceManager::ResourceMan> const& 
 {
 	using namespace Render;
 	using namespace ResourceManager;
-	using namespace Core::bitmask;
+	using namespace Core;
 	using namespace std::literals;
 	using rnv = ResourceNameView;
 
