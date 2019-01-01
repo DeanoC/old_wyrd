@@ -193,6 +193,8 @@ struct App
 			std::memcpy(globals->projectionMatrix, &simpleEye->getProjection(), sizeof(float) * 16);
 			auto viewProj = simpleEye->getProjection() * simpleEye->getView();
 			std::memcpy(globals->viewProjectionMatrix, &viewProj, sizeof(float) * 16);
+			auto inverseViewProj = Math::inverse(viewProj);
+			std::memcpy(globals->inverseViewProjectionMatrix, &inverseViewProj, sizeof(float) * 16);
 			globalBuffer->unmap();
 
 			imguiBindings->newFrame(display->getWidth(), display->getHeight());

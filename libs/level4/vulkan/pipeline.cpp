@@ -162,8 +162,8 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 						});
 						specDataBuffers[m].insert(
 								specDataBuffers[m].end(),
-								specConstants[i].data,
-								specConstants[i].data + specConstants[i].sizeInBytes);
+								(uint8_t*)specConstants[i].data,
+								((uint8_t*)specConstants[i].data) + specConstants[i].sizeInBytes);
 					}
 				}
 				specInfos[m].mapEntryCount = (uint32_t)specEntries[m].size();

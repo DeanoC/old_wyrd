@@ -29,17 +29,19 @@ class MeshModRenderer
 public:
 	enum class RenderStyle
 	{
-		SolidNormals,
-		SolidNormalsWire,
 		SolidConstant,
 		SolidConstantWire,
+		SolidNormalsFlat,
+		SolidNormalsFlatWire,
+		SolidNormalsPhong,
+		SolidNormalsPhongWire,
 		SolidDotFlat,
 		SolidDotFlatWire,
 		SolidDotPhong,
 		SolidDotPhongWire,
 	};
 
-	static constexpr size_t RenderStylesCount = size_t(RenderStyle::SolidConstantWire) + 1;
+	static constexpr size_t RenderStylesCount = size_t(RenderStyle::SolidDotPhongWire) + 1;
 
 	struct RenderData
 	{
@@ -65,12 +67,11 @@ public:
 	auto destroy() -> void;
 
 	auto addMeshMod(std::shared_ptr<MeshMod::Mesh> const& mesh_,
-					RenderStyle style_ = RenderStyle::SolidNormalsWire,
-					std::array<float,4> const& colour_ = {0.5f,0.5f,0.5f,1.0f},
-					bool smoothColours = false) -> MeshIndex;
+					RenderStyle style_ = RenderStyle::SolidNormalsFlatWire,
+					std::array<float,4> const& colour_ = {0.5f,0.5f,0.5f,1.0f} ) -> MeshIndex;
 
 	auto addScene(std::shared_ptr<MeshMod::SceneNode> const& rootNode,
-				  RenderStyle style_ = RenderStyle::SolidNormalsWire,
+				  RenderStyle style_ = RenderStyle::SolidNormalsFlatWire,
 				  std::array<float,4> const& colour_ = {0.5f,0.5f,0.5f,1.0f}) -> SceneIndex;
 
 	auto render(Math::mat4x4 const& rootMatrix_,

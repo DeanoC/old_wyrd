@@ -12,6 +12,7 @@ struct SimpleForwardGlobals
 	float viewMatrix[16];
 	float projectionMatrix[16];
 	float viewProjectionMatrix[16];
+	float inverseViewProjectionMatrix[16];
 };
 
 }

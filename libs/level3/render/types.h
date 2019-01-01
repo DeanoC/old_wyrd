@@ -328,13 +328,13 @@ struct PushConstantRange
 	ShaderType shaderAccess;
 };
 
+// TODO better data variant handling
 struct SpecializationConstant
 {
-	ShaderType shaderAccess;
-	uint32_t id;
-
-	uint8_t const* data;
+	int32_t data[16]; // Max constant size is 4x4 float matrix
 	uint32_t sizeInBytes;
+	uint32_t id;
+	ShaderType shaderAccess;
 };
 
 constexpr auto is_bitmask_enum(RenderPipelineStages) -> bool { return true; }

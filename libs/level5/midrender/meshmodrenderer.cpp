@@ -25,172 +25,82 @@ namespace MidRender {
 
 struct IMeshModRenderStyle
 {
+	enum class FragmentStyle : int32_t
+	{
+		Constant = 0,
+		Normal = 1,
+		Dot = 2
+	};
 	virtual ~IMeshModRenderStyle() = default;
 
-	virtual void init(std::shared_ptr<ResourceManager::ResourceMan> const& rm_)
-	{
-		rm = rm_;
-	};
+	virtual void init(
+			std::shared_ptr<ResourceManager::ResourceMan> const& rm_,
+			FragmentStyle style_,
+			bool withWire_,
+			bool phongNormals_) = 0;
 
 	virtual void bind(
 			MeshModRenderer::RenderData const& data_,
-			std::shared_ptr<Render::Encoder> const& encoder_)
-	{
-		using namespace Render;
-		using namespace ResourceManager;
-
-		auto renderEncoder = encoder_->asRenderEncoder();
-		auto renderPipeline = renderPipelineHandle.acquire<RenderPipeline>();
-		auto bindingTable = bindingTableHandle.acquire<BindingTable>();
-
-		renderEncoder->bind(renderPipeline, bindingTable);
-	}
+			std::shared_ptr<Render::Encoder> const& encoder_) = 0;
 
 	virtual void pushConstants(
-			MeshModRenderer::RenderData const& data_,
+			MeshModRenderer::RenderData const& rd_,
 			std::shared_ptr<Render::Encoder> const& encoder_,
 			Math::mat4x4 const& worldMatrix_) = 0;
 
-	std::shared_ptr<ResourceManager::ResourceMan> rm;
-
-	Render::RenderPipelineHandle renderPipelineHandle;
-	Render::BindingTableHandle bindingTableHandle;
 };
-namespace {
 
-struct SolidNormalsRenderStyle : public IMeshModRenderStyle
+struct DefaultMeshModRenderStyle : public IMeshModRenderStyle
 {
-
-	void init(std::shared_ptr<ResourceManager::ResourceMan> const& rm_) final
+	void init(
+			std::shared_ptr<ResourceManager::ResourceMan> const& rm_,
+			FragmentStyle style_,
+			bool withWire_,
+			bool phongNormals_) final
 	{
 		using namespace Render;
 		using namespace ResourceManager;
-		using namespace Core;
 		using namespace std::literals;
+		using namespace Core;
 		using rnv = ResourceNameView;
 
-		IMeshModRenderStyle::init(rm_);
+		rm = rm_;
 
 		bindingTableHandle = rm->openByName<BindingTableId>(rnv("mem$MMR_BindingTable0"));
 
-		renderPipelineHandle = RenderPipeline::Create(
-				rm_,
-				rnv(fmt::format("mem$MMR_RenderPipeline{}"s, (int)MeshModRenderer::RenderStyle::SolidNormals)),
-				Topology::Triangles,
-				RenderPipelineFlags::None,
-				DynamicPipelineState::None,
-				{
-						rm->openByName<BindingTableMemoryMapId>(rnv("mem$MMR_BindingTableMemoryMap0")),
-				},
-				{
-						{0, sizeof(float) * 16, ShaderType::Vertex} // world matrix
-				},
-				{},
-				{
-						rm->openByName<SPIRVShaderId>(rnv("mem$MMR_Phong_VS")),
-						rm->openByName<SPIRVShaderId>(rnv("mem$MMR_Normals_FS")),
-				},
-				rm->openByName<RasterisationStateId>(Stock::simpleForwardRasterState),
-				rm->openByName<RenderPassId>(Stock::simpleForwardRenderPass),
-				rm->openByName<ROPBlenderId>(Stock::singleOpaqueROPBlender),
-				rm->openByName<VertexInputId>(rnv("mem$MMR_VertexFormat")),
-				rm->openByName<ViewportId>(Stock::simpleForwardViewport)
-		);
-	}
+		std::vector specializationConstants =
+		{
+				SpecializationConstant{
+						{ withWire_ }, sizeof(int32_t),
+						0,
+						ShaderType::Vertex | ShaderType::Geometry | ShaderType::Fragment},
 
-	void pushConstants(
-			MeshModRenderer::RenderData const& data_,
-			std::shared_ptr<Render::Encoder> const& encoder_,
-			Math::mat4x4 const& worldMatrix_) final
-	{
-		using namespace Render;
-		using namespace ResourceManager;
-		auto renderEncoder = encoder_->asRenderEncoder();
-		auto renderPipeline = renderPipelineHandle.acquire<RenderPipeline>();
+				SpecializationConstant{
+						{ phongNormals_ }, sizeof(int32_t),
+						1,
+						ShaderType::Vertex | ShaderType::Geometry},
 
-		renderEncoder->pushConstants(
-				renderPipeline,
-				PushConstantRange{0, sizeof(float) * 16, ShaderType::Vertex},
-				&worldMatrix_);
-	}
+				SpecializationConstant{
+						{(int32_t)style_}, sizeof(int32_t),
+						1,
+						ShaderType::Fragment},
+		};
 
-};
+		std::vector shaders = {
+				rm->openByName<SPIRVShaderId>(rnv("mem$MMR_all_VS")),
+				rm->openByName<SPIRVShaderId>(rnv("mem$MMR_all_FS")),
+		};
 
-struct SolidNormalsWireRenderStyle : public IMeshModRenderStyle
-{
-	void init(std::shared_ptr<ResourceManager::ResourceMan> const& rm_) final
-	{
-		using namespace Render;
-		using namespace ResourceManager;
-		using namespace Core;
-		using namespace std::literals;
-		using rnv = ResourceNameView;
-
-		IMeshModRenderStyle::init(rm_);
-
-		bindingTableHandle = rm->openByName<BindingTableId>(rnv("mem$MMR_BindingTable0"));
+		if(withWire_ || !phongNormals_)
+		{
+			shaders.push_back(
+					rm->openByName<SPIRVShaderId>(rnv("mem$MMR_all_GS"))
+			);
+		}
 
 		renderPipelineHandle = RenderPipeline::Create(
 				rm_,
-				rnv(fmt::format("mem$MMR_RenderPipeline{}"s, (int)MeshModRenderer::RenderStyle::SolidNormalsWire)),
-				Topology::Triangles,
-				RenderPipelineFlags::None,
-				DynamicPipelineState::None,
-				{
-						rm->openByName<BindingTableMemoryMapId>(rnv("mem$MMR_BindingTableMemoryMap0")),
-				},
-				{
-						{0, sizeof(float) * 16, ShaderType::Vertex} // world matrix
-				},
-				{},
-				{
-						rm->openByName<SPIRVShaderId>(rnv("mem$MMR_Phong_VS")),
-						rm->openByName<SPIRVShaderId>(rnv("mem$MMR_Phong_Bary_GS")),
-						rm->openByName<SPIRVShaderId>(rnv("mem$MMR_Normals_FS")),
-				},
-				rm->openByName<RasterisationStateId>(Stock::simpleForwardRasterState),
-				rm->openByName<RenderPassId>(Stock::simpleForwardRenderPass),
-				rm->openByName<ROPBlenderId>(Stock::singleOpaqueROPBlender),
-				rm->openByName<VertexInputId>(rnv("mem$MMR_VertexFormat")),
-				rm->openByName<ViewportId>(Stock::simpleForwardViewport)
-		);
-	}
-
-	void pushConstants(
-			MeshModRenderer::RenderData const& data_,
-			std::shared_ptr<Render::Encoder> const& encoder_,
-			Math::mat4x4 const& worldMatrix_) final
-	{
-		using namespace Render;
-		using namespace ResourceManager;
-		auto renderEncoder = encoder_->asRenderEncoder();
-		auto renderPipeline = renderPipelineHandle.acquire<RenderPipeline>();
-
-		renderEncoder->pushConstants(
-				renderPipeline,
-				PushConstantRange{0, sizeof(float) * 16, ShaderType::Vertex},
-				&worldMatrix_);
-	}
-};
-
-struct SolidConstantRenderStyle : public IMeshModRenderStyle
-{
-	void init(std::shared_ptr<ResourceManager::ResourceMan> const& rm_) override
-	{
-		using namespace Render;
-		using namespace ResourceManager;
-		using namespace Core;
-		using namespace std::literals;
-		using rnv = ResourceNameView;
-
-		IMeshModRenderStyle::init(rm_);
-
-		bindingTableHandle = rm->openByName<BindingTableId>(rnv("mem$MMR_BindingTable0"));
-
-		static const uint32_t c_drawWire = 0;
-		renderPipelineHandle = RenderPipeline::Create(
-				rm_,
-				rnv(fmt::format("mem$MMR_RenderPipeline{}"s, (int)MeshModRenderer::RenderStyle::SolidConstant)),
+				rnv(fmt::format("mem$MMR_RenderPipeline{}{}{}"s, (int) style_, withWire_, phongNormals_)),
 				Topology::Triangles,
 				RenderPipelineFlags::None,
 				DynamicPipelineState::None,
@@ -201,20 +111,16 @@ struct SolidConstantRenderStyle : public IMeshModRenderStyle
 						{0,  sizeof(float) * 16, ShaderType::Vertex}, // world matrix
 						{64, sizeof(float) * 4,  ShaderType::Fragment}, // colour
 				},
-				{
-					SpecializationConstant{ ShaderType::Fragment, 0, (uint8_t*)&c_drawWire, sizeof(uint32_t) }
-				},
-				{
-						rm->openByName<SPIRVShaderId>(rnv("mem$MMR_Phong_VS")),
-						rm->openByName<SPIRVShaderId>(rnv("mem$MMR_Constant_FS")),
-				},
+				specializationConstants,
+				shaders,
 				rm->openByName<RasterisationStateId>(Stock::simpleForwardRasterState),
 				rm->openByName<RenderPassId>(Stock::simpleForwardRenderPass),
 				rm->openByName<ROPBlenderId>(Stock::singleOpaqueROPBlender),
 				rm->openByName<VertexInputId>(rnv("mem$MMR_VertexFormat")),
 				rm->openByName<ViewportId>(Stock::simpleForwardViewport)
 		);
-	}
+
+	};
 
 	void bind(
 			MeshModRenderer::RenderData const& data_,
@@ -250,135 +156,12 @@ struct SolidConstantRenderStyle : public IMeshModRenderStyle
 				PushConstantRange{64, sizeof(float) * 4, ShaderType::Fragment},
 				rd_.colour.data());
 	}
+
+	std::shared_ptr<ResourceManager::ResourceMan> rm;
+
+	Render::RenderPipelineHandle renderPipelineHandle;
+	Render::BindingTableHandle bindingTableHandle;
 };
-
-struct SolidConstantWireRenderStyle : public SolidConstantRenderStyle
-{
-	void init(std::shared_ptr<ResourceManager::ResourceMan> const& rm_) final
-	{
-		using namespace Render;
-		using namespace ResourceManager;
-		using namespace Core;
-		using namespace std::literals;
-		using rnv = ResourceNameView;
-
-		IMeshModRenderStyle::init(rm_);
-
-		bindingTableHandle = rm->openByName<BindingTableId>(rnv("mem$MMR_BindingTable0"));
-
-		renderPipelineHandle = RenderPipeline::Create(
-				rm,
-				rnv(fmt::format("mem$MMR_RenderPipeline{}"s, (int)MeshModRenderer::RenderStyle::SolidConstantWire)),
-				Topology::Triangles,
-				RenderPipelineFlags::None,
-				DynamicPipelineState::None,
-				{
-						rm->openByName<BindingTableMemoryMapId>(rnv("mem$MMR_BindingTableMemoryMap0")),
-				},
-				{
-						{0,  sizeof(float) * 16, ShaderType::Vertex}, // world matrix
-						{64, sizeof(float) * 4,  ShaderType::Fragment}, // colour
-				},
-				{},
-				{
-						rm->openByName<SPIRVShaderId>(rnv("mem$MMR_Phong_VS")),
-						rm->openByName<SPIRVShaderId>(rnv("mem$MMR_Phong_Bary_GS")),
-						rm->openByName<SPIRVShaderId>(rnv("mem$MMR_Constant_Wire_FS")),
-				},
-				rm->openByName<RasterisationStateId>(Stock::simpleForwardRasterState),
-				rm->openByName<RenderPassId>(Stock::simpleForwardRenderPass),
-				rm->openByName<ROPBlenderId>(Stock::singleOpaqueROPBlender),
-				rm->openByName<VertexInputId>(rnv("mem$MMR_VertexFormat")),
-				rm->openByName<ViewportId>(Stock::simpleForwardViewport)
-		);
-	}
-};
-
-struct SolidDotFixedFlatLitRenderStyle : public SolidConstantRenderStyle
-{
-	void init(std::shared_ptr<ResourceManager::ResourceMan> const& rm_) final
-	{
-		using namespace Render;
-		using namespace ResourceManager;
-		using namespace Core;
-		using namespace std::literals;
-		using rnv = ResourceNameView;
-
-		IMeshModRenderStyle::init(rm_);
-
-		bindingTableHandle = rm->openByName<BindingTableId>(rnv("mem$MMR_BindingTable0"));
-
-		renderPipelineHandle = RenderPipeline::Create(
-				rm,
-				rnv(fmt::format("mem$MMR_RenderPipeline{}"s, (int)MeshModRenderer::RenderStyle::SolidDotFlat)),
-				Topology::Triangles,
-				RenderPipelineFlags::None,
-				DynamicPipelineState::None,
-				{
-						rm->openByName<BindingTableMemoryMapId>(rnv("mem$MMR_BindingTableMemoryMap0")),
-				},
-				{
-						{0,  sizeof(float) * 16, ShaderType::Vertex}, // world matrix
-						{64, sizeof(float) * 4,  ShaderType::Fragment}, // colour
-				},
-				{},
-				{
-						rm->openByName<SPIRVShaderId>(rnv("mem$MMR_Phong_VS")),
-						rm->openByName<SPIRVShaderId>(rnv("mem$MMR_Flat_Bary_GS")),
-						rm->openByName<SPIRVShaderId>(rnv("mem$MMR_Dot_FS")),
-				},
-				rm->openByName<RasterisationStateId>(Stock::simpleForwardRasterState),
-				rm->openByName<RenderPassId>(Stock::simpleForwardRenderPass),
-				rm->openByName<ROPBlenderId>(Stock::singleOpaqueROPBlender),
-				rm->openByName<VertexInputId>(rnv("mem$MMR_VertexFormat")),
-				rm->openByName<ViewportId>(Stock::simpleForwardViewport)
-		);
-	}
-};
-
-struct SolidDotFixedFlatLitWireRenderStyle : public SolidConstantRenderStyle
-{
-	void init(std::shared_ptr<ResourceManager::ResourceMan> const& rm_) final
-	{
-		using namespace Render;
-		using namespace ResourceManager;
-		using namespace Core;
-		using namespace std::literals;
-		using rnv = ResourceNameView;
-
-		IMeshModRenderStyle::init(rm_);
-
-		bindingTableHandle = rm->openByName<BindingTableId>(rnv("mem$MMR_BindingTable0"));
-
-		renderPipelineHandle = RenderPipeline::Create(
-				rm,
-				rnv(fmt::format("mem$MMR_RenderPipeline{}"s, (int)MeshModRenderer::RenderStyle::SolidDotFlatWire)),
-				Topology::Triangles,
-				RenderPipelineFlags::None,
-				DynamicPipelineState::None,
-				{
-						rm->openByName<BindingTableMemoryMapId>(rnv("mem$MMR_BindingTableMemoryMap0")),
-				},
-				{
-						{0,  sizeof(float) * 16, ShaderType::Vertex}, // world matrix
-						{64, sizeof(float) * 4,  ShaderType::Fragment}, // colour
-				},
-				{},
-				{
-						rm->openByName<SPIRVShaderId>(rnv("mem$MMR_Phong_VS")),
-						rm->openByName<SPIRVShaderId>(rnv("mem$MMR_Flat_Bary_GS")),
-						rm->openByName<SPIRVShaderId>(rnv("mem$MMR_Dot_FS")),
-				},
-				rm->openByName<RasterisationStateId>(Stock::simpleForwardRasterState),
-				rm->openByName<RenderPassId>(Stock::simpleForwardRenderPass),
-				rm->openByName<ROPBlenderId>(Stock::singleOpaqueROPBlender),
-				rm->openByName<VertexInputId>(rnv("mem$MMR_VertexFormat")),
-				rm->openByName<ViewportId>(Stock::simpleForwardViewport)
-		);
-	}
-};
-
-}; // end anon namespace
 
 auto MeshModRenderer::init(std::shared_ptr<ResourceManager::ResourceMan> const& rm_) -> void
 {
@@ -392,86 +175,47 @@ auto MeshModRenderer::init(std::shared_ptr<ResourceManager::ResourceMan> const& 
 
 	TextResource::CreateFromFile(
 			rm,
-			rnv("mem$MMR_Phong_VS_Text"),
-			"text/shaders/meshmodrenderer/phong_VS.glsl");
+			rnv("mem$MMR_all_VS_Text"),
+			"text/shaders/meshmodrenderer/all_VS.glsl");
 
 	TextResource::CreateFromFile(
 			rm,
-			rnv("mem$MMR_Flat_Bary_GS_Text"),
-			"text/shaders/meshmodrenderer/flat_bary_GS.glsl");
+			rnv("mem$MMR_all_GS_Text"),
+			"text/shaders/meshmodrenderer/all_GS.glsl");
 
 	TextResource::CreateFromFile(
 			rm,
-			rnv("mem$MMR_Phong_Bary_GS_Text"),
-			"text/shaders/meshmodrenderer/phong_bary_GS.glsl");
-
-	TextResource::CreateFromFile(
-			rm,
-			rnv("mem$MMR_Constant_FS_Text"),
-			"text/shaders/meshmodrenderer/constant_FS.glsl");
-
-	TextResource::CreateFromFile(
-		rm,
-		rnv("mem$MMR_Constant_Wire_FS_Text"),
-		"text/shaders/meshmodrenderer/constant_wire_FS.glsl");
-
-	TextResource::CreateFromFile(
-			rm,
-			rnv("mem$MMR_Normals_FS_Text"),
-			"text/shaders/meshmodrenderer/normals_FS.glsl");
-
-	TextResource::CreateFromFile(
-			rm,
-			rnv("mem$MMR_Dot_FS_Text"),
-			"text/shaders/meshmodrenderer/dot_FS.glsl");
+			rnv("mem$MMR_all_FS_Text"),
+			"text/shaders/meshmodrenderer/all_FS.glsl");
 
 	SPIRVShader::Compile(
-			rm, rnv("mem$MMR_Phong_VS"),
-			{rm->openByName<TextResourceId>(rnv("mem$MMR_Phong_VS_Text"))},
+			rm, rnv("mem$MMR_all_VS"),
+			{rm->openByName<TextResourceId>(rnv("mem$MMR_all_VS_Text"))},
 			ShaderSourceLanguage::GLSL, ShaderType::Vertex, 0);
 
 	SPIRVShader::Compile(
-			rm, rnv("mem$MMR_Flat_Bary_GS"),
-			{rm->openByName<TextResourceId>(rnv("mem$MMR_Flat_Bary_GS_Text"))},
+			rm, rnv("mem$MMR_all_GS"),
+			{rm->openByName<TextResourceId>(rnv("mem$MMR_all_GS_Text"))},
 			ShaderSourceLanguage::GLSL, ShaderType::Geometry, 0);
 
 	SPIRVShader::Compile(
-			rm, rnv("mem$MMR_Phong_Bary_GS"),
-			{rm->openByName<TextResourceId>(rnv("mem$MMR_Phong_Bary_GS_Text"))},
-			ShaderSourceLanguage::GLSL, ShaderType::Geometry, 0);
-
-	SPIRVShader::Compile(
-			rm, ResourceNameView("mem$MMR_Constant_FS"),
-			{rm->openByName<TextResourceId>(rnv("mem$MMR_Constant_FS_Text"))},
+			rm, ResourceNameView("mem$MMR_all_FS"),
+			{rm->openByName<TextResourceId>(rnv("mem$MMR_all_FS_Text"))},
 			ShaderSourceLanguage::GLSL, ShaderType::Fragment, 0);
 
-	SPIRVShader::Compile(
-		rm, ResourceNameView("mem$MMR_Constant_Wire_FS"),
-		{ rm->openByName<TextResourceId>(rnv("mem$MMR_Constant_Wire_FS_Text")) },
-		ShaderSourceLanguage::GLSL, ShaderType::Fragment, 0);
-
-	SPIRVShader::Compile(
-			rm, ResourceNameView("mem$MMR_Normals_FS"),
-			{rm->openByName<TextResourceId>(rnv("mem$MMR_Normals_FS_Text"))},
-			ShaderSourceLanguage::GLSL, ShaderType::Fragment, 0);
-
-	SPIRVShader::Compile(
-			rm, ResourceNameView("mem$MMR_Dot_FS"),
-			{rm->openByName<TextResourceId>(rnv("mem$MMR_Dot_FS_Text"))},
-			ShaderSourceLanguage::GLSL, ShaderType::Fragment, 0);
 
 	VertexInput::Create(
 			rm, rnv("mem$MMR_VertexFormat"),
 			{
 					{VertexInputLocation::Position, VertexInputType::Float3},
-					{VertexInputLocation::Normal,   VertexInputType::Byte4}
+					{VertexInputLocation::Normal,   VertexInputType::Float3}
 			});
 
 	auto bindingTableMemMap0 = BindingTableMemoryMap::Create(
 			rm,
 			rnv("mem$MMR_BindingTableMemoryMap0"),
 			{
-					{BindingTableType::Buffer, 1, ShaderType::Vertex}
+					{BindingTableType::Buffer, 1, ShaderType::Vertex | ShaderType::Geometry}
 			}
 	);
 
@@ -487,14 +231,16 @@ auto MeshModRenderer::init(std::shared_ptr<ResourceManager::ResourceMan> const& 
 			0, 0,
 			rm->openByName<BufferId>(Stock::simpleForwardGlobalBuffer));
 
-	renderStyles[(int) RenderStyle::SolidNormals] = new SolidNormalsRenderStyle();
-	renderStyles[(int) RenderStyle::SolidNormalsWire] = new SolidNormalsWireRenderStyle();
-	renderStyles[(int) RenderStyle::SolidConstant] = new SolidConstantRenderStyle();
-	renderStyles[(int) RenderStyle::SolidConstantWire] = new SolidConstantWireRenderStyle();
-
 	for(auto i = 0u; i < RenderStylesCount; ++i)
 	{
-		renderStyles[i]->init(rm);
+		bool const wire = i & 0x1;
+		bool const phong = (i >=2) && ((i-2) & 0x2);
+		IMeshModRenderStyle::FragmentStyle style =
+				(i < 2) ? 	IMeshModRenderStyle::FragmentStyle::Constant :
+				(i < 6) ? 	IMeshModRenderStyle::FragmentStyle::Normal :
+							IMeshModRenderStyle::FragmentStyle::Dot;
+		renderStyles[i] = new DefaultMeshModRenderStyle();
+		renderStyles[i]->init(rm, style, wire, phong);
 	}
 
 }
@@ -512,8 +258,7 @@ auto MeshModRenderer::destroy() -> void
 auto MeshModRenderer::addMeshMod(
 		std::shared_ptr<MeshMod::Mesh> const& mesh_,
 		RenderStyle style_,
-		std::array<float, 4> const& colour_,
-		bool smoothColours) -> MeshIndex
+		std::array<float, 4> const& colour_) -> MeshIndex
 {
 	using namespace MeshMod;
 
@@ -525,94 +270,49 @@ auto MeshModRenderer::addMeshMod(
 	mesh_->getVertices().removeAllSimilarPositions();
 	mesh_->updateFromEdits();
 
-	if(smoothColours)
-	{
-		MeshOps::BasicMeshOps::computeVertexNormalsEx(mesh_, false);
-	} else
-	{
-		MeshOps::BasicMeshOps::computeFacePlaneEquations(mesh_, false);
-	}
+	MeshOps::BasicMeshOps::computeVertexNormalsEx(mesh_, false);
 
-	struct PosColorVertex
+	struct PosNormalVertex
 	{
 		float x, y, z;
-		uint32_t argb;
+		float nx, ny, nz;
 	};
-	using VertexContainer = std::vector<PosColorVertex>;
+	using VertexContainer = std::vector<PosNormalVertex>;
 	using IndexContainer = std::vector<uint32_t>;
 	VertexContainer renderVertices;
 	IndexContainer indices;
 
 	VertexIndexContainer faceVertexIndices(3);
-	if(smoothColours)
+	size_t baseVertex = renderVertices.size();
+	renderVertices.resize(baseVertex + vertices.getCount());
+	auto& rv = renderVertices;
+	auto const& normals = vertices.getAttribute<VertexData::Normals>();
+
+	for(auto i = 0u; i < vertices.getCount(); i++)
 	{
-		size_t baseVertex = renderVertices.size();
-		renderVertices.resize(baseVertex + vertices.getCount());
-		auto& rv = renderVertices;
-		auto const& normals = vertices.getAttribute<VertexData::Normals>();
-
-		for(auto i = 0u; i < vertices.getCount(); i++)
-		{
-			VertexIndex vertexIndex = VertexIndex(i);
-			VertexData::Position const pos = vertices.position(vertexIndex);
-			Math::vec3 const normal = normals.at(vertexIndex).getVec3();
-			rv[baseVertex + i].x = pos.x;
-			rv[baseVertex + i].y = pos.y;
-			rv[baseVertex + i].z = pos.z;
-			uint8_t a = 0xFF;
-			uint8_t r = (uint8_t) (((normal.x + 1) * 0.5f) * 255.f);
-			uint8_t g = (uint8_t) (((normal.y + 1) * 0.5f) * 255.f);
-			uint8_t b = (uint8_t) (((normal.z + 1) * 0.5f) * 255.f);
-			rv[baseVertex + i].argb = (a << 24) | (r << 16) | (g << 8) | (b << 0);
-		}
-		indices.resize(polygons.getCount() * 3);
-		for(auto i = 0u; i < polygons.getCount(); i++)
-		{
-			auto polygonIndex = PolygonIndex(i);
-			if(!polygons.isValid(polygonIndex)) continue;
-
-			faceVertexIndices.clear();
-			polygons.getVertexIndices(polygonIndex, faceVertexIndices);
-
-			indices[i * 3 + 0] = (uint32_t) faceVertexIndices[0];
-			indices[i * 3 + 1] = (uint32_t) faceVertexIndices[1];
-
-			indices[i * 3 + 2] = (uint32_t) faceVertexIndices[2];
-		}
-	} else
+		VertexIndex vertexIndex = VertexIndex(i);
+		VertexData::Position const pos = vertices.position(vertexIndex);
+		Math::vec3 const normal = normals.at(vertexIndex).getVec3();
+		rv[baseVertex + i].x = pos.x;
+		rv[baseVertex + i].y = pos.y;
+		rv[baseVertex + i].z = pos.z;
+		rv[baseVertex + i].nx = normal.x;
+		rv[baseVertex + i].ny = normal.y;
+		rv[baseVertex + i].nz = normal.z;
+	}
+	indices.resize(polygons.getCount() * 3);
+	for(auto i = 0u; i < polygons.getCount(); i++)
 	{
-		auto const& planeEqs = polygons.getAttribute<PolygonData::PlaneEquations>();
-		for(auto i = 0u; i < polygons.getCount(); i++)
-		{
-			auto polygonIndex = PolygonIndex(i);
-			if(!polygons.isValid(polygonIndex)) continue;
+		auto polygonIndex = PolygonIndex(i);
+		if(!polygons.isValid(polygonIndex)) continue;
 
-			faceVertexIndices.clear();
-			polygons.getVertexIndices(polygonIndex, faceVertexIndices);
-			if(faceVertexIndices.size() != 3) continue;
+		faceVertexIndices.clear();
+		polygons.getVertexIndices(polygonIndex, faceVertexIndices);
 
-			size_t baseVertex = renderVertices.size();
-			renderVertices.resize(baseVertex + 3);
-			auto& rv = renderVertices;
+		indices[i * 3 + 0] = (uint32_t) faceVertexIndices[0];
+		indices[i * 3 + 1] = (uint32_t) faceVertexIndices[1];
 
-			for(auto j = 0u; j < 3; ++j)
-			{
-				VertexData::Position const pos = vertices.position(faceVertexIndices[j]);
-				Math::vec3 const normal = planeEqs[polygonIndex].planeEq.normal();
-				rv[baseVertex + j].x = pos.x;
-				rv[baseVertex + j].y = pos.y;
-				rv[baseVertex + j].z = pos.z;
-				uint8_t a = 0xFF;
-				uint8_t r = (uint8_t) (((normal.x + 1) * 0.5f) * 255.f);
-				uint8_t g = (uint8_t) (((normal.y + 1) * 0.5f) * 255.f);
-				uint8_t b = (uint8_t) (((normal.z + 1) * 0.5f) * 255.f);
-				rv[baseVertex + i].argb = (a << 24) | (r << 16) | (g << 8) | (b << 0);
-			}
-
-			indices.push_back((uint32_t) (baseVertex + 0));
-			indices.push_back((uint32_t) (baseVertex + 1));
-			indices.push_back((uint32_t) (baseVertex + 2));
-		}
+		indices[i * 3 + 2] = (uint32_t) faceVertexIndices[2];
 	}
 
 	using namespace Render;
@@ -669,7 +369,7 @@ auto MeshModRenderer::addScene(
 			if(Core::QuickHash(obj->getType()) == meshTypeHash)
 			{
 				std::shared_ptr<MeshMod::Mesh> mesh = std::dynamic_pointer_cast<MeshMod::Mesh>(obj);
-				sceneData.meshMap[mesh.get()] = addMeshMod(mesh, style_, colour_, true);
+				sceneData.meshMap[mesh.get()] = addMeshMod(mesh, style_, colour_);
 			}
 		}
 		for(auto j = 0u; j < node->getChildCount(); ++j)
