@@ -54,25 +54,50 @@ FakeClient::FakeClient()
 		static bool meshSent = false;
 		if(meshSent == false)
 		{
-			picojson::object mesh;
-			mesh["name"] = picojson::value{"TestMesh"s};
-			mesh["positioncount"] = picojson::value{3.0};
-			mesh["positions"] = picojson::value{ picojson::array{
-					picojson::value{0.0}, picojson::value{1.0}, picojson::value{0.0},
-					picojson::value{1.0}, picojson::value{1.0}, picojson::value{0.0},
-					picojson::value{1.0}, picojson::value{0.0}, picojson::value{0.0},
-			}};
-			mesh["trianglecount"] = picojson::value{1.0};
-			mesh["indices"] = picojson::value{ picojson::array{
-					picojson::value{0.0}, picojson::value{1.0}, picojson::value{2.0}
-			}};
+			{
+				picojson::object mesh;
+				mesh["name"] = picojson::value{"TriMesh"s};
+				mesh["positioncount"] = picojson::value{3.0};
+				mesh["positions"] = picojson::value{picojson::array{
+						picojson::value{0.0}, picojson::value{1.0}, picojson::value{0.0},
+						picojson::value{1.0}, picojson::value{1.0}, picojson::value{0.0},
+						picojson::value{1.0}, picojson::value{0.0}, picojson::value{0.0},
+				}};
+				mesh["trianglecount"] = picojson::value{1.0};
+				mesh["indices"] = picojson::value{picojson::array{
+						picojson::value{0.0}, picojson::value{1.0}, picojson::value{2.0}
+				}};
+				picojson::value o{mesh};
+				std::string meshString = o.serialize();
+				connection->syncWriteBasicPayload(
+						(uint32_t) meshString.size() + 1,
+						(BasicPayloadType) Replay::Items::SimpleMeshType,
+						meshString.data());
 
-			picojson::value o{mesh};
-			std::string meshString = o.serialize();
-			connection->syncWriteBasicPayload(
-					(uint32_t) meshString.size() + 1,
-					(BasicPayloadType) Replay::Items::SimpleMeshType,
-					meshString.data());
+			}
+			{
+				picojson::object mesh;
+				mesh["name"] = picojson::value{"SquareMesh"s};
+				mesh["positioncount"] = picojson::value{4.0};
+				mesh["positions"] = picojson::value{picojson::array{
+						picojson::value{1.0}, picojson::value{1.0}, picojson::value{0.0},
+						picojson::value{2.0}, picojson::value{1.0}, picojson::value{0.0},
+						picojson::value{2.0}, picojson::value{0.0}, picojson::value{0.0},
+						picojson::value{1.0}, picojson::value{0.0}, picojson::value{0.0},
+				}};
+				mesh["trianglecount"] = picojson::value{2.0};
+				mesh["indices"] = picojson::value{picojson::array{
+						picojson::value{0.0}, picojson::value{1.0}, picojson::value{2.0},
+						picojson::value{0.0}, picojson::value{2.0}, picojson::value{3.0}
+				}};
+
+				picojson::value o{mesh};
+				std::string meshString = o.serialize();
+				connection->syncWriteBasicPayload(
+						(uint32_t) meshString.size() + 1,
+						(BasicPayloadType) Replay::Items::SimpleMeshType,
+						meshString.data());
+			}
 			meshSent = true;
 		} else
 		{
@@ -82,7 +107,7 @@ FakeClient::FakeClient()
 
 			picojson::object object;
 			object["name"] = picojson::value{"Object1"s};
-			object["meshname"] = picojson::value{"TestMesh"s};
+			object["meshname"] = picojson::value{"TriMesh"s};
 			object["position"] =
 					picojson::value{ picojson::array{
 							picojson::value{counter},

@@ -51,6 +51,9 @@ constexpr ItemType SimpleMeshType = "SMSH"_item_type;
 // rotation = optional vec3 (xyz euler)
 constexpr ItemType MeshObjectType = "MSHO"_item_type;
 
+// name = tactical map name
+// data = byte array stored from the Tactical Map API
+constexpr ItemType TacticalMapType = "TACM"_item_type;
 
 } // end items;
 

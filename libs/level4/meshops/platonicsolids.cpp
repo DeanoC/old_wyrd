@@ -16,7 +16,7 @@
 #include "meshops/platonicsolids.h"
 
 namespace MeshOps {
-auto PlatonicSolids::createTetrahedon() -> std::unique_ptr<MeshMod::Mesh>
+auto PlatonicSolids::CreateTetrahedon() -> std::unique_ptr<MeshMod::Mesh>
 {
 	using namespace MeshMod;
 	using namespace Math;
@@ -52,7 +52,7 @@ auto PlatonicSolids::createTetrahedon() -> std::unique_ptr<MeshMod::Mesh>
 	return std::move(mesh);
 }
 
-auto PlatonicSolids::createOctahedron() -> std::unique_ptr<MeshMod::Mesh>
+auto PlatonicSolids::CreateOctahedron() -> std::unique_ptr<MeshMod::Mesh>
 {
 	using namespace MeshMod;
 	using namespace Math;
@@ -95,7 +95,7 @@ auto PlatonicSolids::createOctahedron() -> std::unique_ptr<MeshMod::Mesh>
 	return std::move(mesh);
 }
 
-auto PlatonicSolids::createCube() -> std::unique_ptr<MeshMod::Mesh>
+auto PlatonicSolids::CreateCube() -> std::unique_ptr<MeshMod::Mesh>
 {
 	using namespace MeshMod;
 	using namespace Math;
@@ -140,7 +140,7 @@ auto PlatonicSolids::createCube() -> std::unique_ptr<MeshMod::Mesh>
 
 }
 
-auto PlatonicSolids::createIcosahedron() -> std::unique_ptr<MeshMod::Mesh>
+auto PlatonicSolids::CreateIcosahedron() -> std::unique_ptr<MeshMod::Mesh>
 {
 	using namespace MeshMod;
 	using namespace Math;
@@ -213,54 +213,6 @@ auto PlatonicSolids::createIcosahedron() -> std::unique_ptr<MeshMod::Mesh>
 	assert(mesh->getHalfEdges().getCount() == 60);
 
 	return mesh;
-}
-
-
-auto PlatonicSolids::createBoxFrom(Geometry::AABB const& aabb) -> std::unique_ptr<MeshMod::Mesh>
-{
-	using namespace MeshMod;
-	using namespace Math;
-	auto mesh = std::make_unique<Mesh>("Box");
-
-	Math::vec3 const minBox = aabb.getMinExtent();
-	Math::vec3 const maxBox = aabb.getMaxExtent();
-
-	const vec3 pos[] {
-		{ minBox.x, maxBox.y, minBox.z },
-		{ minBox.x, minBox.y, minBox.z },
-		{ maxBox.x, minBox.y, minBox.z },
-		{ maxBox.x, maxBox.y, minBox.z },
-
-		{ minBox.x, maxBox.y,  maxBox.z },
-		{ minBox.x, minBox.y,  maxBox.z },
-		{ maxBox.x, minBox.y,  maxBox.z },
-		{ maxBox.x, maxBox.y,  maxBox.z },
-	};
-	using vi = VertexIndex;
-	const VertexIndexContainer faces[] = {
-		{ vi(0), vi(1), vi(2), vi(3) },
-		{ vi(7), vi(6), vi(5), vi(4) },
-		{ vi(4), vi(0), vi(3), vi(7) },
-		{ vi(5), vi(6), vi(2), vi(1) },
-		{ vi(5), vi(1), vi(0), vi(4) },
-		{ vi(2), vi(6), vi(7), vi(3) }
-	};
-	for (auto p : pos)
-	{
-		mesh->getVertices().add(p.x, p.y, p.z);
-	}
-	for (auto f : faces)
-	{
-		mesh->getPolygons().addPolygon(f);
-	}
-	mesh->updateEditState(MeshMod::Mesh::TopologyEdits);
-	mesh->updateFromEdits();
-
-	assert(mesh->getVertices().getCount() == 8);
-	assert(mesh->getPolygons().getCount() == 6);
-	assert(mesh->getHalfEdges().getCount() == 24);
-
-	return std::move(mesh);
 }
 
 }

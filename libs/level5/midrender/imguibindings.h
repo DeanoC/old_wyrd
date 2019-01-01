@@ -21,6 +21,9 @@ struct ImguiBindings
 	auto newFrame(uint32_t width_, uint32_t height_) -> void;
 	auto render(std::shared_ptr<Render::Encoder>& encoder_) -> void;
 
+	auto wantCapturedKeyboard() const -> bool { return ImGui::GetIO().WantCaptureKeyboard; }
+	auto wantCapturedMouse() const -> bool { return ImGui::GetIO().WantCaptureMouse; }
+
 	std::shared_ptr<ResourceManager::ResourceMan> rm;
 
 	Render::SPIRVShaderHandle vertexShaderHandle;

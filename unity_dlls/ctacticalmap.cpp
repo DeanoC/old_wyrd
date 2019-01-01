@@ -15,7 +15,8 @@
 #include "meshops/basicmeshops.h"
 #include "meshops/platonicsolids.h"
 #include "meshops/gltf.h"
-#include <enkiTS/src/TaskScheduler.h>
+#include "meshops/shapes.h"
+#include "enkiTS/src/TaskScheduler.h"
 #include <limits>
 #include <fstream>
 #include "core/freelist.h"
@@ -26,13 +27,13 @@ enki::TaskScheduler g_EnkiTS;
 
 #include "ctacticalmap.h"
 
-static Core::FreeList<TacticalMap::Ptr, uint32_t> unityOwnedTacticalMap;
+static Core::FreeList<std::shared_ptr<TacticalMap>, uint32_t> unityOwnedTacticalMap;
 static Core::FreeList<ITacticalMapBuilder::Ptr, uint32_t> unityOwnedTacticalMapBuilders;
 static Core::FreeList<ITacticalMapStitcher::Ptr, uint32_t> unityOwnedTacticalMapStitchers;
 
 CAPI auto CTM_Load(char const* fileName) -> TacticalMapHandle
 {
-	std::vector<TacticalMap::Ptr> tactMaps;
+	std::vector<std::shared_ptr<TacticalMap>> tactMaps;
 	std::ifstream in(fileName, std::ifstream::in | std::ifstream::binary);
 	TacticalMap::createFromStream(in, tactMaps);
 
@@ -54,7 +55,7 @@ CAPI auto CTM_LoadFromBlob(Core::Blob* blob) -> TacticalMapHandle
 	std::memcpy(str.data(), blob->nativeData, blob->size);
 	std::istringstream stream(str);
 
-	std::vector<TacticalMap::Ptr> tactMaps;
+	std::vector<std::shared_ptr<TacticalMap>> tactMaps;
 	bool okay = TacticalMap::createFromStream(stream, tactMaps);
 
 	if(!okay || tactMaps.empty()) return TacticalMapInvalidHandle;
@@ -133,7 +134,7 @@ CAPI auto CTM_DamageStructure(TacticalMapHandle ctmHandle, float const* center, 
 
 //------------------------------------------------------//
 
-CAPI auto CTMB_CreateBuilder(float* bounds2D) -> TacticalMapBuilderHandle
+CAPI auto CTMB_CreateBuilder(float* bounds2D, char const* name) -> TacticalMapBuilderHandle
 {
 	int const width = (int)std::floor(bounds2D[2] - bounds2D[0]);
 	int const height = (int)std::floor(bounds2D[3] - bounds2D[1]);
@@ -148,7 +149,7 @@ CAPI auto CTMB_CreateBuilder(float* bounds2D) -> TacticalMapBuilderHandle
 
 	Math::vec2 bounds(bounds2D[0], bounds2D[1]);
 
-	std::shared_ptr<ITacticalMapBuilder> builder = TacticalMap::allocateBuilder(bounds, width, height);
+	std::shared_ptr<ITacticalMapBuilder> builder = TacticalMap::allocateBuilder(bounds, width, height, name);
 
 	return unityOwnedTacticalMapBuilders.push(builder);
 }
@@ -173,6 +174,7 @@ CAPI auto CTMB_SetOpaqueLevelDataSize(TacticalMapBuilderHandle handle_, uint32_t
 	auto const ibuilder = unityOwnedTacticalMapBuilders[(uint32_t)handle_];
 	ibuilder->setLevelDataSize(size_);
 }
+
 CAPI auto CTMB_DebugExportToGLTF(TacticalMapBuilderHandle tmHandle, char const* fileName) -> void
 {
 	if (tmHandle == ~0) return;
@@ -235,7 +237,7 @@ CAPI auto CTMB_ExportToGLTF(TacticalMapBuilderHandle tmHandle, char const* fileN
 	{
 		for (auto const& box : it.second)
 		{
-			boxes.push_back(MeshOps::PlatonicSolids::createBoxFrom(box));
+			boxes.push_back(MeshOps::Shapes::CreateAABB(box));
 			auto boxMesh = boxes.back();
 			auto& meshPolys = meshPolygons[boxMesh.get()];
 			boxMesh->getPolygons().visitValid([&meshPolys](MeshMod::PolygonIndex polygonIndex)
@@ -321,14 +323,13 @@ CAPI auto CTMB_AddBoxAt(TacticalMapBuilderHandle handle, TacticalMapLevelDataHea
 	tmb->addBoxAt(box, levelData, transform);
 }
 
-CAPI auto CTMS_CreateStitcher() -> TacticalMapStitcherHandle
+CAPI auto CTMS_CreateStitcher(char const* name_) -> TacticalMapStitcherHandle
 {
 #if !defined(USING_STATIC_LIBS)
 	g_EnkiTS.Initialize();
 #endif
 
-	std::shared_ptr<ITacticalMapStitcher> builder = TacticalMap::allocateStitcher();
-
+	auto builder = TacticalMap::allocateStitcher(name_);
 	return unityOwnedTacticalMapStitchers.push(builder);
 }
 
@@ -355,7 +356,7 @@ CAPI auto CTMS_Stitch(TacticalMapStitcherHandle ctmsHandle) -> TacticalMapHandle
 	assert(unityOwnedTacticalMapStitchers[(uint32_t) ctmsHandle] );
 
 	auto const tms = unityOwnedTacticalMapStitchers[(uint32_t)ctmsHandle];
-	TacticalMap::Ptr tm = tms->build();
+	std::shared_ptr<TacticalMap> tm = tms->build();
 	if(!tm) return TacticalMapInvalidHandle;
 
 	return unityOwnedTacticalMap.push(tm);
@@ -375,7 +376,7 @@ CAPI static auto DestroyAll() -> void
 	unityOwnedTacticalMapStitchers = {};
 }
 
-EXPORT_CPP auto UnityOwnedTacticalMap(TacticalMapHandle tmHandle) -> TacticalMap::Ptr
+EXPORT_CPP auto UnityOwnedTacticalMap(TacticalMapHandle tmHandle) -> std::shared_ptr<TacticalMap>
 {
 	assert(unityOwnedTacticalMap[(uint32_t)tmHandle]);
 	return unityOwnedTacticalMap.at((uint32_t)tmHandle);

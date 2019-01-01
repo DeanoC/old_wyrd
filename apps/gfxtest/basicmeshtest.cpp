@@ -22,9 +22,9 @@ struct BasicMeshTest : public GfxTest
 		meshModRenderer->init(rm);
 
 		rootScene = std::make_shared<MeshMod::SceneNode>();
-		rootScene->transform.position = Math::vec3(0, 0, -4);
+		rootScene->transform.position = Math::vec3(0, 0, 0);
 
-		std::shared_ptr<MeshMod::Mesh> sphere = MeshOps::Shapes::createSphere(3);
+		std::shared_ptr<MeshMod::Mesh> sphere = MeshOps::Shapes::CreateSphere(3);
 		auto child0 = std::make_shared<MeshMod::SceneNode>();
 		child0->addObject(sphere);
 		auto child1 = std::make_shared<MeshMod::SceneNode>();
@@ -34,17 +34,26 @@ struct BasicMeshTest : public GfxTest
 		auto child3 = std::make_shared<MeshMod::SceneNode>();
 		child3->addObject(sphere);
 
+		std::shared_ptr<MeshMod::Mesh> squareZ = MeshOps::Shapes::CreateSquare(Math::vec3(0,0,0), Math::vec3(0,0,1));
+		auto child4 = std::make_shared<MeshMod::SceneNode>();
+		child4->addObject(squareZ);
+
 		rootScene->addChild(child0);
 		rootScene->addChild(child1);
 		rootScene->addChild(child2);
 		rootScene->addChild(child3);
+		rootScene->addChild(child4);
 
 		child0->transform.position = Math::vec3(-2, 0, 0);
 		child1->transform.position = Math::vec3(2, 0, 0);
 		child2->transform.position = Math::vec3(0, -2, 0);
 		child3->transform.position = Math::vec3(0, 2, 0);
+		child4->transform.position = Math::vec3(0, 0, 0);
 
-		sceneIndex = meshModRenderer->addScene(rootScene);
+		sceneIndex = meshModRenderer->addScene(
+			rootScene, 
+			MidRender::MeshModRenderer::RenderStyle::SolidConstantWire,
+			{1.0f, 0.0f, 0.0f, 1.0f});
 	}
 
 	void tick(double deltaT_, std::shared_ptr<Render::Encoder>& encoder_) final

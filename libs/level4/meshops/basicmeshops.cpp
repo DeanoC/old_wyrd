@@ -47,7 +47,8 @@ polygons may produce incorrect plane equations.
 
 If any lines or point faces are in the mesh the planeequation for that face will be the default
 */
-auto BasicMeshOps::computeFacePlaneEquations(std::shared_ptr<MeshMod::Mesh> const& mesh, bool replaceExisting, bool zeroBad,
+auto BasicMeshOps::computeFacePlaneEquations(std::shared_ptr<MeshMod::Mesh> const& mesh, bool replaceExisting,
+											 bool zeroBad,
 											 bool fixBad) -> void
 {
 	using namespace MeshMod;
@@ -298,11 +299,11 @@ auto BasicMeshOps::computeVertexNormals(std::shared_ptr<MeshMod::Mesh> const& me
 	mesh->maintainPointReps(true);
 
 	// clear normals
-	auto normals = vertices.getAttribute <VertexData::Normals>();
+	auto normals = vertices.getAttribute<VertexData::Normals>();
 	vertices.visitAll(
 			[&normals](VertexIndex const vertexIndex_)
 			{
-				normals[vertexIndex_] = {0,0,0};
+				normals[vertexIndex_] = {0, 0, 0};
 			});
 
 	computeFacePlaneEquations(mesh, replaceExisting);
@@ -357,7 +358,8 @@ auto BasicMeshOps::computeVertexNormals(std::shared_ptr<MeshMod::Mesh> const& me
 Computes and store per vertex normals.
 Based on mesh libs version with fixing and handling of slivers
 */
-auto BasicMeshOps::computeVertexNormalsEx(std::shared_ptr<MeshMod::Mesh> const& mesh, bool replaceExisting, bool zeroBad,
+auto BasicMeshOps::computeVertexNormalsEx(std::shared_ptr<MeshMod::Mesh> const& mesh, bool replaceExisting,
+										  bool zeroBad,
 										  bool fixBad) -> void
 {
 	if(zeroBad && fixBad)
@@ -383,11 +385,11 @@ auto BasicMeshOps::computeVertexNormalsEx(std::shared_ptr<MeshMod::Mesh> const& 
 	mesh->updateFromEdits();
 
 	// clear normals
-	auto& normals = vertices.getOrAddAttribute <VertexData::Normals>();
+	auto& normals = vertices.getOrAddAttribute<VertexData::Normals>();
 	vertices.visitAll(
 			[&normals](VertexIndex const vertexIndex_)
 			{
-				normals[vertexIndex_] = {0,0,0};
+				normals[vertexIndex_] = {0, 0, 0};
 			});
 
 	computeFacePlaneEquations(mesh, replaceExisting, zeroBad, fixBad);
@@ -406,7 +408,7 @@ auto BasicMeshOps::computeVertexNormalsEx(std::shared_ptr<MeshMod::Mesh> const& 
 	{
 		// get the vertex and edges connected to this vertex
 		auto const vertexIndex = normals.distance(normal);
-		if (vertices.isValid(vertexIndex) == false) continue;
+		if(vertices.isValid(vertexIndex) == false) continue;
 
 		vertexHalfEdges.clear();
 		vertices.getVertexHalfEdges(vertexIndex, vertexHalfEdges);
@@ -492,6 +494,39 @@ auto BasicMeshOps::transform(std::shared_ptr<MeshMod::Mesh> const& mesh, Math::m
 		vertex.z = pos.z;
 	}
 	mesh->updateEditState(MeshMod::Mesh::PositionEdits);
+}
+
+auto BasicMeshOps::combine(std::shared_ptr<MeshMod::Mesh const> const& src_,
+						   std::shared_ptr<MeshMod::Mesh> const& dst_) -> void
+{
+	using namespace MeshMod;
+	auto const& srcVertices = src_->getVertices();
+	auto const& srcPolygons = src_->getPolygons();
+	auto& dstVertices = dst_->getVertices();
+	auto & dstPolygons = dst_->getPolygons();
+
+	auto const baseVertexCount = dstVertices.getCount();
+	for(auto i = 0u; i < srcVertices.getCount(); ++i)
+	{
+		auto const &position = srcVertices.position(VertexIndex(i));
+		dstVertices.add(position.x, position.y, position.z);
+	}
+
+	VertexIndexContainer vertexIndexContainer;
+	vertexIndexContainer.reserve(10);
+
+	srcPolygons.visitAll(
+			[&srcPolygons, &dstPolygons, &vertexIndexContainer, baseVertexCount]
+					(PolygonIndex const polygonIndex_)
+			{
+				vertexIndexContainer.clear();
+				srcPolygons.getVertexIndices(polygonIndex_, vertexIndexContainer);
+
+				dstPolygons.addPolygon(vertexIndexContainer, VertexIndex(baseVertexCount));
+			}
+	);
+
+	dst_->updateEditState(MeshMod::Mesh::TopologyEdits);
 }
 
 auto BasicMeshOps::isTriangleMesh(std::shared_ptr<MeshMod::Mesh const> const& mesh_) -> bool

@@ -56,9 +56,10 @@ auto KeyboardMouseListenerImpl::update() -> void
 	{
 		fbutton += m->buttonDown(MouseButton::Left) ? 1.0f : 0.0f;
 		sbutton += m->buttonDown(MouseButton::Right) ? 1.0f : 0.0f;
-//		rx += m->getRelX();
-//		ry += m->getRelY();
+		rx += g_Mouse->getRelativeMouseX();
+		ry += g_Mouse->getRelativeMouseY();
 	}
+
 
 #define NOT_ZERO_AXIS(v, ax) if( Math::abs(v) > 1e-5f ) { listener->axisMovement( VPadAxisId:: ax, v ); }
 #define NOT_ZERO_BUTTON(v, ax) if( Math::abs(v) > 1e-5f ) { listener->button( VPadButtonId:: ax, v ); }

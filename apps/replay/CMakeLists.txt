@@ -6,8 +6,10 @@ set(REPLAYAPP_SOURCE
 		server.cpp
 		server.h
 		fakeclient.cpp
-		fakeclient.h)
-include_directories( ${wyrd_INCLUDES})
+		fakeclient.h
+		../appcommon/arcballcamera.h
+		../appcommon/simplepadcamera.h)
+include_directories( ${apps_INCLUDES} ${wyrd_INCLUDES})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/live)
 add_executable(replayapp WIN32 ${REPLAYAPP_SOURCE} )

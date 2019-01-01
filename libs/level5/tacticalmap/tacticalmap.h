@@ -186,17 +186,15 @@ public:
 	using LevelDataPair = std::pair<TacticalMapTileLevel*, TacticalMapLevelDataHeader*>;
 	using ConstLevelDataPair = std::pair<TacticalMapTileLevel const*, TacticalMapLevelDataHeader const*>;
 
-	typedef std::shared_ptr<TacticalMap> Ptr;
-	typedef std::shared_ptr<TacticalMap const> ConstPtr;
+	static bool createFromStream(std::istream& in, std::vector<std::shared_ptr<TacticalMap>>& out_);
 
-	static bool createFromStream(std::istream& in, std::vector<TacticalMap::Ptr>& out_);
-
-	static ITacticalMapBuilder::Ptr allocateBuilder(Math::vec2 const bottomLeft_, TileCoord_t width_, TileCoord_t height_);
-	static ITacticalMapStitcher::Ptr allocateStitcher();
+	static ITacticalMapBuilder::Ptr allocateBuilder(Math::vec2 const bottomLeft_, TileCoord_t width_, TileCoord_t height_, char const* name_);
+	static ITacticalMapStitcher::Ptr allocateStitcher(char const* name_);
 
 	int getWidth() const { return (int)width; }
 	int getHeight() const { return (int)height; }
 	Math::vec2 const getBottomLeft() const { return bottomLeft; }
+	char const* getName() const { return name; }
 
 	Math::vec2 worldToLocal( Math::vec3 const& world ) const;
 	void worldToLocal(Math::vec3 const& world, TileCoord_t& outX, TileCoord_t &outY) const;
@@ -248,7 +246,7 @@ private:
 		return (TacticalMapLevelDataHeader const*)(levelDataHeap + ((tile_.levelStartIndex + levelIndex_) * sizeOfTacticalLevelData));
 	}
 
-	static const uint16_t MajorVersion = 6;
+	static const uint16_t MajorVersion = 7;
 	static const uint16_t MinorVersion = 0;
 
 	TacticalMap() {};
@@ -265,6 +263,7 @@ private:
 	Math::vec2 bottomLeft;
 	float minHeight, maxHeight;
 
+	char const* name = nullptr;
 	TacticalMapTileLevel* levels = nullptr;
 	TacticalMapTile* map  = nullptr;
 	uint8_t* levelDataHeap = nullptr;

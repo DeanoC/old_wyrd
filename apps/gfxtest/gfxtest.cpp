@@ -105,8 +105,8 @@ struct App
 		tickerClock = std::make_unique<Timing::TickerClock>();
 		createResources();
 
-//		underTest = CreateBasicMeshTest();
-		underTest = CreateDuckGltfTest();
+		underTest = CreateBasicMeshTest();
+//		underTest = CreateDuckGltfTest();
 //		underTest = CreateSponzaGltfTest();
 //		underTest = CreateTacmapGltfTest();
 		underTest->init(resourceManager);
@@ -205,6 +205,17 @@ struct App
 			renderEncoder->beginRenderPass(renderPass, renderTarget);
 
 			underTest->tick(deltaT, encoder);
+			if (ImGui::BeginMainMenuBar())
+			{
+				if (ImGui::BeginMenu("Camera Controls"))
+				{
+					if (ImGui::MenuItem("WASD FPS")) {}
+					if (ImGui::MenuItem("ArcBall")) {}
+//					ImGui::Separator();
+					ImGui::EndMenu();
+				}
+				ImGui::EndMainMenuBar();
+			}
 
 			imguiBindings->render(encoder);
 			renderEncoder->endRenderPass();
@@ -235,8 +246,8 @@ struct App
 	Render::Display::WeakPtr weakDisplay;
 	Shell::PresentableWindow* window;
 	std::unique_ptr<Timing::TickerClock> tickerClock;
-	std::shared_ptr<SimplePadCamera> simplePadCamera;
 	std::unique_ptr<Input::Provider> inputProvider;
+	std::shared_ptr<SimplePadCamera> simplePadCamera;
 	std::unique_ptr<ArcBallCamera> arcBallCamera;
 
 	std::unique_ptr<MidRender::ImguiBindings> imguiBindings;

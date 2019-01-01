@@ -13,20 +13,48 @@ class Mouse
 {
 public:
 #if PLATFORM == WINDOWS
-	static bool WinProcessMessages(uint32_t message, uint64_t wParam, uint64_t lParam);
+	static bool WinProcessMessages(void* phwnd, uint32_t message, uint64_t wParam, uint64_t lParam);
 #endif
 
-	Mouse() : buttonState{} {}
+	Mouse() : buttonState{}, absMousePos{}, mouseWheel{}
+	{}
 
 	bool buttonDown(MouseButton button) const { return ((buttonState[((uint16_t) button)] & ButtonDownFlag) != 0); }
 	bool buttonUp(MouseButton button) const { return !buttonDown(button); }
 	bool buttonHeld(MouseButton button) { return buttonState[((uint16_t) button)] & ButtonHeldFlag; };
 	bool buttonDoubleClicked(MouseButton button) { return buttonState[((uint16_t) button)] & ButtonDoubleClickFlag; };
 
-	float getMouseWheelVertical() const { return mouseWheel[0]; }
-	float getMouseWheelHorizontal() const { return mouseWheel[1]; }
+	float getMouseWheelVertical() { 
+		auto ret = mouseWheel[0];
+		mouseWheel[0] = 0;
+		return ret;
+	}
+	float getMouseWheelHorizontal() {
+		auto ret = mouseWheel[1];
+		mouseWheel[1] = 0;
+		return ret;
+	}
+
 	float getAbsMouseX() const { return absMousePos[0]; };
 	float getAbsMouseY() const { return absMousePos[1]; };
+
+	void enableRelativeMode(bool relative) 
+	{ 
+		relativeMode = relative; 
+	}
+
+	bool isInRelativeMode() const { return relativeMode; }
+
+	float getRelativeMouseX() {
+		auto ret = relMousePos[0];
+		relMousePos[0] = 0;
+		return ret; 
+	};
+	float getRelativeMouseY() { 
+		auto ret = relMousePos[1];
+		relMousePos[1] = 0;
+		return ret;
+	};
 
 	// once per frame clearConsumedState should be called
 	// the first client that takes the input and doesn't want
@@ -44,6 +72,10 @@ protected:
 	std::array<uint16_t, MaxMouseButtons> buttonState;
 	std::array<float,2> absMousePos;
 	std::array<float,2> mouseWheel;
+
+	bool relativeMode = false;
+	std::array<float, 2> relativeCenter;
+	std::array<float, 2> relMousePos;
 
 	bool inputConsumedFlag = false;
 };

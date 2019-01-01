@@ -25,8 +25,8 @@ struct Win32PresentationWindow
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	if(Input::Keyboard::WinProcessMessages(message, wParam, lParam)) return 0;
-	if(Input::Mouse::WinProcessMessages(message, wParam, lParam)) return 0;
+	if(Input::Keyboard::WinProcessMessages(&hWnd, message, wParam, lParam)) return 0;
+	if(Input::Mouse::WinProcessMessages(&hWnd, message, wParam, lParam)) return 0;
 
 	switch(message)
 	{

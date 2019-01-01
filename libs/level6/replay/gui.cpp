@@ -13,7 +13,9 @@
 #include "meshmod/vertices.h"
 #include "meshops/platonicsolids.h"
 #include "meshops/shapes.h"
+#include "meshops/basicmeshops.h"
 #include "fmt/format.h"
+#include "tacticalmap/tacticalmap.h"
 #include <cctype>
 #include "picojson/picojson.h"
 
@@ -30,17 +32,19 @@ Gui::Gui(std::shared_ptr<ResourceManager::ResourceMan> const& rm_,
 
 	{
 		auto rootScene = std::make_shared<MeshMod::SceneNode>();
-		rootScene->addObject(MeshOps::Shapes::createDiamond());
+		rootScene->addObject(MeshOps::Shapes::CreateDiamond());
 		diamondSceneIndex = meshModRenderer->addScene(rootScene);
 	}
 	{
 		auto rootScene = std::make_shared<MeshMod::SceneNode>();
-		rootScene->addObject(MeshOps::PlatonicSolids::createIcosahedron());
+		rootScene->addObject(MeshOps::PlatonicSolids::CreateIcosahedron());
 		fallbackSceneIndex = meshModRenderer->addScene(rootScene);
 	}
 
 	using namespace std::placeholders;
 	replay->registerCallback(Items::SimpleMeshType, std::bind(&Gui::meshCallback, this, _1));
+	replay->registerCallback(Items::TacticalMapType, std::bind(&Gui::tacmapCallback, this, _1));
+
 }
 
 Gui::~Gui()
@@ -49,57 +53,62 @@ Gui::~Gui()
 	meshModRenderer.reset();
 }
 
-auto Gui::render(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void
+auto Gui::render(bool showUI_, double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void
 {
+
 	// reset every frame
 	spatialMarkers.clear();
 
-	ImGuiWindowFlags window_flags =
-			ImGuiWindowFlags_NoTitleBar |
-			ImGuiWindowFlags_MenuBar |
-			ImGuiWindowFlags_NoScrollbar |
-			ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_NoResize;
-
-	ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSize(ImVec2(1240, 100), ImGuiCond_FirstUseEver);
-
-	if(!ImGui::Begin("Replay", &windowOpen, window_flags))
+	if(showUI_)
 	{
-		// Early out if the window is collapsed, as an optimization.
-		ImGui::End();
-	} else
-	{
-		double time = (viewerTime < 0.0) ? replay->getCurrentTime() : viewerTime;
-		auto timeString = fmt::format("Time: {}s", time);
-		ImGui::Text("%s", timeString.c_str());
+		ImGuiWindowFlags window_flags =
+				ImGuiWindowFlags_NoTitleBar |
+				ImGuiWindowFlags_MenuBar |
+				ImGuiWindowFlags_NoScrollbar |
+				ImGuiWindowFlags_NoMove |
+				ImGuiWindowFlags_NoResize;
 
-		menu();
+		ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(1240, 100), ImGuiCond_FirstUseEver);
 
-		if(ImGui::Button(ICON_FA_PAUSE))
+		if(!ImGui::Begin("Replay", &windowOpen, window_flags))
 		{
-			pause();
-		}
-		ImGui::SameLine();
-		if(ImGui::Button(ICON_FA_PLAY))
+			// Early out if the window is collapsed, as an optimization.
+			ImGui::End();
+		} else
 		{
-			play();
-		}
-		static double const timeMin = 0.0;
-		double const timeMax = replay->getCurrentTime();
+			double time = (viewerTime < 0.0) ? replay->getCurrentTime() : viewerTime;
+			auto timeString = fmt::format("Time: {}s", time);
+			ImGui::Text("%s", timeString.c_str());
 
-		if(ImGui::SliderScalar("", ImGuiDataType_Double, &time, &timeMin, &timeMax))
-		{
-			pause();
-			viewerTime = time;
+			menu();
+
+			if(ImGui::Button(ICON_FA_PAUSE))
+			{
+				pause();
+			}
+			ImGui::SameLine();
+			if(ImGui::Button(ICON_FA_PLAY))
+			{
+				play();
+			}
+			static double const timeMin = 0.0;
+			double const timeMax = replay->getCurrentTime();
+
+			if(ImGui::SliderScalar("", ImGuiDataType_Double, &time, &timeMin, &timeMax))
+			{
+				pause();
+				viewerTime = time;
+			}
+			ImGui::End();
 		}
-		ImGui::End();
+
+		log();
 	}
-
-	log();
 
 	processReplaySection();
 
+	std::lock_guard lock(lockMutex);
 	switch(mainView)
 	{
 		default:
@@ -109,21 +118,20 @@ auto Gui::render(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder
 		case MainViewType::Mesh:
 			meshView(deltaT_, encoder_);
 			break;
+		case MainViewType::TacticalMaps:
+			tacticalMapView(deltaT_, encoder_);
+			break;
 	}
 }
 
 auto Gui::sceneView(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void
 {
-
+	cameraMode = CameraMode::FPS;
+	yrot += Math::degreesToRadians(30.0f) * float(deltaT_);
 	for(auto const& marker : spatialMarkers)
 	{
 		auto translationMat = translate(glm::identity<glm::mat4x4>(), marker.position);
 		auto rootMat = rotate(translationMat, yrot, glm::vec3(0, 1, 0));
-		yrot += Math::degreesToRadians(90.0f) * float(deltaT_);
-		while(yrot > Math::two_pi<float>())
-		{
-			yrot -= Math::two_pi<float>();
-		}
 
 		meshModRenderer->render(rootMat, diamondSceneIndex, encoder_);
 	}
@@ -137,10 +145,110 @@ auto Gui::sceneView(double deltaT_, std::shared_ptr<Render::Encoder> const& enco
 
 		meshModRenderer->render(rootMat, meshObject.index, encoder_);
 	}
+
+	std::string comboString = {};
+	std::vector<std::string> nameLookup;
+	nameLookup.reserve(tacticalMaps.size());
+	for (auto const&[name, index] : tacticalMaps)
+	{
+		comboString += name + '\0';
+		nameLookup.push_back(name);
+	}
+
+	ImGui::Combo("Select Mesh", &tacMapViewSelectedItem, comboString.c_str());
+	if (tacMapViewSelectedItem >= (int)nameLookup.size()) return;
+
+	auto const sceneIndex = tacticalMaps[nameLookup[tacMapViewSelectedItem]].first;
+	auto const& tiles = tacticalMaps[nameLookup[tacMapViewSelectedItem]].second;
+
+	Geometry::AABB total;
+	for (auto const& tile : *tiles)
+	{
+		total.expandBy(tile.aabb);
+	}
+	arcBallFocusPoint = total.getBoxCenter();
+
+	meshModRenderer->render(
+		Math::identity<Math::mat4x4>(),
+		sceneIndex,
+		encoder_);
 }
 
 auto Gui::meshView(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void
 {
+	cameraMode = CameraMode::ArcBall;
+	arcBallFocusPoint = Math::vec3(0, 0, 0);
+
+	std::string comboString = {};
+	std::vector<std::string> nameLookup;
+	nameLookup.reserve(meshMap.size());
+	for(auto const&[name, index] : meshMap)
+	{
+		comboString += name + '\0';
+		nameLookup.push_back(name);
+	}
+
+	ImGui::Combo("Select Mesh", &meshViewSelectedItem, comboString.c_str());
+	if(meshViewSelectedItem >= (int) nameLookup.size()) return;
+
+	auto const sceneIndex = meshMap[nameLookup[meshViewSelectedItem]];
+
+	yrot += float(deltaT_ * 0.5);
+	/*		rootScene->transform.orientation = Math::rotate(
+				Math::identity<Math::quat>(),
+				yrot,
+				Math::vec3(0, 1, 0));
+		rootScene->transform.orientation = Math::rotate(
+				rootScene->transform.orientation,
+				yrot / 2.0f,
+				Math::vec3(0, 0, 1));
+	*/
+	meshModRenderer->render(
+			Math::identity<Math::mat4x4>(),
+			sceneIndex,
+			encoder_);
+}
+
+auto Gui::tacticalMapView(double deltaT_, std::shared_ptr<Render::Encoder> const& encoder_) -> void
+{
+	cameraMode = CameraMode::FPS;
+
+	std::string comboString = {};
+	std::vector<std::string> nameLookup;
+	nameLookup.reserve(tacticalMaps.size());
+	for(auto const&[name, index] : tacticalMaps)
+	{
+		comboString += name + '\0';
+		nameLookup.push_back(name);
+	}
+
+	ImGui::Combo("Select Mesh", &tacMapViewSelectedItem, comboString.c_str());
+	if(tacMapViewSelectedItem >= (int) nameLookup.size()) return;
+
+	auto const sceneIndex = tacticalMaps[nameLookup[tacMapViewSelectedItem]].first;
+	auto const& tiles = tacticalMaps[nameLookup[tacMapViewSelectedItem]].second;
+
+	Geometry::AABB total;
+	for(auto const& tile : *tiles)
+	{
+		total.expandBy(tile.aabb);
+	}
+	arcBallFocusPoint = total.getBoxCenter();
+
+	yrot += float(deltaT_ * 0.5);
+	/*		rootScene->transform.orientation = Math::rotate(
+				Math::identity<Math::quat>(),
+				yrot,
+				Math::vec3(0, 1, 0));
+		rootScene->transform.orientation = Math::rotate(
+				rootScene->transform.orientation,
+				yrot / 2.0f,
+				Math::vec3(0, 0, 1));
+	*/
+	meshModRenderer->render(
+			Math::identity<Math::mat4x4>(),
+			sceneIndex,
+			encoder_);
 }
 
 auto Gui::pause() -> void
@@ -171,6 +279,10 @@ auto Gui::menu() -> void
 			if(ImGui::MenuItem("Mesh", nullptr))
 			{
 				mainView = MainViewType::Mesh;
+			}
+			if(ImGui::MenuItem("TacticalMaps", nullptr))
+			{
+				mainView = MainViewType::TacticalMaps;
 			}
 			ImGui::EndMenu();
 		}
@@ -234,8 +346,22 @@ auto Gui::log() -> void
 			std::memcpy(typeString, &item.type, sizeof(uint32_t));
 			typeString[4] = 0;
 
-			auto logString = fmt::format("({}s)[{}]: {}", item.timeStamp, typeString, item.data);
-			ImGui::Text("%s", logString.c_str());
+			// special case some binary in json format
+			switch(item.type)
+			{
+				case Items::TacticalMapType:
+				{
+					auto logString = fmt::format("({}s)[{}]: BINARY_DATA", item.timeStamp, typeString);
+					ImGui::Text("%s", logString.c_str());
+					break;
+				}
+				default:
+				{
+					auto logString = fmt::format("({}s)[{}]: {}", item.timeStamp, typeString, item.data);
+					ImGui::Text("%s", logString.c_str());
+					break;
+				}
+			}
 		}
 		if(item.type == Items::LogType)
 		{
@@ -310,6 +436,7 @@ auto safe_get<std::vector<float>>(
 	}
 	return default_;
 }
+
 template<>
 auto safe_get<std::vector<uint32_t>>(
 		picojson::object const& j_,
@@ -327,6 +454,7 @@ auto safe_get<std::vector<uint32_t>>(
 	}
 	return default_;
 }
+
 template<>
 auto safe_get<float>(
 		picojson::object const& j_,
@@ -411,7 +539,7 @@ auto safe_get<Math::vec3>(
 			return Math::vec3{
 					safe_get<float>(ja, 0),
 					safe_get<float>(ja, 1),
-					safe_get<float>(ja, 2) };
+					safe_get<float>(ja, 2)};
 		}
 	}
 
@@ -459,10 +587,10 @@ auto Gui::decodeLog(Item const& item_) -> void
 			item_.timeStamp,
 			level,
 			text);
-	if(o.find("position") != o.cend() && ImGui::IsItemHovered())
+	if(o.find("position") != o.cend())// && ImGui::IsItemHovered())
 	{
 		Math::vec3 pos = safe_get<Math::vec3>(o, "position"sv);
-		logString += fmt::format(" {},{},{}", pos.x, pos.y, pos.z);
+//		logString += fmt::format(" {},{},{}", pos.x, pos.y, pos.z);
 		spatialMarkers.push_back({pos});
 	}
 
@@ -471,6 +599,7 @@ auto Gui::decodeLog(Item const& item_) -> void
 
 auto Gui::decodeSimpleMesh(Item const& item_) -> void
 {
+	std::lock_guard lock(lockMutex);
 	using namespace std::literals;
 
 	picojson::value pj;
@@ -535,11 +664,11 @@ auto Gui::decodeSimpleMesh(Item const& item_) -> void
 	rootScene->addObject(mesh);
 	auto sceneIndex = meshModRenderer->addScene(rootScene);
 	meshMap[name] = sceneIndex;
-	meshObjectMap[name].index = sceneIndex;
 }
 
 auto Gui::decodeMeshObject(Item const& item_) -> void
 {
+	std::lock_guard lock(lockMutex);
 	using namespace std::literals;
 
 	picojson::value pj;
@@ -603,6 +732,82 @@ auto Gui::meshCallback(Item const& item_) -> bool
 {
 	decodeSimpleMesh(item_);
 	return true;
+}
+
+auto Gui::tacmapCallback(Item const& item_) -> bool
+{
+	using namespace std::literals;
+	std::lock_guard lock(lockMutex);
+
+	std::istringstream stream(item_.data);
+
+	std::vector<std::shared_ptr<TacticalMap>> tactMaps;
+	bool okay = TacticalMap::createFromStream(stream, tactMaps);
+	if(okay)
+	{
+		for(auto const& tmap : tactMaps)
+		{
+			auto rootScene = std::make_shared<MeshMod::SceneNode>();
+			auto renderTiles = std::make_shared<std::vector<TacMapTile>>();
+			auto combinedMesh = std::make_shared<MeshMod::Mesh>("Tactical Map Combined Mesh");
+
+			for(auto z = 0; z < tmap->getHeight(); ++z)
+			{
+				for(auto x = 0; x < tmap->getWidth(); ++x)
+				{
+					tmapTileGenerateMesh(x, z, rootScene, combinedMesh, renderTiles, tmap);
+				}
+			}
+			rootScene->addObject(combinedMesh);
+
+			tacticalMaps[tmap->getName()] = {
+					meshModRenderer->addScene(rootScene),
+					renderTiles
+			};
+		}
+	}
+
+	return okay;
+}
+
+auto Gui::tmapTileGenerateMesh(
+		int x_,
+		int z_,
+		std::shared_ptr<MeshMod::SceneNode>& rootScene_,
+		std::shared_ptr<MeshMod::Mesh>& combinedMesh, 
+		std::shared_ptr<std::vector<TacMapTile>>& renderTiles_,
+		std::shared_ptr<TacticalMap> const& tmap_) -> void
+{
+	auto const& tile = tmap_->getTile(x_, z_);
+	Math::vec2 tilePos = tmap_->getBottomLeft() + Math::vec2(x_, z_);
+
+	TacMapTile renderTile;
+
+	float minHeight = std::numeric_limits<float>::max();
+	float maxHeight = std::numeric_limits<float>::lowest();
+
+	for(auto i = 0u; i < tile.levelCount; ++i)
+	{
+		auto const& level = tmap_->getLevel(tile, i);
+		minHeight = std::min(minHeight, level.baseHeight);
+		maxHeight = std::max(maxHeight, level.baseHeight + level.roofDeltaHeight);
+
+		MeshOps::BasicMeshOps::combine(				
+				MeshOps::Shapes::CreateSquare(
+						{tilePos.x, level.baseHeight, tilePos.y},
+						{0.0f, 1.0f, 0.0f}
+				),
+				combinedMesh);
+	}
+
+	renderTile.aabb = Geometry::AABB(
+			Math::vec3(tilePos.x, minHeight, tilePos.y),
+			Math::vec3(tilePos.x + 1.0f, maxHeight, tilePos.y + 1.0f)
+	);
+	renderTile.objectIndex = rootScene_->getObjectCount();
+	//	rootScene_->addObject(MeshOps::Shapes::CreateAABB(renderTile.aabb));
+
+	renderTiles_->push_back(renderTile);
 }
 
 }

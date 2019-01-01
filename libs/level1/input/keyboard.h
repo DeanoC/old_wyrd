@@ -12,7 +12,7 @@ class Keyboard
 {
 public:
 #if PLATFORM == WINDOWS
-	static bool WinProcessMessages(uint32_t message, uint64_t wParam, uint64_t lParam);
+	static bool WinProcessMessages(void* phwnd, uint32_t message, uint64_t wParam, uint64_t lParam);
 #elif PLATFORM == POSIX
 	friend void KeyboardX11ProcessKeyEvent( bool down, XKeyEvent* event );
 #endif
@@ -31,7 +31,12 @@ public:
 	bool keyDownOnce(Key key)
 	{
 		// note the short circuit order is important here don't rearrange
-		return (!keyHeld(key) && keyDown(key));
+		if (!keyHeld(key) && keyDown(key))
+		{
+			keyDataState[(uint16_t)key] &= ~KeyDownFlag;
+			return true;
+		}
+		return false;
 	}
 
 	static constexpr uint32_t MaxKeyCount = 512;

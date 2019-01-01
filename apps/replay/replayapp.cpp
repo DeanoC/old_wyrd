@@ -33,32 +33,8 @@
 #include "replay/gui.h"
 #include "server.h"
 #include "fakeclient.h"
-
-struct InputListener : public Input::VPadListener
-{
-	~InputListener() final {}
-
-	void axisMovement(Input::VPadAxisId id_, float delta_) override
-	{
-		switch(id_)
-		{
-			case Input::VPadAxisId::LX: lx += delta_; break;
-			case Input::VPadAxisId::LY: ly += delta_; break;
-
-			case Input::VPadAxisId::LZ:break;
-			case Input::VPadAxisId::RX:break;
-			case Input::VPadAxisId::RY:break;
-			case Input::VPadAxisId::RZ:break;
-		}
-	}
-
-	void button(Input::VPadButtonId id_, float delta_) override
-	{
-	}
-
-	float lx = 0;
-	float ly = 0;
-};
+#include "appcommon/simplepadcamera.h"
+#include "appcommon/arcballcamera.h"
 
 struct App
 {
@@ -119,7 +95,7 @@ struct App
 		}
 		if(pickedGpuIndex == ~0) return false;
 
-		std::string windowName = "Phoeonix Pointer Remote Viewer"s;
+		std::string windowName = "Phoenix Point Replay App"s;
 		Shell::PresentableWindowConfig windowConfig;
 		windowConfig.width = 1280;
 		windowConfig.height = 720;
@@ -141,8 +117,6 @@ struct App
 
 		weakDisplay = device->getDisplay();
 		inputProvider = shell.getInputProvider(window);
-		inputListener = std::make_shared<InputListener>();
-		inputProvider->setVirtualPadListener(0, inputListener);
 
 		createResources();
 
@@ -220,36 +194,40 @@ struct App
 		auto renderQueue = device->getGeneralQueue();
 		auto rEncoderPool = device->makeEncoderPool(true, CommandQueueFlavour::Render);
 
-		auto simpleEye = new SimpleEye();
-		simpleEye->setProjection(60.0f, 1280.0f / 720.0f, 0.01f);
-		Math::mat4x4 view = Math::lookAt(Math::vec3(0, 0, 4),
-										 Math::vec3(0, 0, 0),
-										 Math::vec3(0, 1, 0));
-		simpleEye->setView(view);
+		simplePadCamera = std::make_shared<SimplePadCamera>();
+		arcBallCamera = std::make_unique<ArcBallCamera>(Math::vec3(0,0,0), 20.0);
+		inputProvider->setVirtualPadListener(0, simplePadCamera);
+
 		tickerClock->update();
 
 		using namespace Core::bitmask;
 		do
 		{
 			auto deltaT = tickerClock->update();
+
 			replay->update(deltaT);
+			simplePadCamera->update(deltaT);
+			arcBallCamera->update(deltaT);
 
 			rEncoderPool->reset();
 
-			SimpleForwardGlobals* globals = (SimpleForwardGlobals*) globalBuffer->map();
-			std::memcpy(globals->viewMatrix, &simpleEye->getView(), sizeof(float) * 16);
-			std::memcpy(globals->projectionMatrix, &simpleEye->getProjection(), sizeof(float) * 16);
-			auto viewProj = simpleEye->getProjection() * simpleEye->getView();
+			bool const arcBallCam = (replayGui->getCameraMode() == Replay::Gui::CameraMode::ArcBall);
+			simplePadCamera->enabled = !arcBallCam;
+			if(arcBallCam)
+			{
+				arcBallCamera->lookatPoint = replayGui->getArcBallFocusPoint();
+			}
+			auto const simpleEye = arcBallCam ? arcBallCamera->simpleEye : simplePadCamera->simpleEye;
+
+			SimpleForwardGlobals* globals = (SimpleForwardGlobals*)globalBuffer->map();
+			std::memcpy(globals->viewMatrix, &simpleEye.getView(), sizeof(float) * 16);
+			std::memcpy(globals->projectionMatrix, &simpleEye.getProjection(), sizeof(float) * 16);
+			auto viewProj = simpleEye.getProjection() * simpleEye.getView();
 			std::memcpy(globals->viewProjectionMatrix, &viewProj, sizeof(float) * 16);
 			globalBuffer->unmap();
 
 			imguiBindings->newFrame(display->getWidth(), display->getHeight());
 
-			bool show_demo_window = true;
-			bool show_app_about = true;
-
-			if(show_demo_window)
-				ImGui::ShowDemoWindow(&show_demo_window);
 			auto encoder = rEncoderPool->allocateEncoder(EncoderFlag::RenderEncoder);
 			auto renderEncoder = encoder->asRenderEncoder();
 
@@ -257,7 +235,7 @@ struct App
 			colourRT0->transitionToRenderTarget(encoder);
 			renderEncoder->beginRenderPass(renderPass, renderTarget);
 
-			replayGui->render(deltaT, encoder);
+			replayGui->render(true, deltaT, encoder);
 			imguiBindings->render(encoder);
 
 			renderEncoder->endRenderPass();
@@ -275,10 +253,29 @@ struct App
 			device->houseKeepTick();
 			display->present(colourRT0);
 			inputProvider->update(deltaT);
+
 			if(Input::g_Keyboard)
 			{
 				using namespace Input;
 				if(Input::g_Keyboard->keyDown(Key::KT_ESCAPE)) return true;
+	
+				if (Input::g_Mouse && 
+					!imguiBindings->wantCapturedKeyboard() &&
+					Input::g_Keyboard->keyDownOnce(Key::KT_TAB))
+				{
+					if (showGui)
+					{
+						Input::g_Mouse->enableRelativeMode(true);
+
+						showGui = false;
+					}
+					else
+					{
+						Input::g_Mouse->enableRelativeMode(false);
+
+						showGui = true;
+					}
+				}
 			}
 		} while(shell.update());
 
@@ -293,13 +290,15 @@ struct App
 	std::unique_ptr<MidRender::ImguiBindings> imguiBindings;
 	std::unique_ptr<Server> server;
 	std::unique_ptr<FakeClient> client;
+	std::shared_ptr<SimplePadCamera> simplePadCamera;
+	std::unique_ptr<ArcBallCamera> arcBallCamera;
 
 	std::shared_ptr<Replay::Replay> replay;
 	std::unique_ptr<Replay::Gui> replayGui;
 	std::unique_ptr<Timing::TickerClock> tickerClock;
 	Shell::PresentableWindow* window;
 	std::unique_ptr<Input::Provider> inputProvider;
-	std::shared_ptr<InputListener> inputListener;
+	bool showGui = true;
 };
 
 int Main(Shell::ShellInterface& shell_)

@@ -39,13 +39,13 @@ struct CTacticalMapInterface
 	CAPI auto (*CTM_LookupLevelDataAtWorld)(TacticalMapHandle ctmHandle, float const* point, float const range, uint32_t levelMask, TacticalMapLevelDataHeader* out) -> bool;
 	CAPI auto (*CTM_DamageStructure)(TacticalMapHandle ctmHandle, float const* center, float const* extent) -> void;
 
-	CAPI auto (*CTMS_CreateStitcher)() -> TacticalMapStitcherHandle;
+	CAPI auto (*CTMS_CreateStitcher)(char const* name_) -> TacticalMapStitcherHandle;
 	CAPI auto (*CTMS_AddParcelInstances)(TacticalMapStitcherHandle ctmsHandle, TacticalMapHandle tmHandle, ParcelInstances* instances) -> void;
 	CAPI auto (*CTMS_Stitch)(TacticalMapStitcherHandle ctmsHandle)->TacticalMapHandle;
 	CAPI auto (*CTMS_Delete)(TacticalMapStitcherHandle ctmsHandle) -> void;
 
 	// build API
-	CAPI auto (*CTMB_CreateBuilder)(float* bounds2D)->TacticalMapBuilderHandle;
+	CAPI auto (*CTMB_CreateBuilder)(float* bounds2D, char const* name)->TacticalMapBuilderHandle;
 	CAPI auto (*CTMB_SetMinimumHeight)(TacticalMapBuilderHandle handle_, float const minHeight_) -> void;
 	CAPI auto (*CTMB_SetOpaqueLevelDataSize)(TacticalMapBuilderHandle handle_, uint32_t const size_) -> void;
 	CAPI auto (*CTMB_AddMeshAt)(TacticalMapBuilderHandle handle, TacticalMapHandle meshHandle, TacticalMapLevelDataHeader const* opaqueData, float const* matrix) -> void;
@@ -57,7 +57,7 @@ struct CTacticalMapInterface
 
 // cpp helpers
 EXPORT_CPP auto CTMB_ExportToGLTF(TacticalMapBuilderHandle ctmbHandle, char const* fileName) -> MeshMod::SceneNode::Ptr;
-EXPORT_CPP auto UnityOwnedTacticalMap(TacticalMapHandle handle) -> TacticalMap::Ptr;
+EXPORT_CPP auto UnityOwnedTacticalMap(TacticalMapHandle handle) -> std::shared_ptr<TacticalMap>;
 EXPORT_CPP auto UnityOwnedTacticalMapBuilder(TacticalMapBuilderHandle handle) -> std::shared_ptr<ITacticalMapBuilder>;
 EXPORT_CPP auto UnityOwnedTacticalMapStitcher(TacticalMapStitcherHandle handle) ->std::shared_ptr<ITacticalMapStitcher>;
 

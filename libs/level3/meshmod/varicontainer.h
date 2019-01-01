@@ -340,7 +340,7 @@ inline auto VariContainer<CT>::cloneElement(IndexType elementToCopy_) -> IndexTy
 	{
 		ptr->cloneElement(elementToCopy_);
 	}
-
+	notValids.push_back(notValids[(size_t)elementToCopy_]);
 	return IndexType(size() - 1);
 }
 
