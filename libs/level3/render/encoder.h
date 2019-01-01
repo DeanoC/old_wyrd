@@ -29,17 +29,17 @@ public:
 
 	auto canEncodeRenderCommands() -> bool const
 	{
-		return Core::bitmask::test_equal(encoderFlags, EncoderFlag::RenderEncoder);
+		return Core::test_equal(encoderFlags, EncoderFlag::RenderEncoder);
 	}
 
 	auto canEncodeComputeCommands() -> bool const
 	{
-		return Core::bitmask::test_equal(encoderFlags, EncoderFlag::ComputeEncoder);
+		return Core::test_equal(encoderFlags, EncoderFlag::ComputeEncoder);
 	}
 
-	auto canSubmitToQueue() -> bool const { return !Core::bitmask::test_equal(encoderFlags, EncoderFlag::Callable); }
+	auto canSubmitToQueue() -> bool const { return !Core::test_equal(encoderFlags, EncoderFlag::Callable); }
 
-	auto isCallable() -> bool const { return Core::bitmask::test_equal(encoderFlags, EncoderFlag::Callable); }
+	auto isCallable() -> bool const { return Core::test_equal(encoderFlags, EncoderFlag::Callable); }
 
 	auto getFlags() -> EncoderFlag const { return encoderFlags; }
 
@@ -104,7 +104,7 @@ struct EncoderPool
 
 	virtual ~EncoderPool() = default;
 	virtual auto allocateEncoder(
-			EncoderFlag encoderFlags_ = Core::bitmask::zero<EncoderFlag>()) -> Render::Encoder::Ptr = 0;
+			EncoderFlag encoderFlags_ = Core::zero<EncoderFlag>()) -> Render::Encoder::Ptr = 0;
 	virtual auto reset() -> void = 0;
 };
 

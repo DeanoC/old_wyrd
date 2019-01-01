@@ -42,8 +42,8 @@ struct alignas(8) Sampler : public ResourceManager::Resource<SamplerId>
 			float maxLod_ = 1000.0f
 			) -> SamplerHandle;
 
-	auto isCompareEnabled() const { return Core::bitmask::test_equal(flags, SamplerFlags::CompareEnable); }
-	auto isAnistropyEnabled() const { return Core::bitmask::test_equal(flags, SamplerFlags::AnistropyEnable); }
+	auto isCompareEnabled() const { return Core::test_equal(flags, SamplerFlags::CompareEnable); }
+	auto isAnistropyEnabled() const { return Core::test_equal(flags, SamplerFlags::AnistropyEnable); }
 
 	Filter magFilter;
 	Filter minFilter;

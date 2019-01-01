@@ -23,7 +23,7 @@ struct EncoderPool : public Render::EncoderPool
 	~EncoderPool() final;
 
 	auto allocateEncoder(
-			Render::EncoderFlag encoderFlags_ = Core::bitmask::zero<Render::EncoderFlag>()) -> Render::Encoder::Ptr final;
+			Render::EncoderFlag encoderFlags_ = Core::zero<Render::EncoderFlag>()) -> Render::Encoder::Ptr final;
 	auto reset() -> void final;
 	auto destroyEncoder(Vulkan::Encoder* encoder_) -> void;
 

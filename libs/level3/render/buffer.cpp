@@ -45,7 +45,7 @@ auto Buffer::Create(
 		uint64_t sizeInBytes_,
 		void* data_) -> BufferHandle
 {
-	using namespace Core::bitmask;
+	using namespace Core;
 	bool noInit = false;
 	size_t dataSize = sizeInBytes_;
 	if(data_ == nullptr || test_any(flags_, BufferFlags::InitZero | BufferFlags::NoInit))
@@ -80,7 +80,7 @@ auto Buffer::Create(
 
 auto Buffer::implicitDataChanged() const
 {
-	assert(Core::bitmask::test_equal(flags, BufferFlags::CPUDynamic));
+	assert(Core::test_equal(flags, BufferFlags::CPUDynamic));
 
 }
 

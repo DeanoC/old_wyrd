@@ -22,7 +22,7 @@ auto Stocks::InitBasics(std::shared_ptr<ResourceManager::ResourceMan> const& rm_
 	using namespace Render;
 	using namespace ResourceManager;
 	using namespace std::literals;
-	using namespace Core::bitmask;
+	using namespace Core;
 
 	auto const glslPassthroughSourceName = ResourceNameView("mem$glslPassthroughShaderSource"sv);
 	TextResource::Create(
@@ -116,7 +116,7 @@ auto Stocks::InitSimpleForwardRenderer(std::shared_ptr<ResourceManager::Resource
 	using namespace Render;
 	using namespace ResourceManager;
 	using namespace std::literals;
-	using namespace Core::bitmask;
+	using namespace Core;
 
 	Texture::Create(
 			rm_,

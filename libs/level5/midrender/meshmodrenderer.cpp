@@ -30,7 +30,7 @@ auto MeshModRenderer::init(std::shared_ptr<ResourceManager::ResourceMan> const& 
 {
 	using namespace Render;
 	using namespace ResourceManager;
-	using namespace Core::bitmask;
+	using namespace Core;
 
 	rm = rm_;
 
@@ -209,7 +209,7 @@ auto MeshModRenderer::addMeshMod(std::shared_ptr<MeshMod::Mesh> const& mesh_,
 
 	using namespace Render;
 	using namespace std::literals;
-	using namespace Core::bitmask;
+	using namespace Core;
 
 	std::string iname = fmt::format("mem$MMR_IndexBuffer_{}_{}"s, mesh_->getName(), (uint32_t) meshes.size());
 	std::string vname = fmt::format("mem$MMR_VertexBuffer_{}_{}"s, mesh_->getName(), (uint32_t) meshes.size());

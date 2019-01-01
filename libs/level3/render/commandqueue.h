@@ -18,25 +18,21 @@ struct CommandQueue
 
 	auto isRenderFlavour() const -> bool
 	{
-		using namespace Core::bitmask;
 		return bool(flavour & CommandQueueFlavour::Render);
 	}
 
 	auto isComputeFlavour() const -> bool
 	{
-		using namespace Core::bitmask;
 		return bool(flavour & CommandQueueFlavour::Compute);
 	}
 
 	auto isDMAFlavour() const -> bool
 	{
-		using namespace Core::bitmask;
 		return bool(flavour & CommandQueueFlavour::DMA);
 	}
 
 	auto isPresentFlavour() const -> bool
 	{
-		using namespace Core::bitmask;
 		return bool(flavour & CommandQueueFlavour::Present);
 	}
 
@@ -49,7 +45,7 @@ struct CommandQueue
 protected:
 	CommandQueue(CommandQueueFlavour flavour_) : flavour(flavour_) {}
 	virtual ~CommandQueue() = default;
-	CommandQueueFlavour const flavour = Core::bitmask::zero<CommandQueueFlavour>();
+	CommandQueueFlavour const flavour = Core::zero<CommandQueueFlavour>();
 };
 
 }

@@ -119,7 +119,7 @@ struct alignas(8) RasterisationState : public ResourceManager::Resource<Rasteris
 
 	constexpr auto testFlag(RasterisationStateFlags flag_) const -> bool
 	{
-		return Core::bitmask::test_equal(flags, flag_);
+		return Core::test_equal(flags, flag_);
 	}
 
 };

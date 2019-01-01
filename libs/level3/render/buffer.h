@@ -24,7 +24,6 @@ enum class BufferFlags : uint32_t
 
 constexpr auto is_bitmask_enum(BufferFlags) -> bool { return true; }
 
-
 // resource stages of Buffer have to implement IGpuBuffer
 struct IGpuBuffer
 {
@@ -78,11 +77,11 @@ struct alignas(8) Buffer : public ResourceManager::Resource<BufferId>
 
 	constexpr auto canBeWrittenAsTexture() const { return testUsageFlag(Usage::TextureWrite); }
 
-	constexpr auto canBeUpdatedByCPU() const { return Core::bitmask::test_equal(flags, BufferFlags::CPUDynamic); }
+	constexpr auto canBeUpdatedByCPU() const { return Core::test_equal(flags, BufferFlags::CPUDynamic); }
 
 
 	constexpr auto hasImplicitData() const -> bool {
-		using namespace Core::bitmask;
+		using namespace Core;
 		return !test_any(flags, BufferFlags::InitZero | BufferFlags::NoInit);
 	}
 
@@ -133,18 +132,18 @@ struct alignas(8) Buffer : public ResourceManager::Resource<BufferId>
 
 	constexpr auto testUsageFlag(Usage flag_) const -> bool
 	{
-		return Core::bitmask::test_equal(ToUsage(flags), flag_);
+		return Core::test_equal(ToUsage(flags), flag_);
 	}
 
 	static constexpr auto ToUsage(BufferFlags flags_) -> Usage
 	{
-		using namespace Core::bitmask;
+		using namespace Core;
 		return from_uint<Usage>(to_uint(flags_ & BufferFlags::Usage) >> 5);
 	}
 
 	static constexpr auto FromUsage(Usage usage) -> BufferFlags
 	{
-		using namespace Core::bitmask;
+		using namespace Core;
 		return from_uint<BufferFlags>(to_uint(usage) << 5);
 	}
 };

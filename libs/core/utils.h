@@ -88,10 +88,31 @@ std::array<T, N> make_array(const T& value)
 	return detail::make_array(value, std::make_index_sequence<N>());
 }
 
-namespace bitmask {
+// is an enum a scoped enum (enum class) or a old fashioned one?
+// from StackOverflow https://stackoverflow.com/questions/15586163/c11-type-trait-to-differentiate-between-enum-class-and-regular-enum
 template<typename E>
-constexpr auto is_bitmask_enum(E) -> bool { return false; }
+using is_scoped_enum = std::integral_constant<
+		bool,
+		std::is_enum<E>::value && !std::is_convertible<E, int>::value>;
 
+} // end namespace Core
+
+template<typename E>
+constexpr auto is_bitmask_enum(E) -> bool
+{
+	// normal enums allow the bitwise ops regardless
+	// for scoped enums (enum class) only if this function is overridden
+	if constexpr (Core::is_scoped_enum<E>::value == false)
+	{
+		return true;
+	} else
+	{
+		return false;
+	}
+}
+
+// the enum class bitwise operators are boosted outside the Core namespace
+// so that they operator the same as the normal operators do
 template<typename E, typename = typename std::enable_if<std::is_enum<E>{}>::type>
 constexpr auto operator|(E lhs, E rhs)
 {
@@ -172,6 +193,8 @@ constexpr auto operator^=(E& lhs, E rhs)
 	}
 }
 
+namespace Core {
+
 template<typename E, typename = typename std::enable_if<std::is_enum<E>{}>::type>
 constexpr auto test_equal(E lhs, E rhs)
 {
@@ -216,8 +239,7 @@ constexpr auto to_uint(E e)
 	}
 }
 
-} // namespace Core::bitmask
-
 }	//namespace Core
+
 
 #endif

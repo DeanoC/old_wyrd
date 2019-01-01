@@ -31,7 +31,7 @@ EncoderPool::~EncoderPool()
 
 auto EncoderPool::allocateEncoder(Render::EncoderFlag encoderFlags_) -> Render::Encoder::Ptr
 {
-	using namespace Core::bitmask;
+	using namespace Core;
 
 	VkCommandBufferAllocateInfo allocateInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
 	allocateInfo.commandPool = commandPool;

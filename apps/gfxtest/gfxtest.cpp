@@ -41,7 +41,7 @@ struct App
 	auto init() -> bool
 	{
 		using namespace std::string_literals;
-		using namespace Core::bitmask;
+		using namespace Core;
 		using namespace Render;
 
 		Shell::ShellConfig shellConfig{};
@@ -133,7 +133,7 @@ struct App
 	{
 		using namespace std::string_literals;
 		using namespace std::string_view_literals;
-		using namespace Core::bitmask;
+		using namespace Core;
 		using namespace Render;
 		using namespace ResourceManager;
 		using namespace MidRender;
@@ -177,7 +177,7 @@ struct App
 		inputProvider->setVirtualPadListener(0, simplePadCamera);
 		tickerClock->update();
 
-		using namespace Core::bitmask;
+		using namespace Core;
 		do
 		{
 			auto deltaT = tickerClock->update();

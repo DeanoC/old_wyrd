@@ -37,18 +37,6 @@ public:
 		   uint32_t presentQ_ = ~0);
 	~Device();
 
-	auto getVkDevice() -> VkDevice { return device; }
-
-	auto upload(uint8_t const* data_, uint64_t size_, Texture const* dst_) -> void;
-	auto fill(uint32_t value_, Texture const* dst_) -> void;
-
-	auto upload(uint8_t const* data_, uint64_t size_, Buffer const* dst_) -> void;
-	auto fill(uint32_t value_, Buffer const* dst_) -> void;
-
-	auto mapMemory(VmaAllocation const& alloc_) -> void*;
-	auto unmapMemory(VmaAllocation const& alloc_) -> void;
-	auto flushMemory(VmaAllocation const& alloc_) -> void;
-
 	// Render::Device interface
 	auto getDisplay() const -> std::weak_ptr<Render::Display> final;
 	auto houseKeepTick() -> void final;
@@ -65,6 +53,18 @@ public:
 	auto getPresentQueue() -> Render::CommandQueue::Ptr final;
 
 	// Vulkan specific functions
+	auto getVkDevice() -> VkDevice { return device; }
+
+	auto upload(uint8_t const* data_, uint64_t size_, Texture const* dst_) -> void;
+	auto fill(uint32_t value_, Texture const* dst_) -> void;
+
+	auto upload(uint8_t const* data_, uint64_t size_, Buffer const* dst_) -> void;
+	auto fill(uint32_t value_, Buffer const* dst_) -> void;
+
+	auto mapMemory(VmaAllocation const& alloc_) -> void*;
+	auto unmapMemory(VmaAllocation const& alloc_) -> void;
+	auto flushMemory(VmaAllocation const& alloc_) -> void;
+
 	auto getPhysicalDevice() const -> VkPhysicalDevice { return physicalDevice; }
 
 	auto destroyQueue(VkQueue const& queue_) -> void;

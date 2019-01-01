@@ -55,7 +55,7 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 
 	auto isPrimitiveRestartEnabled() const
 	{
-		return Core::bitmask::test_equal(flags, RenderPipelineFlags::EnablePrimitiveRestart);
+		return Core::test_equal(flags, RenderPipelineFlags::EnablePrimitiveRestart);
 	}
 
 	BindingTableMemoryMapHandle const* getBindingTableMemoryMapHandles() const
@@ -65,41 +65,40 @@ struct alignas(8) RenderPipeline : public ResourceManager::Resource<RenderPipeli
 
 	auto hasDynamicViewportState() const
 	{
-		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::Viewport);
+		return Core::test_equal(dynamicPipelineState, DynamicPipelineState::Viewport);
 	}
 	auto hasDynamicScissorState() const
 	{
-		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::Scissor);
+		return Core::test_equal(dynamicPipelineState, DynamicPipelineState::Scissor);
 	}
 	auto hasDynamicLineWidthState() const
 	{
-		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::LineWidth);
+		return Core::test_equal(dynamicPipelineState, DynamicPipelineState::LineWidth);
 	}
 	auto hasDynamicDepthBiasState() const
 	{
-		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::DepthBias);
+		return Core::test_equal(dynamicPipelineState, DynamicPipelineState::DepthBias);
 	}
 	auto hasDynamicBlendConstantState() const
 	{
-		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::BlendConstants);
+		return Core::test_equal(dynamicPipelineState, DynamicPipelineState::BlendConstants);
 	}
 	auto hasDynamicDepthBoundsState() const
 	{
-		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::DepthBounds);
+		return Core::test_equal(dynamicPipelineState, DynamicPipelineState::DepthBounds);
 	}
 	auto hasDynamicStencilCompareMaskState() const
 	{
-		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::StencilCompareMask);
+		return Core::test_equal(dynamicPipelineState, DynamicPipelineState::StencilCompareMask);
 	}
 	auto hasDynamicStencilWriteMaskState() const
 	{
-		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::StencilWriteMask);
+		return Core::test_equal(dynamicPipelineState, DynamicPipelineState::StencilWriteMask);
 	}
 	auto hasDynamicStencilReferenceState() const
 	{
-		return Core::bitmask::test_equal(dynamicPipelineState, DynamicPipelineState::StencilReference);
+		return Core::test_equal(dynamicPipelineState, DynamicPipelineState::StencilReference);
 	}
-
 
 	PushConstantRange const* getPushConstantRanges() const
 	{

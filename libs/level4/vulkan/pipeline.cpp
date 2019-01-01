@@ -92,7 +92,7 @@ constexpr auto from(Render::VertexInputType const in_) -> VkFormat
 
 auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, Device::WeakPtr device_) -> void
 {
-	using namespace Core::bitmask;
+	using namespace Core;
 
 	auto registerFunc = [device_](int stage_, ResourceManager::ResolverInterface resolver_, uint16_t, uint16_t,
 		std::shared_ptr<ResourceManager::ResourceBase> ptr_) -> bool
@@ -298,7 +298,7 @@ auto RenderPipeline::RegisterResourceHandler(ResourceManager::ResourceMan& rm_, 
 		dynamicStates.reserve(MaxDynamicPipelineStates);
 		for (auto n = 0u; n < MaxDynamicPipelineStates; ++n)
 		{
-			using namespace Core::bitmask;
+			using namespace Core;
 			if (test_equal(renderPipeline->dynamicPipelineState, (Render::DynamicPipelineState)(1u << n)))
 			{
 				dynamicStates.push_back((VkDynamicState)n);

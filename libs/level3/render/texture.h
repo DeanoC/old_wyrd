@@ -68,7 +68,7 @@ public:
 
 	constexpr auto is3D() const { return depth != 1; }
 
-	constexpr auto isCubeMap() -> bool const { return Core::bitmask::test_equal(flags, TextureFlags::CubeMap); };
+	constexpr auto isCubeMap() -> bool const { return Core::test_equal(flags, TextureFlags::CubeMap); };
 
 	constexpr auto canBeDMASrc() const -> bool { return testUsageFlag(Usage::DMASrc); }
 
@@ -117,18 +117,18 @@ public:
 
 	constexpr auto testUsageFlag(Usage flag_) const -> bool
 	{
-		return Core::bitmask::test_equal(ToUsage(flags), flag_);
+		return Core::test_equal(ToUsage(flags), flag_);
 	}
 
 	static constexpr auto ToUsage(TextureFlags flags_) -> Usage
 	{
-		using namespace Core::bitmask;
+		using namespace Core;
 		return from_uint<Usage>(to_uint(flags_ & TextureFlags::Usage) >> 5);
 	}
 
 	static constexpr auto FromUsage(Usage usage) -> TextureFlags
 	{
-		using namespace Core::bitmask;
+		using namespace Core;
 		return from_uint<TextureFlags>(to_uint(usage) << 5);
 	}
 

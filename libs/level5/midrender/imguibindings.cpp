@@ -104,7 +104,7 @@ auto ImguiBindings::init(std::shared_ptr<ResourceManager::ResourceMan> const& rm
 {
 	using namespace Render;
 	using namespace ResourceManager;
-	using namespace Core::bitmask;
+	using namespace Core;
 
 	rm = rm_;
 
@@ -295,7 +295,7 @@ auto ImguiBindings::render(std::shared_ptr<Render::Encoder>& encoder_) -> void
 {
 	using namespace std::literals;
 	using namespace Render;
-	using namespace Core::bitmask;
+	using namespace Core;
 	using namespace ResourceManager;
 
 	ImGui::EndFrame();

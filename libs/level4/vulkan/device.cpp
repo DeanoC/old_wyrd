@@ -290,7 +290,7 @@ Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
 	for(auto i = 0u; i < createInfo_.queueCreateInfoCount; ++i)
 	{
 		using namespace Render;
-		using namespace Core::bitmask;
+		using namespace Core;
 
 		CommandQueueFlavour flavour{zero<CommandQueueFlavour>()};
 		flavour |= (renderCapable && queueFamilies_[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) ?
@@ -315,7 +315,7 @@ Device::Device(std::shared_ptr<ResourceManager::ResourceMan> resourceMan_,
 	for(auto que : cqs)
 	{
 		using namespace Render;
-		using namespace Core::bitmask;
+		using namespace Core;
 		if(!renderSpecificQueue && test_equal(que->getFlavour(), CommandQueueFlavour::Render |
 																 CommandQueueFlavour::DMA))
 		{
@@ -838,20 +838,20 @@ auto Device::makeEncoderPool(bool frameLifetime_,
 							 Render::CommandQueueFlavour flavour_) -> std::shared_ptr<Render::EncoderPool>
 {
 	using namespace Render;
-	using namespace Core::bitmask;
-	assert(renderCapable || Core::bitmask::test_equal(flavour_, CommandQueueFlavour::Render));
+	using namespace Core;
+	assert(renderCapable || test_equal(flavour_, CommandQueueFlavour::Render));
 
 	VkCommandPoolCreateInfo createInfo{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
 	createInfo.flags = 0;
 	createInfo.flags |= frameLifetime_ ? VkCommandPoolCreateFlagBits::VK_COMMAND_POOL_CREATE_TRANSIENT_BIT : 0;
 
-	if(Core::bitmask::test_equal(flavour_, CommandQueueFlavour::Render | CommandQueueFlavour::Compute))
+	if(test_equal(flavour_, CommandQueueFlavour::Render | CommandQueueFlavour::Compute))
 	{
 		createInfo.queueFamilyIndex = allQueue->getFamilyIndex();
-	} else if(Core::bitmask::test_any(flavour_, CommandQueueFlavour::Render))
+	} else if(test_any(flavour_, CommandQueueFlavour::Render))
 	{
 		createInfo.queueFamilyIndex = renderSpecificQueue->getFamilyIndex();
-	} else if(Core::bitmask::test_any(flavour_, CommandQueueFlavour::Compute))
+	} else if(test_any(flavour_, CommandQueueFlavour::Compute))
 	{
 		createInfo.queueFamilyIndex = computeSpecificQueue->getFamilyIndex();
 	} else

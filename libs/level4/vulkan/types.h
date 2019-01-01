@@ -13,7 +13,7 @@ namespace Vulkan {
 constexpr auto from(Render::MemoryAccess const in_) -> uint32_t
 {
 	using namespace Render;
-	using namespace Core::bitmask;
+	using namespace Core;
 
 	uint32_t ret = 0;
 	ret |= test_equal(in_, MemoryAccess::IndirectCommandRead) ? VK_ACCESS_INDIRECT_COMMAND_READ_BIT : 0;
@@ -40,7 +40,7 @@ constexpr auto from(Render::MemoryAccess const in_) -> uint32_t
 constexpr auto from(Render::RenderPipelineStages const in_) -> uint32_t
 {
 	using namespace Render;
-	using namespace Core::bitmask;
+	using namespace Core;
 
 	// special case all and allgfx
 	if(test_equal(in_, RenderPipelineStages::AllGfx))
@@ -75,7 +75,7 @@ constexpr auto from(Render::RenderPipelineStages const in_) -> uint32_t
 constexpr auto from(Render::ComputePipelineStages const in_) -> uint32_t
 {
 	using namespace Render;
-	using namespace Core::bitmask;
+	using namespace Core;
 
 	// special case all
 	if(test_equal(in_, ComputePipelineStages::All))
@@ -94,7 +94,7 @@ constexpr auto from(Render::ComputePipelineStages const in_) -> uint32_t
 constexpr auto from(Render::DMAPipelineStages const in_) -> uint32_t
 {
 	using namespace Render;
-	using namespace Core::bitmask;
+	using namespace Core;
 
 	// special case all
 	if(test_equal(in_, DMAPipelineStages::All))
@@ -113,7 +113,7 @@ constexpr auto from(Render::DMAPipelineStages const in_) -> uint32_t
 constexpr auto from(Render::HostPipelineStages const in_) -> uint32_t
 {
 	using namespace Render;
-	using namespace Core::bitmask;
+	using namespace Core;
 
 	// special case all
 	if(test_equal(in_, HostPipelineStages::All))
@@ -306,7 +306,7 @@ constexpr auto from(Render::ROPBlendFactor const in_) -> VkBlendFactor
 constexpr auto from(Render::ColourComponents const in_) -> uint32_t
 {
 	using namespace Render;
-	using namespace Core::bitmask;
+	using namespace Core;
 
 	if(in_ == ColourComponents::Red)
 	{
@@ -328,7 +328,7 @@ constexpr auto from(Render::ColourComponents const in_) -> uint32_t
 constexpr auto from(Render::ShaderType const in_) -> uint32_t
 {
 	using namespace Render;
-	using namespace Core::bitmask;
+	using namespace Core;
 
 	uint32_t ret = 0;
 	ret |= test_equal(in_, ShaderType::Vertex) ? VK_SHADER_STAGE_VERTEX_BIT : 0;
@@ -449,7 +449,7 @@ constexpr auto from(Render::StencilOp const in_) -> VkStencilOp
 constexpr auto from(Render::SampleCounts const in_) -> uint8_t
 {
 	using namespace Render;
-	using namespace Core::bitmask;
+	using namespace Core;
 
 	uint32_t ret = 0;
 	ret |= test_equal(in_, SampleCounts::One) ? VK_SAMPLE_COUNT_1_BIT : 0;
