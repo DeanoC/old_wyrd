@@ -35,17 +35,22 @@ SCENARIO("Resource Manager has mem storage", "[resourcemanager]")
 		auto memstorage = std::make_shared<MemStorage>();
 		REQUIRE(memstorage);
 		rm->registerStorageHandler(memstorage);
-		rm->registerHandler("TEST"_resource_id,
-							{0, [](int stage_, ResourceManager::ResolverInterface, uint16_t majorVersion_,
-								   uint16_t minorVersion_, std::shared_ptr<void> ptr_) -> bool
-							{
-								if(majorVersion_ != 0) return false;
-								if(minorVersion_ != 0) return false;
-								if(stage_ != 0) return false;
+		rm->registerHandler(
+				"TEST"_resource_id,
+				{0,
+				 [](int stage_, ResourceManager::ResolverInterface, uint16_t majorVersion_,
+					uint16_t minorVersion_, std::shared_ptr<void> ptr_) -> bool
+				 {
+					 if(majorVersion_ != 0) return false;
+					 if(minorVersion_ != 0) return false;
+					 if(stage_ != 0) return false;
 
-								return true;
-							}, [](int, void*) -> bool
-							 { return true; }});
+					 return true;
+				 },
+				 [](int, void*) -> bool
+				 {
+					return true;
+				 }});
 
 		memstorage->addMemory("test"s, "TEST"_resource_id, 0, 0, TestTxt0, strlen(TestTxt0) + 1);
 		memstorage->addMemory("test2"s, "TEST"_resource_id, 0, 0, TestTxt0, strlen(TestTxt0) + 1);
@@ -75,30 +80,35 @@ SCENARIO("Resource Manager has mem storage", "[resourcemanager]")
 			}
 		} WHEN("TextResource is added and used")
 		{
-			auto stage = rm->registerNextHandler(TextResource::Id,
-												 {10, [&testText](int stage_, ResourceManager::ResolverInterface,
-																  uint16_t majorVersion_,
-																  uint16_t minorVersion_,
-																  std::shared_ptr<ResourceBase> ptr_) -> bool
-												 {
-													 if(majorVersion_ != 0) return false;
-													 if(minorVersion_ != 0) return false;
-													 if(stage_ != 1) return false;
+			auto stage = rm->registerNextHandler(
+					TextResource::Id,
+					{10,
+					 [&testText](int stage_, ResourceManager::ResolverInterface,
+								 uint16_t majorVersion_,
+								 uint16_t minorVersion_,
+								 std::shared_ptr<ResourceBase> ptr_) -> bool
+					 {
+						 if(majorVersion_ != 0) return false;
+						 if(minorVersion_ != 0) return false;
+						 if(stage_ != 1) return false;
 
-													 auto txtr = std::static_pointer_cast<TextResource>(ptr_);
-													 std::string txt = txtr->getText();
-													 REQUIRE(txt == testText);
-													 uint8_t* bytePtr = txtr->getStage<uint8_t>(stage_);
-													 for(auto i = 0u; i < 10; ++i)
-													 {
-														 REQUIRE(bytePtr[i] == 0xB1);
-													 }
+						 auto txtr = std::static_pointer_cast<TextResource>(ptr_);
+						 std::string txt = txtr->getText();
+						 REQUIRE(txt == testText);
+						 uint8_t* bytePtr = txtr->getStage<uint8_t>(stage_);
+						 for(auto i = 0u; i < 10; ++i)
+						 {
+							 REQUIRE(bytePtr[i] == 0xB1);
+						 }
 
-													 std::memset(bytePtr, 0xAA, 10);
+						 std::memset(bytePtr, 0xAA, 10);
 
-													 return true;
-												 }, [](int, void*) -> bool
-												  { return true; }});
+						 return true;
+					 },
+					 [](int, void*) -> bool
+					 {
+						 return true;
+					 }});
 
 			REQUIRE(stage == 1);
 

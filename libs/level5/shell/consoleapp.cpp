@@ -14,7 +14,7 @@ ConsoleApp::~ConsoleApp()
 {
 	if(userInit.gpuComputeRequired || userInit.gpuRenderRequired)
 	{
-		gpuStable->Finish();
+		if(gpuStable) gpuStable->Finish();
 		gpuStable.reset();
 	}
 

@@ -233,7 +233,7 @@ public:
 	{
 		for(size_type i = 0; i < _count; ++i)
 		{
-			freelist.push((IndexType) i);
+			freelist.push( (IndexType) i);
 		}
 	}
 

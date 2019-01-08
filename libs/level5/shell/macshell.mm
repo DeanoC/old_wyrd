@@ -518,13 +518,14 @@ CFStringRef     kPropertyUnicodeKeyLayoutData;
 	if (!inputSource)
 	{
 		LOG_S(WARNING) << "Cocoa: Failed to retrieve keyboard layout input source";
+		return;
 	}
 
-	unicodeData = GetInputSourceProperty(inputSource, kPropertyUnicodeKeyLayoutData);
+/*	unicodeData = GetInputSourceProperty(inputSource, kPropertyUnicodeKeyLayoutData);
 	if (!unicodeData)
 	{
 		LOG_S(WARNING) << "Cocoa: Failed to retrieve keyboard layout Unicode data";
-	}
+	}*/
 }
 
 - (void)selectedKeyboardInputSourceChanged:(NSObject* )object {
@@ -600,7 +601,7 @@ MacSpecific::MacSpecific()
 	[listener initializeTIS];
 
 	[NSApp setDelegate:delegate];
-	[NSApp run];
+//	[NSApp run];
 }
 
 MacSpecific::~MacSpecific()

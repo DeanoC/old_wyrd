@@ -18,8 +18,6 @@ constexpr uint32_t operator "" _bundle_id(char const* s, size_t count)
 
 struct IBundle
 {
-	using Ptr = std::shared_ptr<IBundle>;
-
 	enum class ErrorCode
 	{
 		Okay = 0,            // no error
@@ -55,8 +53,13 @@ struct IBundle
 	constexpr static unsigned int MaxHandlerStages = 4;
 
 	// chunk name, stage, major version, minor version, memory size, smart pointer to the base of memory
-	using ChunkCreateFunc = std::function<bool(std::string_view, int, uint16_t, uint16_t, size_t,
-											   std::shared_ptr<void>)>;
+	using ChunkCreateFunc = std::function<auto(
+			std::string_view chunkName_,
+			int stage_,
+			uint16_t majorVersion_,
+			uint16_t minorVersion_,
+			size_t memorySize_,
+			std::shared_ptr<void> ptr_)->bool>;
 
 	// the pointer passed to destroy is a unsmart pointer to the base memory
 	using ChunkDestroyFunc = std::function<auto(int, void*)->void>;
@@ -68,12 +71,12 @@ struct IBundle
 		uint32_t extraMem;
 		ChunkCreateFunc createFunc;
 		ChunkDestroyFunc destroyFunc;
-		bool writePrefix = false; // stage 0 only
-		bool allocatePrefix = false; // stage 0 only
+		bool writePrefix = false; // stage 0 only will write pointers into the begining of memory
+		bool allocatePrefix = false; // stage 0 only whether should add the size of the prefix onto the data size
 	};
 
-	// the extra mem parameter needs some explaination. Each stage can request
-	// some extra memory just for itself. This will be add the end of the stage 0 memory
+	// the extra mem parameter needs some explanation. Each stage can request
+	// some extra memory just for itself. This will be added the end of the stage 0 memory
 	// as stage 0 may be variable sized, when a read is called it can specify to put pointers
 	// in the MaxHandlerStages first locations of the returned memory (known as the prefix).
 	// Each of these will point to each stages extra memory (note that yes stage 0 can have extra
@@ -86,8 +89,6 @@ struct IBundle
 
 	/// @param name_ name of chunk wanted, empty to load all given handler types
 	/// @param handlers vector of handler to process the chunk of a given type
-	/// @param writePrefix will write pointers into the begining of memory
-	/// @param allocatePrefix_ whether should add the size of the prefix onto the data size
 	virtual auto read(std::string_view name_,
 					  std::vector<ChunkHandler> const& handlers_) -> ReadReturn = 0;
 
